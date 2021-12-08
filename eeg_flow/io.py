@@ -11,6 +11,13 @@ from bad_channels import PREP_bads_suggestion
 EVENTS = dict(pedal_release=64, son_standard=1, son_target=2, son_novel=3)
 
 
+def load_xdf(fname):
+    """Load XDF file."""
+    assert Path(fname).exists()
+    streams, _ = pyxdf.load_xdf(fname)
+    return streams
+
+
 def _find_streams(streams, stream_name):
     """
     Find the stream including 'stream_name' in the name attribute.
