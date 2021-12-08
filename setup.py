@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 # Version
 version = None
-with open(Path(__file__).parent/'template'/'_version.py', 'r') as file:
+with open(Path(__file__).parent/'eeg_flow'/'_version.py', 'r') as file:
     for line in file:
         line = line.strip()
         if line.startswith('__version__'):
@@ -15,7 +15,7 @@ if version is None:
     raise RuntimeError('Could not determine version.')
 
 # Descriptions
-short_description = """Short template package description"""
+short_description = """EEG Flow project - FCBG - bavelierlab"""
 long_description_file = Path('README.md')
 with open(long_description_file, 'r') as file:
     long_description = file.read()
@@ -27,7 +27,7 @@ else:
     long_description_content_type='text/plain'
 
 # Variables
-NAME = 'template'
+NAME = 'eeg_flow'
 DESCRIPTION = short_description
 LONG_DESCRIPTION = long_description
 LONG_DESCRIPTION_CONTENT_TYPE=long_description_content_type
@@ -35,9 +35,9 @@ AUTHOR = 'Mathieu Scheltienne'
 AUTHOR_EMAIL = 'mathieu.scheltienne@gmail.com'
 MAINTAINER = 'Mathieu Scheltienne'
 MAINTAINER_EMAIL = 'mathieu.scheltienne@gmail.com'
-URL = 'https://github.com/mscheltienne/template-python'
+URL = 'https://github.com/mscheltienne/eeg-flow'
 LICENSE = 'MIT License'
-DOWNLOAD_URL = 'https://github.com/mscheltienne/template-python'
+DOWNLOAD_URL = 'https://github.com/mscheltienne/eeg-flow'
 VERSION = version
 
 
@@ -83,9 +83,9 @@ setup(
         ],
     keywords='neuroscience neuroimaging',
     project_urls={
-        'Documentation': 'https://github.com/mscheltienne/template-python',
-        'Source': 'https://github.com/mscheltienne/template-python',
-        'Tracker': 'https://github.com/mscheltienne/template-python/issues'
+        'Documentation': 'https://github.com/mscheltienne/eeg-flow',
+        'Source': 'https://github.com/mscheltienne/eeg-flow',
+        'Tracker': 'https://github.com/mscheltienne/eeg-flow/issues'
         },
     platforms='any',
     python_requires='>=3.7',
