@@ -75,7 +75,7 @@ class Sound(_Sound):
         """
         SUPPORTED = ('.wav')
 
-        fname = _check_type(fname, ('path-like', ))
+        _check_type(fname, ('path-like', ))
         assert fname.suffix in SUPPORTED and fname.exists()
         return fname
 
