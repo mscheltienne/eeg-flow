@@ -39,10 +39,9 @@ class Sound(_Sound):
         """
         Sets the signal to output.
         """
-        if len(self._original_signal.shape) == 2:
-            slc = (slice(None, self._trim_samples), slice(None))
-        else:
-            slc = (slice(None, self._trim_samples), )
+        assert len(self._signal.shape) in (1, 2)
+        slc = slice(None, self._trim_samples) if len(self._signal.shape) == 1 \
+            else (slice(None, self._trim_samples), slice(None))
         self._signal = self._original_signal[slc]
 
     def trim(self, duration):
@@ -90,6 +89,10 @@ class Sound(_Sound):
         Checks that the sound is either mono or stereo.
         """
         assert len(signal.shape) in (1, 2)
+        if len(signal.shape) == 2:
+            assert signal.shape[1] in (1, 2)
+            if signal.shape[1] == 1:
+                signal = signal[:, 0]
         return signal
 
     @staticmethod
