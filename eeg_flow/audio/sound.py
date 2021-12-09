@@ -1,6 +1,7 @@
 """
 Sound loaded from a file.
 """
+from pathlib import Path
 
 from scipy.io import wavfile
 from scipy.signal import resample
@@ -38,7 +39,10 @@ class Sound(_Sound):
         """
         Sets the signal to output.
         """
-        slc = (slice(None, self._trim_samples), slice(None))
+        if len(self._original_signal.shape) == 2:
+            slc = (slice(None, self._trim_samples), slice(None))
+        else:
+            slc = (slice(None, self._trim_samples), )
         self._signal = self._original_signal[slc]
 
     def trim(self, duration):
@@ -76,6 +80,7 @@ class Sound(_Sound):
         SUPPORTED = ('.wav')
 
         _check_type(fname, ('path-like', ))
+        fname = Path(fname)
         assert fname.suffix in SUPPORTED and fname.exists()
         return fname
 
@@ -84,7 +89,7 @@ class Sound(_Sound):
         """
         Checks that the sound is either mono or stereo.
         """
-        assert signal.shape[1] in (1, 2)
+        assert len(signal.shape) in (1, 2)
         return signal
 
     @staticmethod
@@ -101,7 +106,7 @@ class Sound(_Sound):
         Volume modifications is not supported for loaded sounds.
         Returns [1] * number of channels.
         """
-        return [1] * signal.shape[1]
+        return [1] * len(signal.shape)
 
     @staticmethod
     def _valid_trim_duration(trim_duration, sound_duration):
