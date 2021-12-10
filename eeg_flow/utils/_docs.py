@@ -23,7 +23,7 @@ docdict['audio_duration'] = """
 duration : float
     Duration of the sound. The default is 0.1 second."""
 
-# ------------------------------------ io ------------------------------------
+# ---------------------------------- io-bads ---------------------------------
 docdict['streams'] = """
 streams : list of dict
     List of streams recorded in the .xdf file."""
@@ -33,6 +33,9 @@ eeg_stream : dict
 docdict['raw'] = """
 raw : mne.io.Raw
     Raw instance."""
+docdict['bads'] = """
+bads : list
+    List of bad channels."""
 
 # ------------------------- Documentation functions --------------------------
 docdict_indented = dict()

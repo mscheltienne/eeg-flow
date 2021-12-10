@@ -4,13 +4,12 @@ import mne
 import numpy as np
 from autoreject import get_rejection_threshold
 
-from . import logger, set_log_level
+from . import logger
+from .utils._docs import fill_doc
 from .utils._checks import _check_type
 
-set_log_level('INFO')
-mne.set_log_level('INFO')
 
-
+@fill_doc
 def erp(raw, bandpass, ref_channels, copy=False):
     """
     Apply simple ERP processing to raw instance.
@@ -28,8 +27,7 @@ def erp(raw, bandpass, ref_channels, copy=False):
 
     Parameters
     ----------
-    raw : mne.io.Raw
-        Raw instance including EEG, EOG, ECG and stim channels.
+    %(raw)s
     bandpass : tuple
         2-length tuple (l_freq, h_freq) used to BP filter the EEG signal.
         e.g. (1., 45.) or (1., 15.)
