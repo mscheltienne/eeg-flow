@@ -1,24 +1,24 @@
-"""Processing using a CAR referencing."""
+"""ERP analysis."""
 
 import mne
 import numpy as np
 from autoreject import get_rejection_threshold
 
-from .. import logger, set_log_level
-from ..utils._checks import _check_type
+from . import logger, set_log_level
+from .utils._checks import _check_type
 
 set_log_level('INFO')
 mne.set_log_level('INFO')
 
 
-def process(raw, bandpass, copy=False):
+def erp(raw, bandpass, ref_channels, copy=False):
     """
     Apply simple ERP processing to raw instance.
         - Picks EEG, EOG, ECG channels
         - Bandpass FIR filter on EEG
         - Bandpass FIR filter on AUX
         - Notch (50, 100) Hz on AUX
-        - Set EEG referece to the average of M1, M2
+        - Set EEG reference.
         - Fit ICA, plot scores for EOG/ECG component correlation and plot
           sources to interactively exclude them
         - Create epochs around audio stimulus (-0.2, 0.5), apply baseline
@@ -33,6 +33,11 @@ def process(raw, bandpass, copy=False):
     bandpass : tuple
         2-length tuple (l_freq, h_freq) used to BP filter the EEG signal.
         e.g. (1., 45.) or (1., 15.)
+    ref_channels : list of str | str
+        Can be:
+            - The name(s) of the channel(s) used to construct the reference.
+              e.g. ['M1', 'M2']
+            - 'average' to apply a CAR reference.
     copy : bool
         If True, operates on a copy of the raw instance.
 
@@ -78,8 +83,8 @@ def process(raw, bandpass, copy=False):
         pad="edge")
     raw.notch_filter(np.arange(50, 101, 50), picks=['eog', 'ecg'])
 
-    # CAR
-    raw.set_eeg_reference(ref_channels='average', projection=False,
+    # Reference
+    raw.set_eeg_reference(ref_channels=ref_channels, projection=False,
                           ch_type='eeg')
 
     # ICA
