@@ -6,28 +6,58 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline
 from mne.io.pick import _DATA_CH_TYPES_ORDER_DEFAULT
 
+from .utils._docs import fill_doc
 from .utils._checks import _check_type
 
 
 # ------------------------------- Load streams -------------------------------
+@fill_doc
 def load_xdf(fname):
-    """Load XDF file."""
+    """Load XDF file.
+
+    Parameters
+    ----------
+    fname : str | Path
+        Path to the existing .xdf dataset to load.
+
+    Returns
+    -------
+    %(streams)s
+    """
     assert Path(fname).exists()
     streams, _ = pyxdf.load_xdf(fname)
     return streams
 
 
+@fill_doc
 def find_streams(streams, stream_name):
     """
     Find the stream including 'stream_name' in the name attribute.
+
+    Parameters
+    ----------
+    %(streams)s
+    stream_name : str
+        Substring that has to be present in the returned stream name.
+
+    Returns
+    -------
+    list of tuple (k: int, stream: dict)
+        k is the idx of stream in streams.
+        strean is the stream that contains stream_name in its name.
     """
     return [(k, stream) for k, stream in enumerate(streams)
             if stream_name in stream['info']['name'][0]]
 
 
+@fill_doc
 def stream_names(streams):
     """
     Return the list of stream names.
+
+    Parameters
+    ----------
+    %(streams)s
     """
     return [stream['info']['name'][0] for stream in streams]
 
@@ -47,13 +77,22 @@ def _get_stream_data(stream):
 
 
 # ------------------------------- EEG stream --------------------------------
-def create_raw(stream):
+@fill_doc
+def create_raw(eeg_stream):
     """
     Create raw array from EEG stream.
+
+    Parameters
+    ----------
+    %(eeg_stream)s
+
+    Returns
+    -------
+    %(raw)s
     """
-    ch_names, ch_types, units = _get_eeg_ch_info(stream)
-    sfreq = _get_eeg_sfreq(stream)
-    data = _get_stream_data(stream).T
+    ch_names, ch_types, units = _get_eeg_ch_info(eeg_stream)
+    sfreq = _get_eeg_sfreq(eeg_stream)
+    data = _get_stream_data(eeg_stream).T
 
     info = mne.create_info(ch_names, sfreq, ch_types)
     raw = mne.io.RawArray(data, info, first_samp=0)
@@ -128,9 +167,20 @@ def _get_eeg_sfreq(stream):
 
 
 # ------------------------------- MousePosition ------------------------------
+@fill_doc
 def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     """
     Add the mouse position stream as 2 misc channels to the raw instance.
+    Operates in-place.
+
+    Parameters
+    ----------
+    %(raw)s
+    %(eeg_stream)
+    mouse_pos_stream : dict
+        Loaded stream containing the mouse position data.
+    k : int
+        Degree of the smoothing spline. Must be 1 <= k <= 5.
     """
     _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
     _check_type(k, ('int', ), item_name='k')
@@ -167,9 +217,20 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
 
 
 # -------------------------------- GameEvents --------------------------------
+@fill_doc
 def add_game_events(raw, eeg_stream, game_events_stream, k=1):
     """
     Add the game events as misc channels to the raw instance.
+    Operates in-place.
+
+    Parameters
+    ----------
+    %(raw)s
+    %(eeg_stream)
+    game_events_stream : dict
+        Loaded stream containing the game event data.
+    k : int
+        Degree of the smoothing spline. Must be 1 <= k <= 5.
     """
     _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
     _check_type(k, ('int', ), item_name='k')
@@ -207,9 +268,18 @@ def add_game_events(raw, eeg_stream, game_events_stream, k=1):
 
 
 # ------------------------------- MouseButtons -------------------------------
+@fill_doc
 def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     """
     Add the mouse buttons press/release to the raw instance as annotations.
+    Operates in-place.
+
+    Parameters
+    ----------
+    %(raw)s
+    %(eeg_stream)
+    mouse_buttons_stream : dict
+        Loaded stream containing the mouse button data.
     """
     _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
 
@@ -256,9 +326,18 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
 
 
 # --------------------------------- Keyboard ---------------------------------
+@fill_doc
 def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
     """
     Add the keyboard buttons press/release to the raw instance as annotations.
+    Operates in-place.
+
+    Parameters
+    ----------
+    %(raw)s
+    %(eeg_stream)
+    keyboard_stream : dict
+        Loaded stream containing the keyboard button data.
     """
     _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
 
