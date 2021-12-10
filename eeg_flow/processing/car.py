@@ -4,6 +4,8 @@ import mne
 import numpy as np
 from autoreject import get_rejection_threshold
 
+from ..utils._checks import _check_type
+
 
 def process(raw, bandpass, copy=False):
     """
@@ -39,6 +41,13 @@ def process(raw, bandpass, copy=False):
     evoked_novel : mne.Evoked
         Evoked response for the novel sound stimulus.
     """
+    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(bandpass, (bool, list), item_name='bandpass')
+    assert len(bandpass) == 2
+    for fq in bandpass:
+        _check_type(fq, (None, 'numeric'))
+    _check_type(copy, (bool, ), item_name='copy')
+
     raw = raw.copy() if copy else raw
     raw.pick_types(stim=True, eeg=True, eog=True, ecg=True)
 
