@@ -134,6 +134,11 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     timestamps = _get_stream_timestamps(mouse_pos_stream)
     data = _get_stream_data(mouse_pos_stream)
 
+    ch_names = [
+        elt['label'][0] for elt in \
+        mouse_pos_stream['info']['desc'][0]['channels'][0]['channel']]
+    assert ch_names == ['MouseX', 'MouseY']  # sanity-check
+
     # interpolate spline on mouse position
     splX = UnivariateSpline(timestamps, data.T[0, :], k=k)
     splY = UnivariateSpline(timestamps, data.T[1, :], k=k)
@@ -159,11 +164,20 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
 
 
 # -------------------------------- GameEvents --------------------------------
-def add_game_events(raw, eeg_sream, game_events_stream, k=1):
+def add_game_events(raw, eeg_stream, game_events_stream, k=1):
     """
     Add the game events as misc channels to the raw instance.
     """
+    eeg_timestamps = _get_stream_timestamps(eeg_stream)
+    timestamps = _get_stream_timestamps(game_events_stream)
+    data = _get_stream_data(game_events_stream)
 
+    ch_names = [
+        elt['label'][0] for elt in \
+        game_events_stream['info']['desc'][0]['channels'][0]['channel']]
+    assert ch_names == ['Health', 'Death', 'Primary_Assault_Ammo',
+                        'Secondary_Assault_Ammo', 'Shield_Gun_Ammo', 'Ammo',
+                        'Pick_Health_Pack', 'Pick_Assault_Ammo']
 
 # ------------------------------- MouseButtons -------------------------------
 def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
