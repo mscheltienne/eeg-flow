@@ -168,7 +168,7 @@ def _get_eeg_sfreq(stream):
 
 # ------------------------------- MousePosition ------------------------------
 @fill_doc
-def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
+def add_mouse_position(raw, eeg_stream, mouse_pos_stream, *, k=1):
     """
     Add the mouse position stream as 2 misc channels to the raw instance.
     Operates in-place.
@@ -184,15 +184,43 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     """
     _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
     _check_type(k, ('int', ), item_name='k')
+    _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
+
+# -------------------------------- GameEvents --------------------------------
+@fill_doc
+def add_game_events(raw, eeg_stream, game_events_stream, *, k=1):
+    """
+    Add the game events as misc channels to the raw instance.
+    Operates in-place.
+
+    Parameters
+    ----------
+    %(raw)s
+    %(eeg_stream)
+    game_events_stream : dict
+        Loaded stream containing the game event data.
+    k : int
+        Degree of the smoothing spline. Must be 1 <= k <= 5.
+    """
+    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(k, ('int', ), item_name='k')
+    _add_misc_channel(raw, eeg_stream, game_events_stream, k)
+
+
+# ------------------------ Misc channel interpolated -------------------------
+def _add_misc_channel(raw, eeg_stream, stream, k=1):
+    """
+    Add data from stream to the raw instance as a misc channel by interpolating
+    on the timestamps of eeg_stream.
+    """
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
-    timestamps = _get_stream_timestamps(mouse_pos_stream)
-    data = _get_stream_data(mouse_pos_stream)
+    timestamps = _get_stream_timestamps(stream)
+    data = _get_stream_data(stream)
 
     ch_names = [
         elt['label'][0] for elt in
-        mouse_pos_stream['info']['desc'][0]['channels'][0]['channel']]
-    assert ch_names == ['MouseX', 'MouseY']  # sanity-check
+        stream['info']['desc'][0]['channels'][0]['channel']]
 
     # interpolate spline on mouse position
     spl = {ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
@@ -214,57 +242,6 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
                            ch_types='misc')
     mouse_raw = mne.io.RawArray(mouse_pos_raw_array, info)
     raw.add_channels([mouse_raw], force_update_info=True)
-
-
-# -------------------------------- GameEvents --------------------------------
-@fill_doc
-def add_game_events(raw, eeg_stream, game_events_stream, k=1):
-    """
-    Add the game events as misc channels to the raw instance.
-    Operates in-place.
-
-    Parameters
-    ----------
-    %(raw)s
-    %(eeg_stream)
-    game_events_stream : dict
-        Loaded stream containing the game event data.
-    k : int
-        Degree of the smoothing spline. Must be 1 <= k <= 5.
-    """
-    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
-    _check_type(k, ('int', ), item_name='k')
-
-    eeg_timestamps = _get_stream_timestamps(eeg_stream)
-    timestamps = _get_stream_timestamps(game_events_stream)
-    data = _get_stream_data(game_events_stream)
-
-    ch_names = [
-        elt['label'][0] for elt in
-        game_events_stream['info']['desc'][0]['channels'][0]['channel']]
-    assert ch_names == ['Health', 'Death', 'Primary_Assault_Ammo',
-                        'Secondary_Assault_Ammo', 'Shield_Gun_Ammo', 'Ammo',
-                        'Pick_Health_Pack', 'Pick_Assault_Ammo']
-
-    # interpolate splines
-    spl = {ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
-           for i, ch in enumerate(ch_names)}
-
-    # find tmin/tmax compared to raw
-    tmin_idx, tmax_idx = np.searchsorted(eeg_timestamps,
-                                         (timestamps[0], timestamps[-1]))
-    xs = np.linspace(timestamps[0], timestamps[-1],
-                     tmax_idx - tmin_idx)
-
-    # create array
-    game_event_raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
-    for i, ch in enumerate(ch_names):
-        game_event_raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
-
-    # add to raw
-    info = mne.create_info(ch_names, sfreq=raw.info['sfreq'], ch_types='misc')
-    game_event_raw = mne.io.RawArray(game_event_raw_array, info)
-    raw.add_channels([game_event_raw], force_update_info=True)
 
 
 # ------------------------------- MouseButtons -------------------------------
