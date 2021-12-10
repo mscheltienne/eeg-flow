@@ -131,31 +131,38 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     Add the mouse position stream as 2 misc channels to the raw instance.
     """
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
-    mouse_timestamps = _get_stream_timestamps(mouse_pos_stream)
-    mouse_data = _get_stream_data(mouse_pos_stream)
+    timestamps = _get_stream_timestamps(mouse_pos_stream)
+    data = _get_stream_data(mouse_pos_stream)
 
     # interpolate spline on mouse position
-    splX = UnivariateSpline(mouse_timestamps, mouse_data.T[0, :], k=k)
-    splY = UnivariateSpline(mouse_timestamps, mouse_data.T[1, :], k=k)
+    splX = UnivariateSpline(timestamps, data.T[0, :], k=k)
+    splY = UnivariateSpline(timestamps, data.T[1, :], k=k)
 
     # find tmin/tmax compared to raw
-    tmin_idx = np.searchsorted(eeg_timestamps, mouse_timestamps[0])
-    tmax_idx = np.searchsorted(eeg_timestamps, mouse_timestamps[-1])
-    xs = np.linspace(mouse_timestamps[0], mouse_timestamps[-1],
+    tmin_idx = np.searchsorted(eeg_timestamps, timestamps[0])
+    tmax_idx = np.searchsorted(eeg_timestamps, timestamps[-1])
+    xs = np.linspace(timestamps[0], timestamps[-1],
                      tmax_idx - tmin_idx)
 
     # create array
-    mouse_raw_array = np.zeros(shape=(2, len(raw.times)))
-    mouse_raw_array[0, tmin_idx:tmax_idx] = splX(xs)
-    mouse_raw_array[1, tmin_idx:tmax_idx] = splY(xs)
+    mouse_pos_raw_array = np.zeros(shape=(2, len(raw.times)))
+    mouse_pos_raw_array[0, tmin_idx:tmax_idx] = splX(xs)
+    mouse_pos_raw_array[1, tmin_idx:tmax_idx] = splY(xs)
 
     # add to raw
     info = mne.create_info(['mouseX', 'mouseY'], sfreq=raw.info['sfreq'],
                            ch_types='misc')
-    mouse_raw = mne.io.RawArray(mouse_raw_array, info)
+    mouse_raw = mne.io.RawArray(mouse_pos_raw_array, info)
     raw.add_channels([mouse_raw], force_update_info=True)
 
     return raw
+
+
+# -------------------------------- GameEvents --------------------------------
+def add_game_events(raw, eeg_sream, game_events_stream, k=1):
+    """
+    Add the game events as misc channels to the raw instance.
+    """
 
 
 # ------------------------------- MouseButtons -------------------------------
