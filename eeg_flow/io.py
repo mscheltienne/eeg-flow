@@ -160,8 +160,6 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     mouse_raw = mne.io.RawArray(mouse_pos_raw_array, info)
     raw.add_channels([mouse_raw], force_update_info=True)
 
-    return raw
-
 
 # -------------------------------- GameEvents --------------------------------
 def add_game_events(raw, eeg_stream, game_events_stream, k=1):
@@ -198,8 +196,6 @@ def add_game_events(raw, eeg_stream, game_events_stream, k=1):
     info = mne.create_info(ch_names, sfreq=raw.info['sfreq'], ch_types='misc')
     game_event_raw = mne.io.RawArray(game_event_raw_array, info)
     raw.add_channels([game_event_raw], force_update_info=True)
-
-    return raw
 
 
 # ------------------------------- MouseButtons -------------------------------
