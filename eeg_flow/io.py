@@ -140,19 +140,19 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     assert ch_names == ['MouseX', 'MouseY']  # sanity-check
 
     # interpolate spline on mouse position
-    splX = UnivariateSpline(timestamps, data.T[0, :], k=k)
-    splY = UnivariateSpline(timestamps, data.T[1, :], k=k)
+    spl = {ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
+           for i, ch in enumerate(ch_names)}
 
     # find tmin/tmax compared to raw
-    tmin_idx = np.searchsorted(eeg_timestamps, timestamps[0])
-    tmax_idx = np.searchsorted(eeg_timestamps, timestamps[-1])
+    tmin_idx, tmax_idx = np.searchsorted(eeg_timestamps,
+                                         (timestamps[0], timestamps[-1]))
     xs = np.linspace(timestamps[0], timestamps[-1],
                      tmax_idx - tmin_idx)
 
     # create array
-    mouse_pos_raw_array = np.zeros(shape=(2, len(raw.times)))
-    mouse_pos_raw_array[0, tmin_idx:tmax_idx] = splX(xs)
-    mouse_pos_raw_array[1, tmin_idx:tmax_idx] = splY(xs)
+    mouse_pos_raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
+    for i, ch in enumerate(ch_names):
+        mouse_pos_raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
 
     # add to raw
     info = mne.create_info(['mouseX', 'mouseY'], sfreq=raw.info['sfreq'],
@@ -178,6 +178,29 @@ def add_game_events(raw, eeg_stream, game_events_stream, k=1):
     assert ch_names == ['Health', 'Death', 'Primary_Assault_Ammo',
                         'Secondary_Assault_Ammo', 'Shield_Gun_Ammo', 'Ammo',
                         'Pick_Health_Pack', 'Pick_Assault_Ammo']
+
+    # interpolate splines
+    spl = {ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
+           for i, ch in enumerate(ch_names)}
+
+    # find tmin/tmax compared to raw
+    tmin_idx, tmax_idx = np.searchsorted(eeg_timestamps,
+                                         (timestamps[0], timestamps[-1]))
+    xs = np.linspace(timestamps[0], timestamps[-1],
+                     tmax_idx - tmin_idx)
+
+    # create array
+    game_event_raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
+    for i, ch in enumerate(ch_names):
+        game_event_raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
+
+    # add to raw
+    info = mne.create_info(ch_names, sfreq=raw.info['sfreq'], ch_types='misc')
+    game_event_raw = mne.io.RawArray(game_event_raw_array, info)
+    raw.add_channels([game_event_raw], force_update_info=True)
+
+    return raw
+
 
 # ------------------------------- MouseButtons -------------------------------
 def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
