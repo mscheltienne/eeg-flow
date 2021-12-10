@@ -1,8 +1,6 @@
-from pathlib import Path
-
 from bsl.utils import Timer
 from psychopy import parallel, core
-from eeg_flow.audio import Tone, Sound
+from eeg_flow.audio import Sound
 
 
 filename_trialList = "trialList/1000-trialListA.txt"
@@ -28,12 +26,12 @@ port = parallel.ParallelPort(address='/dev/parport0')
 port.setData(0)
 
 input('Press any key to start..')
-events = list(range(1, 1001, 1))
+events = [(k+1, trial) for k, trial in enumerate(trials)]
 timer = Timer()
 while True:
-    if timer.sec() >= events[0]:
-        ev = events.pop(0)
-        sounds[trials[ev-1]].play()
-        port.setData(trigger_values[trials[ev-1]])
+    if timer.sec() >= events[0][0]:
+        ev, trial = events.pop(0)
+        sounds[trial].play()
+        port.setData(trigger_values[trial])
         core.wait(0.01)
         port.setData(0)
