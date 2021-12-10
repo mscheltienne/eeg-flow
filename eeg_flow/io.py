@@ -126,7 +126,7 @@ def _get_eeg_sfreq(stream):
 
 
 # ------------------------------- MousePosition ------------------------------
-def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=3):
+def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     """
     Add the mouse position stream as 2 misc channels to the raw instance.
     """
