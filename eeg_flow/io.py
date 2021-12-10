@@ -135,7 +135,7 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     data = _get_stream_data(mouse_pos_stream)
 
     ch_names = [
-        elt['label'][0] for elt in \
+        elt['label'][0] for elt in
         mouse_pos_stream['info']['desc'][0]['channels'][0]['channel']]
     assert ch_names == ['MouseX', 'MouseY']  # sanity-check
 
@@ -171,7 +171,7 @@ def add_game_events(raw, eeg_stream, game_events_stream, k=1):
     data = _get_stream_data(game_events_stream)
 
     ch_names = [
-        elt['label'][0] for elt in \
+        elt['label'][0] for elt in
         game_events_stream['info']['desc'][0]['channels'][0]['channel']]
     assert ch_names == ['Health', 'Death', 'Primary_Assault_Ammo',
                         'Secondary_Assault_Ammo', 'Shield_Gun_Ammo', 'Ammo',
