@@ -164,15 +164,15 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     Add the mouse buttons press/release to the raw instance as annotations.
     """
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
-    mouse_timestamps = _get_stream_timestamps(mouse_buttons_stream)
-    mouse_data = _get_stream_data(mouse_buttons_stream)
+    timestamps = _get_stream_timestamps(mouse_buttons_stream)
+    data = _get_stream_data(mouse_buttons_stream)
 
     # convert
-    mouse_data = np.array(mouse_data)[:, 0]
-    assert mouse_data.shape == mouse_timestamps.shape  # sanity-check
+    data = np.array(data)[:, 0]
+    assert data.shape == timestamps.shape  # sanity-check
 
     # find the unique set of buttons
-    unique_buttons = set(elt.split()[0] for elt in set(mouse_data))
+    unique_buttons = set(elt.split()[0] for elt in set(data))
     assert len(unique_buttons) == 4  # sanity-check
 
     # create annotations-like in LSL time
@@ -181,20 +181,63 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     description = list()
 
     for button in unique_buttons:
-        for k, button_press in enumerate(mouse_data):
-            if button not in button_press:
+        for k, event in enumerate(data):
+            if button not in event:
                 continue
 
             # pressed defines onset and description
-            if 'pressed' in button_press:
-                onset_lsl.append(mouse_timestamps[k])
+            if 'pressed' in event:
+                onset_lsl.append(timestamps[k])
                 description.append(button)
             # released defines durations for right/left click
-            if 'released' in button_press:
-                duration.append(mouse_timestamps[k] - onset_lsl[-1])
+            if 'released' in event:
+                duration.append(timestamps[k] - onset_lsl[-1])
             # durations is set to 0 for wheel motions
-            if 'MouseWheel' in button_press:
+            if 'MouseWheel' in event:
                 duration.append(0)
+
+    # convert onset to time relative to raw instance
+    insert_idx = np.searchsorted(eeg_timestamps, onset_lsl)
+    onset = raw.times[insert_idx]
+
+    # create annotations
+    annotations = mne.Annotations(onset, duration, description)
+    raw.set_annotations(annotations)
+
+
+# --------------------------------- Keyboard ---------------------------------
+def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
+    """
+    Add the keyboard buttons press/release to the raw instance as annotations.
+    """
+    eeg_timestamps = _get_stream_timestamps(eeg_stream)
+    timestamps = _get_stream_timestamps(keyboard_stream)
+    data = _get_stream_data(keyboard_stream)
+
+    # convert
+    data = np.array(data)[:, 0]
+    assert data.shape == timestamps.shape  # sanity-check
+
+    # find the unique set of buttons
+    unique_buttons = set(elt.split()[0] for elt in set(data))
+
+    # create annotations-like in LSL time
+    onset_lsl = list()
+    duration = list()
+    description = list()
+
+    for button in unique_buttons:
+        for k, event in enumerate(data):
+            if button not in event:
+                continue
+
+            # pressed defines onset and description
+            if 'pressed' in event:
+                onset_lsl.append(timestamps[k])
+                description.append(button)
+            # released defines durations
+            if 'released' in event:
+                duration.append(timestamps[k] - onset_lsl[-1])
 
     # convert onset to time relative to raw instance
     insert_idx = np.searchsorted(eeg_timestamps, onset_lsl)
