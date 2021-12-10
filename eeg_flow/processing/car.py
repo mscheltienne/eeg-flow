@@ -4,7 +4,11 @@ import mne
 import numpy as np
 from autoreject import get_rejection_threshold
 
+from .. import logger, set_log_level
 from ..utils._checks import _check_type
+
+set_log_level('INFO')
+mne.set_log_level('INFO')
 
 
 def process(raw, bandpass, copy=False):
@@ -83,11 +87,14 @@ def process(raw, bandpass, copy=False):
     ica.fit(raw, picks='eeg')
     eog_idx, eog_scores = ica.find_bads_eog(
         raw, threshold=0.5, measure='correlation')
+    logger.info('Proposed occular-related components: %s', eog_idx)
     ecg_idx, ecg_scores = ica.find_bads_ecg(
         raw, method='correlation', threshold=0.6, measure='correlation')
+    logger.info('Proposed heartbeat-related components: %s', ecg_idx)
     ica.plot_scores(eog_scores)
     ica.plot_scores(ecg_scores)
     ica.plot_sources(raw, block=True)  # exclude bad components
+    logger.info('Components excluded: %s', ica.exclude)
     ica.apply(raw)
 
     # Create Epochs
@@ -97,6 +104,7 @@ def process(raw, bandpass, copy=False):
                         baseline=(None, 0), reject=None, picks='eeg',
                         preload=True)
     reject = get_rejection_threshold(epochs, decim=1)
+    logger.info('Peak-to-peak rejection threshold computed: %s', reject)
     epochs.drop_bad(reject=reject)
     epochs.plot_drop_log()
 

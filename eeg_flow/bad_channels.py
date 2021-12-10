@@ -3,9 +3,12 @@ import pyprep
 import numpy as np
 from autoreject import Ransac
 
+from . import logger
+
 
 # Until 0.4 release, make sure to use the development version.
 if '0.3.1' in pyprep.__version__:
+    logger.warning('PyPREP should be updated..')
     assert pyprep.__version__.split('0.3.1')[1] != ''
 else:
     assert 4 <= int(pyprep.__version__.split('.')[1])
@@ -16,6 +19,8 @@ def _prepapre_raw(raw):
     Copy the raw instance and prepares it for RANSAC/PyPREP.
     Set the montage as 'standard_1020'. The reference 'CPz' is not added.
     """
+    logger.info('Applying BP filter (1., 45.) Hz and notch filter '
+                '(50, 100, 150) Hz on a copy of raw..')
     raw = raw.copy()
     raw.filter(
         l_freq=1.,
@@ -81,4 +86,5 @@ def PREP_bads_suggestion(raw):
     raw.pick_types(eeg=True)
     nc = pyprep.find_noisy_channels.NoisyChannels(raw)
     nc.find_all_bads()
+
     return nc.get_bads()
