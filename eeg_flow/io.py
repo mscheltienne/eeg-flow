@@ -6,6 +6,8 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline
 from mne.io.pick import _DATA_CH_TYPES_ORDER_DEFAULT
 
+from .utils._checks import _check_type
+
 
 # ------------------------------- Load streams -------------------------------
 def load_xdf(fname):
@@ -130,6 +132,9 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, k=1):
     """
     Add the mouse position stream as 2 misc channels to the raw instance.
     """
+    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(k, ('int', ), item_name='k')
+
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(mouse_pos_stream)
     data = _get_stream_data(mouse_pos_stream)
@@ -166,6 +171,9 @@ def add_game_events(raw, eeg_stream, game_events_stream, k=1):
     """
     Add the game events as misc channels to the raw instance.
     """
+    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(k, ('int', ), item_name='k')
+
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(game_events_stream)
     data = _get_stream_data(game_events_stream)
@@ -203,6 +211,8 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     """
     Add the mouse buttons press/release to the raw instance as annotations.
     """
+    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(mouse_buttons_stream)
     data = _get_stream_data(mouse_buttons_stream)
@@ -250,6 +260,8 @@ def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
     """
     Add the keyboard buttons press/release to the raw instance as annotations.
     """
+    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(keyboard_stream)
     data = _get_stream_data(keyboard_stream)
