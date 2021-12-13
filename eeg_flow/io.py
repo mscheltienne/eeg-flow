@@ -176,7 +176,7 @@ def add_mouse_position(raw, eeg_stream, mouse_pos_stream, *, k=1):
     Parameters
     ----------
     %(raw)s
-    %(eeg_stream)
+    %(eeg_stream)s
     mouse_pos_stream : dict
         Loaded stream containing the mouse position data.
     k : int
@@ -197,7 +197,7 @@ def add_game_events(raw, eeg_stream, game_events_stream, *, k=1):
     Parameters
     ----------
     %(raw)s
-    %(eeg_stream)
+    %(eeg_stream)s
     game_events_stream : dict
         Loaded stream containing the game event data.
     k : int
@@ -254,7 +254,7 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     Parameters
     ----------
     %(raw)s
-    %(eeg_stream)
+    %(eeg_stream)s
     mouse_buttons_stream : dict
         Loaded stream containing the mouse button data.
     """
@@ -312,7 +312,7 @@ def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
     Parameters
     ----------
     %(raw)s
-    %(eeg_stream)
+    %(eeg_stream)s
     keyboard_stream : dict
         Loaded stream containing the keyboard button data.
     """
