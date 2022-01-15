@@ -1,10 +1,11 @@
 """ERP analysis."""
 
+from autoreject import get_rejection_threshold
 import mne
 import numpy as np
-from autoreject import get_rejection_threshold
 
 from . import logger
+from .bad_channels import PREP_bads_suggestion
 from .utils._docs import fill_doc
 from .utils._checks import _check_type
 
@@ -81,6 +82,14 @@ def erp(raw, bandpass, ref_channels, copy=False):
         pad="edge")
     raw.notch_filter(np.arange(50, 101, 50), picks=['eog', 'ecg'])
 
+    # Mark bad channels
+    bads = PREP_bads_suggestion(raw)  # operates on a copy and applies notch
+    raw.info['bads'] = bads
+    raw.plot(block=True)  # interactive bad channel marking
+
+    # Interpolate bad channels
+    raw.interpolate_bads(reset_bads=True, mode='accurate')
+
     # Reference
     raw.set_eeg_reference(ref_channels=ref_channels, projection=False,
                           ch_type='eeg')
@@ -94,9 +103,10 @@ def erp(raw, bandpass, ref_channels, copy=False):
     ecg_idx, ecg_scores = ica.find_bads_ecg(
         raw, method='correlation', threshold=0.6, measure='correlation')
     logger.info('Proposed heartbeat-related components: %s', ecg_idx)
+    ica.exclude = eog_idx + ecg_idx
     ica.plot_scores(eog_scores)
     ica.plot_scores(ecg_scores)
-    ica.plot_sources(raw, block=True)  # exclude bad components
+    ica.plot_sources(raw, block=True)  # interactive exclusion bad components
     logger.info('Components excluded: %s', ica.exclude)
     ica.apply(raw)
 
