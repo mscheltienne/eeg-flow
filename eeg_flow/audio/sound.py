@@ -40,7 +40,8 @@ class Sound(_Sound):
         Sets the signal to output.
         """
         assert len(self._signal.shape) in (1, 2)
-        slc = slice(None, self._trim_samples) if len(self._signal.shape) == 1 \
+        slc = slice(None, self._trim_samples) \
+            if len(self._original_signal.shape) == 1 \
             else (slice(None, self._trim_samples), slice(None))
         self._signal = self._original_signal[slc]
 
