@@ -87,13 +87,6 @@ def erp(raw, bandpass, ref_channels, copy=False):
     raw.info['bads'] = bads
     raw.plot(block=True)  # interactive bad channel marking
 
-    # Interpolate bad channels
-    raw.interpolate_bads(reset_bads=True, mode='accurate')
-
-    # Reference
-    raw.set_eeg_reference(ref_channels=ref_channels, projection=False,
-                          ch_type='eeg')
-
     # ICA
     ica = mne.preprocessing.ICA(method='picard', max_iter='auto')
     ica.fit(raw, picks='eeg')
@@ -106,9 +99,18 @@ def erp(raw, bandpass, ref_channels, copy=False):
     ica.exclude = eog_idx + ecg_idx
     ica.plot_scores(eog_scores)
     ica.plot_scores(ecg_scores)
+    ica.plot_components(inst=raw)
     ica.plot_sources(raw, block=True)  # interactive exclusion bad components
     logger.info('Components excluded: %s', ica.exclude)
     ica.apply(raw)
+
+    # Interpolate bad channels
+    raw.interpolate_bads(reset_bads=True, mode='accurate')
+
+    # Reference
+    raw.set_eeg_reference(ref_channels=ref_channels, projection=False,
+                          ch_type='eeg')
+    raw.drop_channels(['M1', 'M2'])
 
     # Create Epochs
     events = mne.find_events(raw, stim_channel='TRIGGER')
