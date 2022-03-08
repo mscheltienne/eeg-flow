@@ -51,12 +51,11 @@ raw.filter(
     pad="edge")
 raw.notch_filter(np.arange(50, 101, 50), picks=['eog', 'ecg'])
 
-#%% Retrieve EEG channels without CPz
-picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'])
-
 #%% Add ref channel and montage
 raw.add_reference_channels(ref_channels='CPz')
 raw.set_montage('standard_1020')  # only after adding ref channel
+# Retrieve EEG channels without CPz
+picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'])
 
 #%% Search for bads
 bads = PREP_bads_suggestion(raw)
