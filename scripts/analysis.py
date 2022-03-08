@@ -17,6 +17,15 @@ raw = create_raw(eeg_stream)
 fname = '-raw.fif'
 raw = mne.io.read_raw_fif(fname, preload=True)
 
+#%% Set AUX channels' names and types
+mne.rename_channels(
+    raw.info, {'AUX7': 'ECG',
+               'AUX8': 'hEOG',
+               'EOG': 'vEOG',
+               'AUX4': 'EDA'})
+# AUX5 to be defined
+raw.set_channel_types(mapping={'ECG': 'ecg', 'vEOG': 'eog', 'hEOG': 'eog'})
+
 #%% Preprocess
 raw.pick_types(stim=True, eeg=True, eog=True, ecg=True)
 # bandpass filter
@@ -42,15 +51,24 @@ raw.filter(
     pad="edge")
 raw.notch_filter(np.arange(50, 101, 50), picks=['eog', 'ecg'])
 
+#%% Retrieve EEG channels without CPz
+picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'])
+
+#%% Add ref channel and montage
+raw.add_reference_channels(ref_channels='CPz')
+raw.set_montage('standard_1020')  # only after adding ref channel
+
+#%% Search for bads
 bads = PREP_bads_suggestion(raw)
-raw.info['bads'] = bads
+raw.info['bads'] = [bad for bad in bads if bads != 'CPz']
 
 #%% Plot
 raw.plot()
 
 #%% ICA
-ica = mne.preprocessing.ICA(method='picard', max_iter='auto')
-ica.fit(raw, picks='eeg')
+ica = mne.preprocessing.ICA(method='picard', max_iter='auto',
+                            n_components=0.99)
+ica.fit(raw, picks=picks)
 
 #%% Plot
 ica.plot_components(inst=raw)

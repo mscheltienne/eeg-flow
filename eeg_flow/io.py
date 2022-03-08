@@ -97,15 +97,6 @@ def create_raw(eeg_stream):
     info = mne.create_info(ch_names, sfreq, ch_types)
     raw = mne.io.RawArray(data, info, first_samp=0)
 
-    # fix channel names/types
-    mne.rename_channels(
-        raw.info, {'AUX7': 'ECG',
-                   'AUX8': 'hEOG',
-                   'EOG': 'vEOG',
-                   'AUX4': 'EDA'})
-    # AUX5 to be defined
-    raw.set_channel_types(mapping={'ECG': 'ecg', 'vEOG': 'eog', 'hEOG': 'eog'})
-
     mapping = {
         "FP1": "Fp1",
         "FPZ": "Fpz",
@@ -130,10 +121,6 @@ def create_raw(eeg_stream):
         return timearr * 1e-6
     raw.apply_function(uVolt2Volt, picks=['eeg', 'eog', 'ecg', 'misc'],
                        channel_wise=True)
-
-    # add reference and set montage
-    raw.add_reference_channels(ref_channels='CPz')
-    raw.set_montage('standard_1020')  # only after adding ref channel
 
     return raw
 
