@@ -60,7 +60,7 @@ raw.set_montage('standard_1020')  # only after adding ref channel
 
 #%% Search for bads
 bads = PREP_bads_suggestion(raw)
-raw.info['bads'] = [bad for bad in bads if bads != 'CPz']
+raw.info['bads'] = [bad for bad in bads if bad != 'CPz']
 
 #%% Plot
 raw.plot()
