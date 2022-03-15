@@ -49,7 +49,6 @@ raw.filter(
     fir_window="hamming",
     fir_design="firwin",
     pad="edge")
-raw.notch_filter(np.arange(50, 101, 50), picks=['eog', 'ecg'])
 
 #%% Add ref channel and montage
 raw.add_reference_channels(ref_channels='CPz')
