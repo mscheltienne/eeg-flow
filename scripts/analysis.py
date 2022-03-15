@@ -1,6 +1,5 @@
 from autoreject import get_rejection_threshold
 import mne
-import numpy as np
 
 from eeg_flow.io import load_xdf, find_streams, create_raw
 from eeg_flow.bad_channels import PREP_bads_suggestion
