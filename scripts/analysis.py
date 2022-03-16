@@ -52,12 +52,13 @@ raw.filter(
 #%% Add ref channel and montage
 raw.add_reference_channels(ref_channels='CPz')
 raw.set_montage('standard_1020')  # only after adding ref channel
-# Retrieve EEG channels without CPz
-picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'])
 
 #%% Search for bads
 bads = PREP_bads_suggestion(raw)
 raw.info['bads'] = [bad for bad in bads if bad != 'CPz']
+
+# Retrieve EEG channels without CPz
+picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'] + raw.info['bads'])
 
 #%% Plot
 raw.plot()
