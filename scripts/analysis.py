@@ -49,16 +49,13 @@ raw.filter(
     fir_design="firwin",
     pad="edge")
 
+#%% Search for bads
+bads = PREP_bads_suggestion(raw)  # operates on a copy
+raw.info['bads'] = bads
+
 #%% Add ref channel and montage
 raw.add_reference_channels(ref_channels='CPz')
 raw.set_montage('standard_1020')  # only after adding ref channel
-
-#%% Search for bads
-bads = PREP_bads_suggestion(raw)
-raw.info['bads'] = [bad for bad in bads if bad != 'CPz']
-
-# Retrieve EEG channels without CPz
-picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'] + raw.info['bads'])
 
 #%% Plot
 raw.plot()
@@ -66,6 +63,8 @@ raw.plot()
 #%% ICA
 ica = mne.preprocessing.ICA(method='picard', max_iter='auto',
                             n_components=0.99)
+# Retrieve EEG channels without CPz and bads
+picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'] + raw.info['bads'])
 ica.fit(raw, picks=picks)
 
 #%% Plot
