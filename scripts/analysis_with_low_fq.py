@@ -29,6 +29,17 @@ raw.set_channel_types(mapping={'ECG': 'ecg', 'vEOG': 'eog', 'hEOG': 'eog'})
 raw.pick_types(stim=True, eeg=True, eog=True, ecg=True)
 # bandpass filter
 raw.filter(
+    l_freq=0.1,
+    h_freq=40.,
+    picks=['eeg', 'eog', 'ecg'],
+    method="fir",
+    phase="zero-double",
+    fir_window="hamming",
+    fir_design="firwin",
+    pad="edge")
+
+raw_ica_fit = raw.copy()
+raw_ica_fit.filter(
     l_freq=1.,
     h_freq=40.,
     picks=['eeg', 'eog', 'ecg'],
@@ -41,24 +52,24 @@ raw.filter(
 #%% Search for bads
 bads = PREP_bads_suggestion(raw)  # operates on a copy
 raw.info['bads'] = bads
+raw_ica_fit.info['bads'] = bads
 
 #%% Add ref channel and montage after adding ref channel
 raw.add_reference_channels(ref_channels='CPz')
-raw.set_montage('standard_1020')  # only after adding ref channel
-
-#%% Plot
-raw.plot()
+raw_ica_fit.add_reference_channels(ref_channels='CPz')
+raw.set_montage('standard_1020')
+raw_ica_fit.set_montage('standard_1020')
 
 #%% ICA
 ica = mne.preprocessing.ICA(method='picard', max_iter='auto',
                             n_components=0.99)
 # Retrieve EEG channels without CPz and bads
 picks = mne.pick_types(raw.info, eeg=True, exclude=['CPz'] + raw.info['bads'])
-ica.fit(raw, picks=picks)
+ica.fit(raw_ica_fit, picks=picks)
 
 #%% Plot
 ica.plot_components(inst=raw)
-ica.plot_sources(raw)
+ica.plot_sources(raw_ica_fit)
 
 #%% Apply
 ica.apply(raw)
