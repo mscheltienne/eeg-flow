@@ -27,6 +27,7 @@ raw.set_channel_types(mapping={'ECG': 'ecg', 'vEOG': 'eog', 'hEOG': 'eog'})
 
 #%% Preprocess
 raw.pick_types(stim=True, eeg=True, eog=True, ecg=True)
+raw_ica_fit = raw.copy()
 # bandpass filter
 raw.filter(
     l_freq=0.1,
@@ -38,7 +39,6 @@ raw.filter(
     fir_design="firwin",
     pad="edge")
 
-raw_ica_fit = raw.copy()
 raw_ica_fit.filter(
     l_freq=1.,
     h_freq=40.,
