@@ -1,1 +1,8 @@
-numpyscipymnepyprepautorejectsounddevicebslpyxdf
+numpy
+scipy
+mne
+pyprep
+autoreject
+sounddevice
+bsl==0.4.0
+pyxdf
