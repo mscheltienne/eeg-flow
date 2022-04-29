@@ -44,7 +44,7 @@ def find_streams(streams, stream_name):
     -------
     list of tuple (k: int, stream: dict)
         k is the idx of stream in streams.
-        strean is the stream that contains stream_name in its name.
+        stream is the stream that contains stream_name in its name.
     """
     return [(k, stream) for k, stream in enumerate(streams)
             if stream_name in stream['info']['name'][0]]
