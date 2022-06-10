@@ -1,16 +1,16 @@
 from pathlib import Path
 from typing import List, Tuple, Union
 
-import pyxdf
 import numpy as np
+import pyxdf
 from mne import Annotations, create_info, rename_channels
 from mne.io import BaseRaw, RawArray
 from mne.io.pick import _DATA_CH_TYPES_ORDER_DEFAULT
 from numpy.typing import NDArray
 from scipy.interpolate import UnivariateSpline
 
-from .utils._docs import fill_doc
 from .utils._checks import _check_type
+from .utils._docs import fill_doc
 
 
 # ------------------------------- Load streams -------------------------------
@@ -33,7 +33,9 @@ def load_xdf(fname: Union[str, Path]) -> List[dict]:
 
 
 @fill_doc
-def find_streams(streams: List[dict], stream_name: str) -> List[Tuple[int, dict]]:
+def find_streams(
+    streams: List[dict], stream_name: str
+) -> List[Tuple[int, dict]]:
     """Find the stream including 'stream_name' in the name attribute.
 
     Parameters
@@ -48,8 +50,11 @@ def find_streams(streams: List[dict], stream_name: str) -> List[Tuple[int, dict]
         k is the idx of stream in streams.
         stream is the stream that contains stream_name in its name.
     """
-    return [(k, stream) for k, stream in enumerate(streams)
-            if stream_name in stream['info']['name'][0]]
+    return [
+        (k, stream)
+        for k, stream in enumerate(streams)
+        if stream_name in stream["info"]["name"][0]
+    ]
 
 
 @fill_doc
@@ -60,17 +65,17 @@ def stream_names(streams: List[dict]):
     ----------
     %(streams)s
     """
-    return [stream['info']['name'][0] for stream in streams]
+    return [stream["info"]["name"][0] for stream in streams]
 
 
 def _get_stream_timestamps(stream: dict):
     """Retrieve the LSL timestamp array."""
-    return stream['time_stamps']
+    return stream["time_stamps"]
 
 
 def _get_stream_data(stream: dict):
     """Retrieve the time series."""
-    return stream['time_series']
+    return stream["time_series"]
 
 
 # ------------------------------- EEG stream --------------------------------
@@ -113,41 +118,45 @@ def create_raw(eeg_stream):
 
     # scaling
     def uVolt2Volt(timearr: NDArray[float]) -> NDArray[float]:
-        """Converts from uV to Volts."""
+        """Convert from uV to Volts."""
         return timearr * 1e-6
-    raw.apply_function(uVolt2Volt, picks=['eeg', 'eog', 'ecg', 'misc'],
-                       channel_wise=True)
+
+    raw.apply_function(
+        uVolt2Volt, picks=["eeg", "eog", "ecg", "misc"], channel_wise=True
+    )
 
     return raw
 
 
 def _get_eeg_ch_info(stream: dict):
-    """Extract the info for each eeg channels (label, type and unit)"""
+    """Extract the info for each eeg channels (label, type and unit)."""
     ch_names, ch_types, units = [], [], []
 
     # get channels labels, types and units
-    for ch in stream["info"]["desc"][0]['channels'][0]['channel']:
-        ch_type = ch['type'][0].lower()
+    for ch in stream["info"]["desc"][0]["channels"][0]["channel"]:
+        ch_type = ch["type"][0].lower()
         if ch_type not in _DATA_CH_TYPES_ORDER_DEFAULT:
             # to be changed to a dict if to many entries exist.
-            ch_type = 'stim' if ch_type == 'markers' else ch_type
-            ch_type = 'misc' if ch_type == 'aux' else ch_type
+            ch_type = "stim" if ch_type == "markers" else ch_type
+            ch_type = "misc" if ch_type == "aux" else ch_type
 
         ch_names.append(ch["label"][0])
         ch_types.append(ch_type)
-        units.append(ch['unit'][0])
+        units.append(ch["unit"][0])
 
     return ch_names, ch_types, units
 
 
 def _get_eeg_sfreq(stream: dict) -> int:
     """Retrieve the nominal sampling rate from the stream."""
-    return int(stream['info']['nominal_srate'][0])
+    return int(stream["info"]["nominal_srate"][0])
 
 
 # ------------------------------- MousePosition ------------------------------
 @fill_doc
-def add_mouse_position(raw: BaseRaw, eeg_stream: dict, mouse_pos_stream: dict, *, k: int = 1) -> None:
+def add_mouse_position(
+    raw: BaseRaw, eeg_stream: dict, mouse_pos_stream: dict, *, k: int = 1
+) -> None:
     """Add the mouse position stream as 2 misc channels to the raw instance.
 
     Parameters
@@ -163,14 +172,16 @@ def add_mouse_position(raw: BaseRaw, eeg_stream: dict, mouse_pos_stream: dict, *
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw, ), item_name='raw')
-    _check_type(k, ('int', ), item_name='k')
+    _check_type(raw, (BaseRaw,), item_name="raw")
+    _check_type(k, ("int",), item_name="k")
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
 
 # -------------------------------- GameEvents --------------------------------
 @fill_doc
-def add_game_events(raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *, k: int = 1) -> None:
+def add_game_events(
+    raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *, k: int = 1
+) -> None:
     """Add the game events as misc channels to the raw instance.
 
     Parameters
@@ -186,13 +197,15 @@ def add_game_events(raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *,
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw, ), item_name='raw')
-    _check_type(k, ('int', ), item_name='k')
+    _check_type(raw, (BaseRaw,), item_name="raw")
+    _check_type(k, ("int",), item_name="k")
     _add_misc_channel(raw, eeg_stream, game_events_stream, k)
 
 
 # ------------------------ Misc channel interpolated -------------------------
-def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) -> None:
+def _add_misc_channel(
+    raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1
+) -> None:
     """Add data from stream to the raw as a misc channel.
 
     The data from stream is interpolated on the timestamps of eeg_stream.
@@ -206,18 +219,21 @@ def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) 
     data = _get_stream_data(stream)
 
     ch_names = [
-        elt['label'][0] for elt in
-        stream['info']['desc'][0]['channels'][0]['channel']]
+        elt["label"][0]
+        for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
+    ]
 
     # interpolate spline on mouse position
-    spl = {ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
-           for i, ch in enumerate(ch_names)}
+    spl = {
+        ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
+        for i, ch in enumerate(ch_names)
+    }
 
     # find tmin/tmax compared to raw
-    tmin_idx, tmax_idx = np.searchsorted(eeg_timestamps,
-                                         (timestamps[0], timestamps[-1]))
-    xs = np.linspace(timestamps[0], timestamps[-1],
-                     tmax_idx - tmin_idx)
+    tmin_idx, tmax_idx = np.searchsorted(
+        eeg_timestamps, (timestamps[0], timestamps[-1])
+    )
+    xs = np.linspace(timestamps[0], timestamps[-1], tmax_idx - tmin_idx)
 
     # create array
     mouse_pos_raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
@@ -225,15 +241,18 @@ def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) 
         mouse_pos_raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
 
     # add to raw
-    info = create_info(['mouseX', 'mouseY'], sfreq=raw.info['sfreq'],
-                       ch_types='misc')
+    info = create_info(
+        ["mouseX", "mouseY"], sfreq=raw.info["sfreq"], ch_types="misc"
+    )
     mouse_raw = RawArray(mouse_pos_raw_array, info)
     raw.add_channels([mouse_raw], force_update_info=True)
 
 
 # ------------------------------- MouseButtons -------------------------------
 @fill_doc
-def add_mouse_buttons(raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict) -> None:
+def add_mouse_buttons(
+    raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict
+) -> None:
     """Add the mouse buttons press/release to the raw as annotations.
 
     Parameters
@@ -247,7 +266,7 @@ def add_mouse_buttons(raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw, ), item_name='raw')
+    _check_type(raw, (BaseRaw,), item_name="raw")
 
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(mouse_buttons_stream)
@@ -272,14 +291,14 @@ def add_mouse_buttons(raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict
                 continue
 
             # pressed defines onset and description
-            if 'pressed' in event:
+            if "pressed" in event:
                 onset_lsl.append(timestamps[k])
                 description.append(button)
             # released defines durations for right/left click
-            if 'released' in event:
+            if "released" in event:
                 duration.append(timestamps[k] - onset_lsl[-1])
             # durations is set to 0 for wheel motions
-            if 'MouseWheel' in event:
+            if "MouseWheel" in event:
                 duration.append(0)
 
     # convert onset to time relative to raw instance
@@ -293,7 +312,9 @@ def add_mouse_buttons(raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict
 
 # --------------------------------- Keyboard ---------------------------------
 @fill_doc
-def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) -> None:
+def add_keyboard_buttons(
+    raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict
+) -> None:
     """Add the keyboard buttons press/release to the raw as annotations.
 
     Parameters
@@ -307,7 +328,7 @@ def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) 
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw, ), item_name='raw')
+    _check_type(raw, (BaseRaw,), item_name="raw")
 
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(keyboard_stream)
@@ -331,11 +352,11 @@ def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) 
                 continue
 
             # pressed defines onset and description
-            if 'pressed' in event:
+            if "pressed" in event:
                 onset_lsl.append(timestamps[k])
                 description.append(button)
             # released defines durations
-            if 'released' in event:
+            if "released" in event:
                 duration.append(timestamps[k] - onset_lsl[-1])
 
     # convert onset to time relative to raw instance

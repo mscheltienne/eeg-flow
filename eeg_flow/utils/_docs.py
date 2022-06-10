@@ -22,18 +22,26 @@ verbose : int | str | bool | None
     "INFO" for True."""
 
 # ------------------------------------ I/O -----------------------------------
-docdict['streams'] = """
+docdict[
+    "streams"
+] = """
 streams : list of dict
     List of streams recorded in the .xdf file."""
-docdict['eeg_stream'] = """
+docdict[
+    "eeg_stream"
+] = """
 eeg_stream : dict
     Stream containing the EEG data."""
 
 # ------------------------------- preprocessing ------------------------------
-docdict['raw'] = """
+docdict[
+    "raw"
+] = """
 raw : Raw
     Raw instance."""
-docdict['bads'] = """
+docdict[
+    "bads"
+] = """
 bads : list
     List of bad channels names."""
 

@@ -1,8 +1,8 @@
 from typing import List
 
 import mne
-import pyprep
 import numpy as np
+import pyprep
 from autoreject import Ransac
 from mne.io import BaseRaw
 
@@ -23,16 +23,17 @@ def _prepapre_raw(raw: BaseRaw) -> BaseRaw:
     """
     raw = raw.copy()
     raw.filter(
-        l_freq=1.,
-        h_freq=45.,
-        picks='eeg',
+        l_freq=1.0,
+        h_freq=45.0,
+        picks="eeg",
         method="fir",
         phase="zero-double",
         fir_window="hamming",
         fir_design="firwin",
-        pad="edge")
-    raw.notch_filter(np.arange(50, 151, 50), picks='eeg')
-    raw.set_montage('standard_1020')
+        pad="edge",
+    )
+    raw.notch_filter(np.arange(50, 151, 50), picks="eeg")
+    raw.set_montage("standard_1020")
     return raw
 
 
@@ -50,15 +51,16 @@ def RANSAC_bads_suggestion(raw: BaseRaw) -> List[str]:
     """
     raw = _prepapre_raw(raw)
     epochs = mne.make_fixed_length_epochs(
-        raw, duration=1.0, preload=True, reject_by_annotation=True)
+        raw, duration=1.0, preload=True, reject_by_annotation=True
+    )
     picks = mne.pick_types(raw.info, eeg=True)
     ransac = Ransac(verbose=False, picks=picks, n_jobs=1)
     ransac.fit(epochs)
     bads = ransac.bad_chs_
     if len(bads) == 0:
-        logger.info('There are no bad channels found.')
+        logger.info("There are no bad channels found.")
     else:
-        logger.info('Found %s bad channels: %s.', len(bads), ', '.join(bads))
+        logger.info("Found %s bad channels: %s.", len(bads), ", ".join(bads))
     return bads
 
 
@@ -88,7 +90,7 @@ def PREP_bads_suggestion(raw: BaseRaw) -> List[str]:
     nc.find_all_bads()
     bads = nc.get_bads()
     if len(bads) == 0:
-        logger.info('There are no bad channels found.')
+        logger.info("There are no bad channels found.")
     else:
-        logger.info('Found %s bad channels: %s.', len(bads), ', '.join(bads))
+        logger.info("Found %s bad channels: %s.", len(bads), ", ".join(bads))
     return bads
