@@ -28,12 +28,14 @@ streams : list of dict
 docdict['eeg_stream'] = """
 eeg_stream : dict
     Loaded stream containing the EEG data."""
+
+# ------------------------------- preprocessing ------------------------------
 docdict['raw'] = """
-raw : mne.io.Raw
+raw : Raw
     Raw instance."""
 docdict['bads'] = """
 bads : list
-    List of bad channels."""
+    List of bad channels names."""
 
 # ------------------------- Documentation functions --------------------------
 docdict_indented = dict()

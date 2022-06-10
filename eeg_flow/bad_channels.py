@@ -1,19 +1,26 @@
+from typing import List
+
 import mne
 import pyprep
 import numpy as np
 from autoreject import Ransac
+from mne.io import BaseRaw
 
 from . import logger
 from .utils._docs import fill_doc
 
 
-def _prepapre_raw(raw):
+def _prepapre_raw(raw: BaseRaw) -> BaseRaw:
+    """Copy the raw instance and prepares it for RANSAC/PyPREP.
+
+    Notes
+    -----
+    The preprocessing includes:
+    - Filter between 1. and 45. Hz the EEG channels.
+    - Notch at (50, 100, 150) Hz the EEG channels.
+    - Set the montage as 'standard_1020'.
+    The reference 'CPz' is not added.
     """
-    Copy the raw instance and prepares it for RANSAC/PyPREP.
-    Set the montage as 'standard_1020'. The reference 'CPz' is not added.
-    """
-    logger.info('Applying BP filter (1., 45.) Hz and notch filter '
-                '(50, 100, 150) Hz on a copy of raw..')
     raw = raw.copy()
     raw.filter(
         l_freq=1.,
@@ -30,10 +37,8 @@ def _prepapre_raw(raw):
 
 
 @fill_doc
-def RANSAC_bads_suggestion(raw):
-    """
-    Create fix length-epochs and apply a RANSAC algorithm to detect bad
-    channels using autoreject.
+def RANSAC_bads_suggestion(raw: BaseRaw) -> List[str]:
+    """Detect bad channels with autoreject RANSAC implementation.
 
     Parameters
     ----------
@@ -58,9 +63,10 @@ def RANSAC_bads_suggestion(raw):
 
 
 @fill_doc
-def PREP_bads_suggestion(raw):
-    """
-    Apply the PREP pipeline to detect bad channels:
+def PREP_bads_suggestion(raw: BaseRaw) -> List[str]:
+    """Detect bad channels with the PREP pipeline.
+
+    The PREP pipeline includes:
         - SNR
         - Correlation
         - Deviation
