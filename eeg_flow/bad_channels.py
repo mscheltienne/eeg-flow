@@ -7,14 +7,6 @@ from . import logger
 from .utils._docs import fill_doc
 
 
-# Until 0.4 release, make sure to use the development version.
-if '0.3.1' in pyprep.__version__:
-    logger.warning('PyPREP should be updated..')
-    assert pyprep.__version__.split('0.3.1')[1] != ''
-else:
-    assert 4 <= int(pyprep.__version__.split('.')[1])
-
-
 def _prepapre_raw(raw):
     """
     Copy the raw instance and prepares it for RANSAC/PyPREP.

@@ -39,7 +39,7 @@ dependencies = [
     'scipy',
     'mne>=1.0.0',
     'pyxdf',
-    'pyprep',
+    'pyprep>=0.4.0',
     'python-picard',
     'mne-icalabel>=0.2.0'
 ]
