@@ -42,7 +42,7 @@ raw_mastoids.filter(
 with raw_mastoids.info._unlock():
     raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
 
-#%% Select chanels on raw on which the ICA is applied
+#%% Select channels from raw on which the ICA is applied
 raw.drop_channels(["M1", "M2"])
 raw.pick_types(stim=True, eeg=True, eog=True, ecg=True)
 
