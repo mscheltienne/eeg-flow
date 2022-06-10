@@ -3,6 +3,8 @@ from bsl.triggers import ParallelPortTrigger
 from psychopy.clock import wait
 from psychopy.sound.backend_ptb import SoundPTB as Sound
 
+from eeg_flow.config import load_triggers
+
 # Read trial list file
 filename_trialList = "trialList/1000-trialListA.txt"
 trials = []
@@ -18,7 +20,8 @@ sound_target = Sound(
     "snd/high_tone-48000.wav", blockSize=32, preBuffer=-1, hamming=True
 )
 sounds = dict(standard=sound_standard, target=sound_target)
-trigger_values = dict(standard=1, target=2)
+tdef = load_triggers()
+trigger_values = dict(standard=tdef.standard, target=tdef.target)
 
 for trial in trials:
     if trial in ("standard", "target"):
@@ -26,7 +29,7 @@ for trial in trials:
     sounds[trial] = Sound(
         f"snd/{trial}-48000.wav", blockSize=32, preBuffer=-1, hamming=True
     )
-    trigger_values[trial] = 3
+    trigger_values[trial] = tdef.novel
 
 # Create trigger
 trigger = ParallelPortTrigger("/dev/parport0")

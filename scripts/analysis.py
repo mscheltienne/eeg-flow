@@ -2,6 +2,7 @@ import mne
 from autoreject import get_rejection_threshold
 
 from eeg_flow.bad_channels import PREP_bads_suggestion
+from eeg_flow.config import load_triggers
 from eeg_flow.io import create_raw, find_streams, load_xdf
 
 #%% Load from .xdf
@@ -73,7 +74,7 @@ raw.drop_channels(["M1", "M2"])
 
 #%% Epochs
 events = mne.find_events(raw, stim_channel="TRIGGER")
-events_id = dict(standard=1, target=2, novel=3)
+events_id = load_triggers().by_name
 epochs = mne.Epochs(
     raw,
     events,
