@@ -41,7 +41,7 @@ dependencies = [
     'pyxdf',
     'pyprep>=0.4.0',
     'python-picard',
-    'mne-icalabel>=0.2.0'
+    'mne-icalabel>=0.2',
 ]
 
 [project.optional-dependencies]
@@ -64,7 +64,7 @@ build = [
     'twine',
 ]
 all = [
-    'eeg_flow[audio]'
+    'eeg_flow[audio]',
     'eeg_flow[style]',
     'eeg_flow[test]',
     'eeg_flow[build]',

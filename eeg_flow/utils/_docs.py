@@ -27,7 +27,7 @@ streams : list of dict
     List of streams recorded in the .xdf file."""
 docdict['eeg_stream'] = """
 eeg_stream : dict
-    Loaded stream containing the EEG data."""
+    Stream containing the EEG data."""
 
 # ------------------------------- preprocessing ------------------------------
 docdict['raw'] = """

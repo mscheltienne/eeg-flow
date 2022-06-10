@@ -1,10 +1,13 @@
 from pathlib import Path
+from typing import List, Tuple, Union
 
-import mne
 import pyxdf
 import numpy as np
-from scipy.interpolate import UnivariateSpline
+from mne import Annotations, create_info, rename_channels
+from mne.io import BaseRaw, RawArray
 from mne.io.pick import _DATA_CH_TYPES_ORDER_DEFAULT
+from numpy.typing import NDArray
+from scipy.interpolate import UnivariateSpline
 
 from .utils._docs import fill_doc
 from .utils._checks import _check_type
@@ -12,7 +15,7 @@ from .utils._checks import _check_type
 
 # ------------------------------- Load streams -------------------------------
 @fill_doc
-def load_xdf(fname):
+def load_xdf(fname: Union[str, Path]) -> List[dict]:
     """Load XDF file.
 
     Parameters
@@ -30,19 +33,18 @@ def load_xdf(fname):
 
 
 @fill_doc
-def find_streams(streams, stream_name):
-    """
-    Find the stream including 'stream_name' in the name attribute.
+def find_streams(streams: List[dict], stream_name: str) -> List[Tuple[int, dict]]:
+    """Find the stream including 'stream_name' in the name attribute.
 
     Parameters
     ----------
     %(streams)s
     stream_name : str
-        Substring that has to be present in the returned stream name.
+        Substring that has to be present in the name attribute.
 
     Returns
     -------
-    list of tuple (k: int, stream: dict)
+    list of tuples : (k: int, stream: dict)
         k is the idx of stream in streams.
         stream is the stream that contains stream_name in its name.
     """
@@ -51,9 +53,8 @@ def find_streams(streams, stream_name):
 
 
 @fill_doc
-def stream_names(streams):
-    """
-    Return the list of stream names.
+def stream_names(streams: List[dict]):
+    """Return the list of stream names.
 
     Parameters
     ----------
@@ -62,25 +63,20 @@ def stream_names(streams):
     return [stream['info']['name'][0] for stream in streams]
 
 
-def _get_stream_timestamps(stream):
-    """
-    Retrieve the LSL timestamp array.
-    """
+def _get_stream_timestamps(stream: dict):
+    """Retrieve the LSL timestamp array."""
     return stream['time_stamps']
 
 
-def _get_stream_data(stream):
-    """
-    Retrieve the time series.
-    """
+def _get_stream_data(stream: dict):
+    """Retrieve the time series."""
     return stream['time_series']
 
 
 # ------------------------------- EEG stream --------------------------------
 @fill_doc
 def create_raw(eeg_stream):
-    """
-    Create raw array from EEG stream.
+    """Create raw from EEG stream.
 
     Parameters
     ----------
@@ -94,8 +90,8 @@ def create_raw(eeg_stream):
     sfreq = _get_eeg_sfreq(eeg_stream)
     data = _get_stream_data(eeg_stream).T
 
-    info = mne.create_info(ch_names, sfreq, ch_types)
-    raw = mne.io.RawArray(data, info, first_samp=0)
+    info = create_info(ch_names, sfreq, ch_types)
+    raw = RawArray(data, info, first_samp=0)
 
     mapping = {
         "FP1": "Fp1",
@@ -111,12 +107,12 @@ def create_raw(eeg_stream):
     }
     for key, value in mapping.items():
         try:
-            mne.rename_channels(raw.info, {key: value})
+            rename_channels(raw.info, {key: value})
         except Exception:
             pass
 
     # scaling
-    def uVolt2Volt(timearr):
+    def uVolt2Volt(timearr: NDArray[float]) -> NDArray[float]:
         """Converts from uV to Volts."""
         return timearr * 1e-6
     raw.apply_function(uVolt2Volt, picks=['eeg', 'eog', 'ecg', 'misc'],
@@ -125,10 +121,8 @@ def create_raw(eeg_stream):
     return raw
 
 
-def _get_eeg_ch_info(stream):
-    """
-    Extract the info for each eeg channels (label, type and unit)
-    """
+def _get_eeg_ch_info(stream: dict):
+    """Extract the info for each eeg channels (label, type and unit)"""
     ch_names, ch_types, units = [], [], []
 
     # get channels labels, types and units
@@ -146,60 +140,66 @@ def _get_eeg_ch_info(stream):
     return ch_names, ch_types, units
 
 
-def _get_eeg_sfreq(stream):
-    """
-    Retrieve the nominal sampling rate from the stream.
-    """
+def _get_eeg_sfreq(stream: dict) -> int:
+    """Retrieve the nominal sampling rate from the stream."""
     return int(stream['info']['nominal_srate'][0])
 
 
 # ------------------------------- MousePosition ------------------------------
 @fill_doc
-def add_mouse_position(raw, eeg_stream, mouse_pos_stream, *, k=1):
-    """
-    Add the mouse position stream as 2 misc channels to the raw instance.
-    Operates in-place.
+def add_mouse_position(raw: BaseRaw, eeg_stream: dict, mouse_pos_stream: dict, *, k: int = 1) -> None:
+    """Add the mouse position stream as 2 misc channels to the raw instance.
 
     Parameters
     ----------
     %(raw)s
     %(eeg_stream)s
     mouse_pos_stream : dict
-        Loaded stream containing the mouse position data.
+        Stream containing the mouse position data.
     k : int
         Degree of the smoothing spline. Must be 1 <= k <= 5.
+
+    Notes
+    -----
+    Operates in-place.
     """
-    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(raw, (BaseRaw, ), item_name='raw')
     _check_type(k, ('int', ), item_name='k')
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
 
 # -------------------------------- GameEvents --------------------------------
 @fill_doc
-def add_game_events(raw, eeg_stream, game_events_stream, *, k=1):
-    """
-    Add the game events as misc channels to the raw instance.
-    Operates in-place.
+def add_game_events(raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *, k: int = 1) -> None:
+    """Add the game events as misc channels to the raw instance.
 
     Parameters
     ----------
     %(raw)s
     %(eeg_stream)s
     game_events_stream : dict
-        Loaded stream containing the game event data.
+        Stream containing the game event data.
     k : int
         Degree of the smoothing spline. Must be 1 <= k <= 5.
+
+    Notes
+    -----
+    Operates in-place.
     """
-    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(raw, (BaseRaw, ), item_name='raw')
     _check_type(k, ('int', ), item_name='k')
     _add_misc_channel(raw, eeg_stream, game_events_stream, k)
 
 
 # ------------------------ Misc channel interpolated -------------------------
-def _add_misc_channel(raw, eeg_stream, stream, k=1):
-    """
-    Add data from stream to the raw instance as a misc channel by interpolating
-    on the timestamps of eeg_stream.
+def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) -> None:
+    """Add data from stream to the raw as a misc channel.
+
+    The data from stream is interpolated on the timestamps of eeg_stream.
+
+    Notes
+    -----
+    Operates in-place.
     """
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(stream)
@@ -225,18 +225,16 @@ def _add_misc_channel(raw, eeg_stream, stream, k=1):
         mouse_pos_raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
 
     # add to raw
-    info = mne.create_info(['mouseX', 'mouseY'], sfreq=raw.info['sfreq'],
-                           ch_types='misc')
-    mouse_raw = mne.io.RawArray(mouse_pos_raw_array, info)
+    info = create_info(['mouseX', 'mouseY'], sfreq=raw.info['sfreq'],
+                       ch_types='misc')
+    mouse_raw = RawArray(mouse_pos_raw_array, info)
     raw.add_channels([mouse_raw], force_update_info=True)
 
 
 # ------------------------------- MouseButtons -------------------------------
 @fill_doc
-def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
-    """
-    Add the mouse buttons press/release to the raw instance as annotations.
-    Operates in-place.
+def add_mouse_buttons(raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict) -> None:
+    """Add the mouse buttons press/release to the raw as annotations.
 
     Parameters
     ----------
@@ -244,8 +242,12 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     %(eeg_stream)s
     mouse_buttons_stream : dict
         Loaded stream containing the mouse button data.
+
+    Notes
+    -----
+    Operates in-place.
     """
-    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(raw, (BaseRaw, ), item_name='raw')
 
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(mouse_buttons_stream)
@@ -285,16 +287,14 @@ def add_mouse_buttons(raw, eeg_stream, mouse_buttons_stream):
     onset = raw.times[insert_idx]
 
     # create annotations
-    annotations = mne.Annotations(onset, duration, description)
+    annotations = Annotations(onset, duration, description)
     raw.set_annotations(annotations)
 
 
 # --------------------------------- Keyboard ---------------------------------
 @fill_doc
-def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
-    """
-    Add the keyboard buttons press/release to the raw instance as annotations.
-    Operates in-place.
+def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) -> None:
+    """Add the keyboard buttons press/release to the raw as annotations.
 
     Parameters
     ----------
@@ -302,8 +302,12 @@ def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
     %(eeg_stream)s
     keyboard_stream : dict
         Loaded stream containing the keyboard button data.
+
+    Notes
+    -----
+    Operates in-place.
     """
-    _check_type(raw, (mne.io.BaseRaw, ), item_name='raw')
+    _check_type(raw, (BaseRaw, ), item_name='raw')
 
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(keyboard_stream)
@@ -339,5 +343,5 @@ def add_keyboard_buttons(raw, eeg_stream, keyboard_stream):
     onset = raw.times[insert_idx]
 
     # create annotations
-    annotations = mne.Annotations(onset, duration, description)
+    annotations = Annotations(onset, duration, description)
     raw.set_annotations(annotations)
