@@ -3,12 +3,13 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import pyxdf
-from mne import Annotations, create_info, rename_channels
+from mne import Annotations, create_info, find_events, rename_channels
 from mne.io import BaseRaw, RawArray
 from mne.io.pick import _DATA_CH_TYPES_ORDER_DEFAULT
 from numpy.typing import NDArray
 from scipy.interpolate import UnivariateSpline
 
+from .config import load_triggers
 from .utils._checks import _check_type
 from .utils._docs import fill_doc
 
@@ -125,6 +126,15 @@ def create_raw(eeg_stream):
         uVolt2Volt, picks=["eeg", "eog", "ecg", "misc"], channel_wise=True
     )
 
+    # add events as annotations
+    events = find_events(raw, "TRIGGER")
+    tdef = load_triggers()
+    duration = 0.1  # seconds
+    for name, event in tdef.by_name.items():
+        stim = np.where(events[:, 2] == event)[0]
+        onsets = [events[start, 0] / raw.info["sfreq"] for start in stim]
+        annotations = Annotations(onsets, duration, name)
+        raw.set_annotations(raw.annotations + annotations)
     return raw
 
 
