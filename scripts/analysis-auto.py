@@ -41,8 +41,6 @@ raw_mastoids.filter(
 # Trick MNE in thinking that a custom-ref has been applied
 with raw_mastoids.info._unlock():
     raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-# Add montage
-raw_mastoids.set_montage("standard_1020")
 
 #%% Select chanels on raw on which the ICA is applied
 raw.drop_channels(["M1", "M2"])
@@ -110,6 +108,7 @@ raw.interpolate_bads(reset_bads=True, mode="accurate")
 #%% Change the reference from CAR to average of both mastoids
 raw.set_eeg_reference(["CPz"], projection=False)
 raw.add_channels([raw_mastoids])
+raw.set_montage("standard_1020")  # add montage for M1 and M2
 raw.set_eeg_reference(["M1", "M2"])
 
 #%% Create stimuli-locked epochs
