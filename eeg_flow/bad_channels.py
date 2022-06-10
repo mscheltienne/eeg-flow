@@ -33,6 +33,7 @@ def _prepapre_raw(raw: BaseRaw) -> BaseRaw:
         pad="edge",
     )
     raw.notch_filter(np.arange(50, 151, 50), picks="eeg")
+    raw.pick_types(eeg=True, exclude=[])
     raw.set_montage("standard_1020")
     return raw
 
