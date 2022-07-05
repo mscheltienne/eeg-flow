@@ -33,7 +33,7 @@ def _prepapre_raw(raw: BaseRaw) -> BaseRaw:
         pad="edge",
     )
     raw.notch_filter(np.arange(50, 151, 50), picks="eeg")
-    raw.pick_types(eeg=True, exclude=[])
+    raw.pick_types(eeg=True, exclude="bads")
     raw.set_montage("standard_1020")
     return raw
 
@@ -54,8 +54,7 @@ def RANSAC_bads_suggestion(raw: BaseRaw) -> List[str]:
     epochs = mne.make_fixed_length_epochs(
         raw, duration=1.0, preload=True, reject_by_annotation=True
     )
-    picks = mne.pick_types(raw.info, eeg=True)
-    ransac = Ransac(verbose=False, picks=picks, n_jobs=1)
+    ransac = Ransac(verbose=False, n_jobs=1)
     ransac.fit(epochs)
     bads = ransac.bad_chs_
     if len(bads) == 0:
@@ -86,7 +85,6 @@ def PREP_bads_suggestion(raw: BaseRaw) -> List[str]:
     %(bads)s
     """
     raw = _prepapre_raw(raw)
-    raw.pick_types(eeg=True)
     nc = pyprep.find_noisy_channels.NoisyChannels(raw)
     nc.find_all_bads()
     bads = nc.get_bads()

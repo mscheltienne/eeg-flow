@@ -1,6 +1,9 @@
+from itertools import chain
+
 import mne
 from autoreject import get_rejection_threshold
 from mne.io.constants import FIFF
+from mne.preprocessing import compute_bridged_electrodes
 from mne_icalabel import label_components
 
 from eeg_flow.bad_channels import PREP_bads_suggestion
@@ -59,9 +62,18 @@ raw_ica_fit.filter(
     fir_design="firwin",
     pad="edge",
 )
-# Search for bads with PREP pipeline
+# Look for bridged electrodes
+bridged_idx, _ = compute_bridged_electrodes(raw_ica_fit)
+raw_ica_fit.info["bads"].extend(
+    [
+        ch
+        for k, ch in enumerate(raw_ica_fit.ch_names)
+        if k in set(chain(*bridged_idx))
+    ]
+)
+# Search for bads with PREP pipeline (excludes bridged electrodes)
 bads = PREP_bads_suggestion(raw_ica_fit)
-raw_ica_fit.info["bads"] = bads
+raw_ica_fit.info["bads"].extend(bads)
 # Add reference and montage
 raw_ica_fit.add_reference_channels(ref_channels="CPz")
 raw_ica_fit.set_montage("standard_1020")
@@ -95,16 +107,13 @@ raw.filter(
     fir_design="firwin",
     pad="edge",
 )
-raw.info["bads"] = bads
+raw.info["bads"] = raw_ica_fit.info["bads"]
 raw.add_reference_channels(ref_channels="CPz")
 raw.set_montage("standard_1020")
 raw.set_eeg_reference("average", projection=False)
 
 #%% Apply ICA to original raw
 ica.apply(raw)
-
-#%% Interpolate bad channels
-raw.interpolate_bads(reset_bads=True, mode="accurate")
 
 #%% Change the reference from CAR to average of both mastoids
 raw.set_eeg_reference(["CPz"], projection=False)
@@ -126,7 +135,8 @@ epochs = mne.Epochs(
     picks="eeg",
     preload=True,
 )
-reject = get_rejection_threshold(epochs, decim=1)
+# get_rejection_threshold excludes bad channels
+reject = get_rejection_threshold(epochs, decim=1, ch_types="eeg")
 epochs.drop_bad(reject=reject)
 epochs.plot_drop_log()
 

@@ -39,7 +39,7 @@ classifiers = [
 dependencies = [
     'numpy',
     'scipy',
-    'mne>=1.0.0',
+    'mne>=1.1.0',
     'pyxdf',
     'pyprep>=0.4.0',
     'python-picard',
