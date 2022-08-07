@@ -72,7 +72,6 @@ def plot_bridged_electrodes_array(
     for bridge in bridged_idx:
         _check_type(bridge, (tuple,), "bridge")
         assert len(bridge) == 2
-        assert all(isinstance(elt, int) for elt in bridge)
     _check_type(ed_matrix, (np.ndarray,), "ed_matrix")
     assert ed_matrix.ndim == 3
     _check_type(info, (Info,), "info")
