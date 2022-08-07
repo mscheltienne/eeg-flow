@@ -1,8 +1,8 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
-from mne.io import BaseRaw
+from mne.io import BaseRaw, Info
 from mne.preprocessing import (
     compute_bridged_electrodes as compute_bridged_electrodes_mne,
 )
@@ -28,10 +28,55 @@ def plot_bridged_electrodes(
     fig : Figure
     ax : Array of Axes
     """
-    _check_raw(raw)
-
+    _check_type(raw, (BaseRaw,), "raw")
+    if 0.5 < raw.info["highpass"]:
+        raise RuntimeError(
+            "The raw instance should not be highpass-filtered " "above 0.5 Hz."
+        )
+    if raw.info["lowpass"] < 30:
+        raise RuntimeError(
+            "The raw instance should not be lowpass-filtered " "below 30 Hz."
+        )
     # retrieve bridge electrodes, operates on a copy
     bridged_idx, ed_matrix = compute_bridged_electrodes_mne(raw)
+    # plot
+    fig, ax = plot_bridged_electrodes_array(
+        bridged_idx, ed_matrix, raw.info.copy().set_montage("standard_1020")
+    )
+    return fig, ax
+
+
+def plot_bridged_electrodes_array(
+    bridged_idx: List[Tuple[int, int]],
+    ed_matrix: NDArray[float],
+    info: Info,
+) -> Tuple[plt.Figure, NDArray[plt.Axes]]:
+    """Pot bridged electrodes.
+
+    Parameters
+    ----------
+    bridged_idx : list of tuple
+        The indices of channels marked as bridged with each bridged
+        pair stored as a tuple.
+    ed_matrix : ndarray of float, shape (n_epochs, n_channels, n_channels)
+        The electrical distance matrix for each pair of EEG electrodes.
+    info : Info
+        MNE Info including the montage (location of each electrodes).
+
+    Returns
+    -------
+    fig : Figure
+    ax : Array of Axes
+    """
+    _check_type(bridged_idx, (list,), "bridged_idx")
+    for bridge in bridged_idx:
+        _check_type(bridge, (tuple,), "bridge")
+        assert len(bridge) == 2
+        assert all(isinstance(elt, int) for elt in bridge)
+    _check_type(ed_matrix, (np.ndarray,), "ed_matrix")
+    assert ed_matrix.ndim == 3
+    _check_type(info, (Info,), "info")
+    assert info.get_montage() is not None
 
     # create figure
     fig, ax = plt.subplots(2, 2, figsize=(15, 10))
@@ -64,7 +109,7 @@ def plot_bridged_electrodes(
 
     # plot topographic map
     plot_bridged_electrodes_mne(
-        raw.info.copy().set_montage("standard_1020"),
+        info,
         bridged_idx,
         ed_matrix,
         title="Bridged Electrodes",
@@ -73,16 +118,3 @@ def plot_bridged_electrodes(
 
     fig.tight_layout()
     return fig, ax
-
-
-def _check_raw(raw: BaseRaw):
-    """Check that the raw instance filters are compatible."""
-    _check_type(raw, (BaseRaw,), "raw")
-    if 0.5 < raw.info["highpass"]:
-        raise RuntimeError(
-            "The raw instance should not be highpass-filtered " "above 0.5 Hz."
-        )
-    if raw.info["lowpass"] < 30:
-        raise RuntimeError(
-            "The raw instance should not be lowpass-filtered " "below 30 Hz."
-        )

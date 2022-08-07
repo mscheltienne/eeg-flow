@@ -1,3 +1,3 @@
-"""Vizualization module."""
+"""Visualization module."""
 
 from .bridged import plot_bridged_electrodes  # noqa: F401
