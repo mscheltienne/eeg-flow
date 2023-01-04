@@ -50,6 +50,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+junit-results.xml
 
 # Translations
 *.mo
@@ -68,9 +69,9 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+doc/_build/
 doc/generated/
-doc/auto_examples/
+doc/api/generated/
 
 # PyBuilder
 target/
@@ -117,3 +118,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyCharm
+**/.idea/

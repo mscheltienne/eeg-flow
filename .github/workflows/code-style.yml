@@ -1,18 +1,11 @@
 name: code-style
-# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
-# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
-# workflow name, PR number (empty on push), push ref (empty on PR)
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
   cancel-in-progress: true
 on:
   pull_request:
-    paths:
-      - '**.py'
   push:
     branches: [main]
-    paths:
-      - '**.py'
   workflow_dispatch:
 
 jobs:
@@ -23,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Setup Python 3.9
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
           architecture: 'x64'
@@ -32,7 +25,7 @@ jobs:
           python -m pip install --progress-bar off --upgrade pip setuptools wheel
           python -m pip install --progress-bar off .[style]
       - name: Run flake8
-        uses: py-actions/flake8@v1
+        uses: py-actions/flake8@v2
         with:
           path: "eeg_flow"
       - name: Run isort
@@ -50,3 +43,5 @@ jobs:
           ignore_words_file: ./.codespellignore
       - name: Run pydocstyle
         run: pydocstyle .
+      - name: Run bibclean
+        run: bibclean-check doc/references.bib

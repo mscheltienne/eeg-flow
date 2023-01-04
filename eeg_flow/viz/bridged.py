@@ -108,7 +108,9 @@ def plot_bridged_electrodes_array(
     ax[1, 0].set_title("Electrical Distance Matrix Distribution")
 
     # plot topographic map
-    args = dict(vlim=(None, 5)) if check_version("mne", "1.3.0") else dict(vmax=5)
+    args = (
+        dict(vlim=(None, 5)) if check_version("mne", "1.3.0") else dict(vmax=5)
+    )
     args["axes"] = ax[1, 1]
     plot_bridged_electrodes_mne(
         info,

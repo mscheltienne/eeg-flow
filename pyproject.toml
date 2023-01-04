@@ -37,16 +37,17 @@ classifiers = [
     'Intended Audience :: Developers',
 ]
 dependencies = [
-    'numpy<1.24',
-    'scipy',
+    'autoreject',
+    'bsl==0.5.1',
     'mne>=1.1.0',
-    'pyxdf',
+    'mne-icalabel>=0.4',
+    'mne-qt-browser',
+    'numpy<1.24',
+    'psutil',
     'pyprep>=0.4.0',
     'python-picard',
-    'mne-icalabel>=0.2',
-    'autoreject',
-    'mne-qt-browser',
-    'bsl==0.5.0',
+    'pyxdf',
+    'scipy',
 ]
 
 [project.optional-dependencies]
@@ -54,13 +55,8 @@ build = [
     'build',
     'twine',
 ]
-audio_sd = [
-    'stimuli',
-]
-audio_psychopy = [
-    'psychoy==2021.2.3',
-]
 style = [
+    'bibclean',
     'black',
     'codespell',
     'isort',
@@ -70,13 +66,15 @@ style = [
 test = [
     'pytest',
     'pytest-cov',
+    'pytest-timeout',
 ]
 all = [
     'eeg_flow[build]',
-    'eeg_flow[audio_sd]',
-    'eeg_flow[audio_psychopy]',
     'eeg_flow[style]',
     'eeg_flow[test]',
+]
+full = [
+    'eeg_flow[all]',
 ]
 
 [project.urls]
@@ -85,15 +83,15 @@ documentation = 'https://github.com/mscheltienne/eeg-flow'
 source = 'https://github.com/mscheltienne/eeg-flow'
 tracker = 'https://github.com/mscheltienne/eeg-flow/issues'
 
+[project.scripts]
+eeg_flow-sys_info = 'eeg_flow.commands.sys_info:run'
+
 [tool.setuptools]
 include-package-data = false
 
 [tool.setuptools.packages.find]
-include = ['template*']
-exclude = ['template*tests']
-
-[tool.setuptools.package-data]
-"eeg_flow.config" = ["*.ini"]
+include = ['eeg_flow*']
+exclude = ['eeg_flow*tests']
 
 [tool.black]
 line-length = 79
@@ -104,9 +102,6 @@ extend-exclude = '''
       __pycache__
     | \.github
     | setup.py
-    | doc/
-    | examples/
-    | tutorials/
 )
 '''
 
@@ -117,14 +112,33 @@ line_length = 79
 py_version = 38
 extend_skip_glob = [
     'setup.py',
-    'doc/*',
-    'examples/*',
-    'tutorials/*'
 ]
 
 [tool.pydocstyle]
 convention = 'numpy'
-ignore-decorators = '(copy_doc|property|.*setter|.*getter|pyqtSlot)'
+ignore-decorators = '(copy_doc|property|.*setter|.*getter|pyqtSlot|Slot)'
 match = '^(?!setup|__init__|test_).*\.py'
-match-dir = '^(?!build|dist|\.).*'
+match-dir = '^eeg_flow.*'
 add_ignore = 'D100,D104,D107'
+
+[tool.pytest.ini_options]
+minversion = '6.0'
+addopts = '--durations 20 --junit-xml=junit-results.xml --verbose'
+filterwarnings = []
+
+[tool.coverage.run]
+branch = true
+cover_pylib = false
+omit = [
+    '**/__init__.py',
+    '**/eeg_flow/_version.py',
+    '**/eeg_flow/commands/*',
+    '**/tests/**',
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    'pragma: no cover',
+    'if __name__ == .__main__.:',
+]
+precision = 2
