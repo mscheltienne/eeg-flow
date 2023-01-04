@@ -27,6 +27,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      MPLBACKEND: agg
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -41,6 +43,8 @@ jobs:
           python -m pip install --progress-bar off .[test]
       - name: Display system information
         run: eeg_flow-sys_info --developer
+      - name: Display matplotlib backend
+        run: python -c "from matplotlib import pyplot as plt; plt.get_backend()"
       - name: Run pytest
         run: pytest eeg_flow --cov=eeg_flow --cov-report=xml --cov-config=pyproject.toml
       - name: Upload to codecov
