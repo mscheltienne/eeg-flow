@@ -64,7 +64,6 @@ plot_bridged_electrodes(raw)
 raw.set_montage("standard_1020")  # we need a montage for the interpolation
 bridged_idx, _ = compute_bridged_electrodes(raw)
 raw = interpolate_bridged_electrodes(raw, bridged_idx)
-raw.set_montage(None)  # we need to remove the montage since CPz is missing
 
 # At this point, raw is referenced to CPz, includes all channels (except CPz),
 # does not have any bad channels marked and is free of bridges.
@@ -104,7 +103,7 @@ ns.find_bad_by_SNR()
 ns.find_bad_by_correlation()
 ns.find_bad_by_hfnoise()
 ns.find_bad_by_nan_flat()
-ns.find_bad_by_ransac()
+ns.find_bad_by_ransac()  # Requires electrode position
 raw_ica_fit.info["bads"] = [
     ch for ch in ns.get_bads() if ch not in ("M1", "M2")
 ]
@@ -134,7 +133,6 @@ ica.fit(raw_ica_fit, picks=picks)
 # - heartbeat in the IC-time series
 # - muscle/noise on the mastoids on the topographic map
 
-ica.info.set_montage("standard_1020")  # required for topographic maps
 ica.plot_sources(raw_ica_fit)
 ica.plot_components(inst=raw_ica_fit)
 
@@ -195,6 +193,7 @@ raw_ica_fit.info["bads"] = bads
 # including the mastoids, but just in case ;)
 
 # change the reference to a common average reference (CAR)
+raw_ica_fit.set_montage(None)
 raw_ica_fit.add_reference_channels(ref_channels="CPz")
 raw_ica_fit.set_montage("standard_1020")
 raw_ica_fit.set_eeg_reference("average", projection=False)
@@ -265,6 +264,7 @@ raw.filter(
     fir_design="firwin",
     pad="edge",
 )
+raw.set_montage(None)
 raw.add_reference_channels(ref_channels="CPz")
 raw.set_eeg_reference("average", projection=False)
 ica.apply(raw)
@@ -276,9 +276,12 @@ ica.apply(raw)
 
 raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
 raw.add_channels([raw_mastoids])
-raw.set_montage("standard_1020")  # add montage for M1 and M2
+raw.set_montage("standard_1020")  # add montage for non-mastoids
 raw.set_eeg_reference(["M1", "M2"])
 
 #%% And we are done.
 # We have a raw with bad channels in raw.info["bads"], good channel denoised,
 # M1, M2 denoised and set as the reference.
+
+# Last visual inspection
+raw.plot(theme="light")
