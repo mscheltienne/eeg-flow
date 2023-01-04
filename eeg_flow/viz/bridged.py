@@ -32,11 +32,11 @@ def plot_bridged_electrodes(
     _check_type(raw, (BaseRaw,), "raw")
     if 0.5 < raw.info["highpass"]:
         raise RuntimeError(
-            "The raw instance should not be highpass-filtered " "above 0.5 Hz."
+            "The raw instance should not be highpass-filtered above 0.5 Hz."
         )
     if raw.info["lowpass"] < 30:
         raise RuntimeError(
-            "The raw instance should not be lowpass-filtered " "below 30 Hz."
+            "The raw instance should not be lowpass-filtered below 30 Hz."
         )
     # retrieve bridge electrodes, operates on a copy
     bridged_idx, ed_matrix = compute_bridged_electrodes_mne(raw)
