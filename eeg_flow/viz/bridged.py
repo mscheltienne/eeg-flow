@@ -6,6 +6,7 @@ from mne.io import BaseRaw, Info
 from mne.preprocessing import (
     compute_bridged_electrodes as compute_bridged_electrodes_mne,
 )
+from mne.utils import check_version
 from mne.viz import plot_bridged_electrodes as plot_bridged_electrodes_mne
 from numpy.typing import NDArray
 
@@ -107,12 +108,14 @@ def plot_bridged_electrodes_array(
     ax[1, 0].set_title("Electrical Distance Matrix Distribution")
 
     # plot topographic map
+    args = dict(vlim=(None, 5)) if check_version("mne", "1.3.0") else dict(vmax=5)
+    args["axes"] = ax[1, 1]
     plot_bridged_electrodes_mne(
         info,
         bridged_idx,
         ed_matrix,
         title="Bridged Electrodes",
-        topomap_args=dict(vmax=5, axes=ax[1, 1]),
+        topomap_args=args,
     )
 
     fig.tight_layout()
