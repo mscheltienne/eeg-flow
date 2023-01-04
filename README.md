@@ -5,3 +5,5 @@
 [![build](https://github.com/mscheltienne/template-python/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mscheltienne/template-python/actions/workflows/build.yml)
 
 # EEG-flow
+
+At the moment, supports python 3.8 to 3.10.
