@@ -8,7 +8,6 @@ from mne.io import read_raw_fif
 
 from eeg_flow.viz import plot_bridged_electrodes
 
-
 raw = read_raw_fif(
     Path(__file__).parent / "data" / "test-bridged.fif", preload=True
 )
