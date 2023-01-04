@@ -61,8 +61,10 @@ plot_bridged_electrodes(raw)
 # signal on the bridged channels and interpolating only from the neighbor
 # channels, it does retain some information from the bridged location.
 
+raw.set_montage("standard_1020")  # we need a montage for the interpolation
 bridged_idx, _ = compute_bridged_electrodes(raw)
 raw = interpolate_bridged_electrodes(raw, bridged_idx)
+raw.set_montage(None)  # we need to remove the montage since CPz is missing
 
 # At this point, raw is referenced to CPz, includes all channels (except CPz),
 # does not have any bad channels marked and is free of bridges.
