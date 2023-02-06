@@ -1,5 +1,9 @@
+from itertools import chain
+
 import numpy as np
-from mne import pick_types, rename_channels
+from autoreject import get_rejection_threshold
+from matplotlib import pyplot as plt
+from mne import Epochs, find_events, pick_types, rename_channels
 from mne.io import read_raw_fif
 from mne.io.constants import FIFF
 from mne.preprocessing import (
@@ -15,7 +19,7 @@ from eeg_flow.io import create_raw, find_streams, load_xdf
 from eeg_flow.viz import plot_bridged_electrodes
 
 #%% Load recording from .xdf
-fname = ".xdf"
+fname = "/home/scheltie/Downloads/sub-feb1_ses-S001_task-2_run-001_eeg.xdf"
 
 streams = load_xdf(fname)
 eeg_stream = find_streams(streams, "eego")[0][1]
@@ -63,10 +67,18 @@ plot_bridged_electrodes(raw)
 
 raw.set_montage("standard_1020")  # we need a montage for the interpolation
 bridged_idx, _ = compute_bridged_electrodes(raw)
-raw = interpolate_bridged_electrodes(raw, bridged_idx)
+try:
+    raw = interpolate_bridged_electrodes(raw, bridged_idx)
+except RuntimeError:
+    bads_idx = sorted(set(chain(*bridged_idx)))
+    raw.info["bads"] = [raw.ch_names[k] for k in bads_idx]
+    assert "M1" not in raw.info["bads"]
+    assert "M2" not in raw.info["bads"]
 
 # At this point, raw is referenced to CPz, includes all channels (except CPz),
-# does not have any bad channels marked and is free of bridges.
+# does not have any bad channels marked and is free of bridges (except if the
+# interpolation failed, in which case the bridged electrodes are marked as bad
+# channels).
 
 #%% Prepare the future reference
 # Next in preprocessing-land, we are going to prepare our future reference: the
@@ -84,6 +96,37 @@ raw = interpolate_bridged_electrodes(raw, bridged_idx)
 raw_ica_fit = raw.copy()
 raw_ica_fit.filter(
     l_freq=1.0,
+    h_freq=100.0,
+    picks="eeg",
+    method="fir",
+    phase="zero-double",
+    fir_window="hamming",
+    fir_design="firwin",
+    pad="edge",
+)
+
+# Note that I am not changing the reference to a common average (CAR). Thus,
+# ICLabel can not be used to suggest bad components.
+# This is deliberate as we want to remove noise from the mastoid channels only.
+
+ns = NoisyChannels(raw_ica_fit, do_detrend=False)  # operates only on EEG
+ns.find_bad_by_SNR()
+ns.find_bad_by_correlation()
+ns.find_bad_by_hfnoise()
+ns.find_bad_by_nan_flat()
+ns.find_bad_by_ransac()  # Requires electrode position
+raw_ica_fit.info["bads"].extend([
+    ch for ch in ns.get_bads() if ch not in ("M1", "M2")
+])
+raw_ica_fit.info["bads"] = list(set(raw_ica_fit.info["bads"]))
+# Note that I do not include the mastoids in the bad channels even if they are
+# detected as such. The goal is to prepare the mastoids that will be used as a
+# reference, thus we *need* to fit components on those channels.
+# It would be very bad if one of the mastoids was giving bad signal..
+
+# Filter to final BP (1, 40) Hz
+raw_ica_fit.filter(
+    l_freq=1.0,
     h_freq=40.0,
     picks="eeg",
     method="fir",
@@ -93,34 +136,18 @@ raw_ica_fit.filter(
     pad="edge",
 )
 
-# Note that I am not filtering between (1, 100) Hz and I am not changing the
-# reference to a common average (CAR). Thus, ICLabel can not be used to suggest
-# bad components.
-# This is deliberate as we want to remove noise from the mastoid channels only.
-
-ns = NoisyChannels(raw_ica_fit, do_detrend=False)
-ns.find_bad_by_SNR()
-ns.find_bad_by_correlation()
-ns.find_bad_by_hfnoise()
-ns.find_bad_by_nan_flat()
-ns.find_bad_by_ransac()  # Requires electrode position
-raw_ica_fit.info["bads"] = [
-    ch for ch in ns.get_bads() if ch not in ("M1", "M2")
-]
-# Note that I do not include the mastoids in the bad channels even if they are
-# detected as such. The goal is to prepare the mastoids that will be used as a
-# reference, thus we *need* to fit components on those channels.
-
 # Before we continue, visually inspect the bad channels. You can also annotate
 # segments to reject.
 raw_ica_fit.plot(theme="light")
 # Since the annotations are not going to change drastically, let's move them
 # directly to 'raw'.
 raw.set_annotations(raw_ica_fit.annotations)
+# And let's save the bads channels for later.
+raw.info["bads"] = raw_ica_fit.info["bads"]
 
 #%%% Fit an ICA
 ica = ICA(
-    n_components=0.99,
+    n_components=0.99,  # n_components=None is my preferred choice.
     method="picard",
     max_iter="auto",
     fit_params=dict(ortho=False, extended=True),
@@ -165,13 +192,12 @@ with raw_mastoids.info._unlock():
 # The first step is to prepare the raw object for an ICA, and for suggestions
 # from ICLabel. The steps are very similar to the previous ones.
 raw.drop_channels(["M1", "M2"])
-raw.pick_types(stim=True, eeg=True)
 
 # filter
 raw_ica_fit = raw.copy()
 raw_ica_fit.filter(
     l_freq=1.0,
-    h_freq=100.0,  # Note the higher frequency
+    h_freq=100.0,
     picks="eeg",
     method="fir",
     phase="zero-double",
@@ -179,18 +205,6 @@ raw_ica_fit.filter(
     fir_design="firwin",
     pad="edge",
 )
-
-# look for bad channels
-ns = NoisyChannels(raw_ica_fit, do_detrend=False)
-ns.find_bad_by_SNR()
-ns.find_bad_by_correlation()
-ns.find_bad_by_hfnoise()
-ns.find_bad_by_nan_flat()
-ns.find_bad_by_ransac()
-bads = ns.get_bads()  # we will need this later for interpolation
-raw_ica_fit.info["bads"] = bads
-# it's unlikely to be different from the previous run on the (1, 40) Hz raw
-# including the mastoids, but just in case ;)
 
 # change the reference to a common average reference (CAR)
 raw_ica_fit.set_montage(None)
@@ -251,7 +265,7 @@ ica.plot_components(inst=raw_ica_fit)
 # frequencies.
 # But for this operation to be valid, it needs to be referenced as raw_ica_fit.
 
-raw.info["bads"] = bads  # set the *same* bad channels, to get the same ref.
+assert sorted(raw_ica_fit.info["bads"]) == sorted(raw.info["bads"])
 raw.filter(
     l_freq=0.5,
     h_freq=40.0,
@@ -283,3 +297,32 @@ raw.set_eeg_reference(["M1", "M2"])
 
 # Last visual inspection
 raw.plot(theme="light")
+
+#%% Create epochs and evoked responses
+events = find_events(raw, stim_channel="TRIGGER")
+epochs = Epochs(
+    raw,
+    tmin=-0.2,
+    tmax=0.8,
+    picks="eeg",
+    events=events,
+    event_id=dict(standard=1, target=2, novel=3),
+    reject=None,
+    baseline=(None, 0),
+    preload=True,
+)
+
+# Estimate the rejection threshold with autoreject and rop bad epochs.
+reject = get_rejection_threshold(epochs)
+epochs.drop_bad(reject=reject)
+
+#%% Create evoked responses
+evokeds = {
+    condition: epochs[condition].average()
+    for condition in ("standard", "target", "novel")
+}
+f, ax = plt.subplots(3, 1, figsize=(10, 5))
+for k, (condition, evo) in enumerate(evokeds.items()):
+    evo.plot(axes=ax[k])
+    ax[k].set_title(condition.capitalize())
+f.tight_layout()
