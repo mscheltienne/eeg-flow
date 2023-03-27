@@ -115,9 +115,9 @@ ns.find_bad_by_correlation()
 ns.find_bad_by_hfnoise()
 ns.find_bad_by_nan_flat()
 ns.find_bad_by_ransac()  # Requires electrode position
-raw_ica_fit.info["bads"].extend([
-    ch for ch in ns.get_bads() if ch not in ("M1", "M2")
-])
+raw_ica_fit.info["bads"].extend(
+    [ch for ch in ns.get_bads() if ch not in ("M1", "M2")]
+)
 raw_ica_fit.info["bads"] = list(set(raw_ica_fit.info["bads"]))
 # Note that I do not include the mastoids in the bad channels even if they are
 # detected as such. The goal is to prepare the mastoids that will be used as a
