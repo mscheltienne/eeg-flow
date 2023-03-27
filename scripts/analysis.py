@@ -3,7 +3,7 @@ from itertools import chain
 import numpy as np
 from autoreject import get_rejection_threshold
 from matplotlib import pyplot as plt
-from mne import Epochs, find_events, pick_types, rename_channels
+from mne import Epochs, find_events, pick_types
 from mne.io import read_raw_fif
 from mne.io.constants import FIFF
 from mne.preprocessing import (
@@ -34,8 +34,8 @@ raw = read_raw_fif(fname, preload=True)
 # - fix the channel names
 # - fix the channel types
 
-rename_channels(
-    raw.info, {"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"}
+raw.rename_channels(
+    {"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"}
 )
 raw.set_channel_types(mapping={"ECG": "ecg", "vEOG": "eog", "hEOG": "eog"})
 

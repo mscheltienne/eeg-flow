@@ -130,7 +130,7 @@ def create_raw(eeg_stream):
     events = find_events(raw, "TRIGGER")
     tdef = load_triggers()
     duration = 0.1  # seconds
-    for name, event in tdef.by_name.items():
+    for name, event in tdef.items():
         stim = np.where(events[:, 2] == event)[0]
         onsets = [events[start, 0] / raw.info["sfreq"] for start in stim]
         annotations = Annotations(onsets, duration, name)
@@ -185,7 +185,6 @@ def add_mouse_position(
     check_type(raw, (BaseRaw,), item_name="raw")
     check_type(k, ("int",), item_name="k")
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
-
 
 # -------------------------------- GameEvents --------------------------------
 @fill_doc
@@ -246,17 +245,16 @@ def _add_misc_channel(
     xs = np.linspace(timestamps[0], timestamps[-1], tmax_idx - tmin_idx)
 
     # create array
-    mouse_pos_raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
+    raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
     for i, ch in enumerate(ch_names):
-        mouse_pos_raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
+        raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
 
-    # add to raw
+    # add channel
     info = create_info(
-        ["mouseX", "mouseY"], sfreq=raw.info["sfreq"], ch_types="misc"
+        ch_names, sfreq=raw.info["sfreq"], ch_types="misc"
     )
-    mouse_raw = RawArray(mouse_pos_raw_array, info)
-    raw.add_channels([mouse_raw], force_update_info=True)
-
+    misc_raw = RawArray(raw_array, info)
+    raw.add_channels([misc_raw], force_update_info=True)
 
 # ------------------------------- MouseButtons -------------------------------
 @fill_doc
