@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from scipy.interpolate import UnivariateSpline
 
 from .config import load_triggers
-from .utils._checks import _check_type
+from .utils._checks import check_type
 from .utils._docs import fill_doc
 
 
@@ -182,8 +182,8 @@ def add_mouse_position(
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw,), item_name="raw")
-    _check_type(k, ("int",), item_name="k")
+    check_type(raw, (BaseRaw,), item_name="raw")
+    check_type(k, ("int",), item_name="k")
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
 
@@ -207,8 +207,8 @@ def add_game_events(
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw,), item_name="raw")
-    _check_type(k, ("int",), item_name="k")
+    check_type(raw, (BaseRaw,), item_name="raw")
+    check_type(k, ("int",), item_name="k")
     _add_misc_channel(raw, eeg_stream, game_events_stream, k)
 
 
@@ -276,7 +276,7 @@ def add_mouse_buttons(
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw,), item_name="raw")
+    check_type(raw, (BaseRaw,), item_name="raw")
 
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(mouse_buttons_stream)
@@ -338,7 +338,7 @@ def add_keyboard_buttons(
     -----
     Operates in-place.
     """
-    _check_type(raw, (BaseRaw,), item_name="raw")
+    check_type(raw, (BaseRaw,), item_name="raw")
 
     eeg_timestamps = _get_stream_timestamps(eeg_stream)
     timestamps = _get_stream_timestamps(keyboard_stream)

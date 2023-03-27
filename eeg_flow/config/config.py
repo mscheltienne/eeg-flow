@@ -1,36 +1,45 @@
+from configparser import ConfigParser
 from pathlib import Path
-from typing import Union
+from typing import Dict, Union
 
-from bsl.triggers import TriggerDef
+from ..utils._checks import ensure_path
 
 
 def load_triggers(
     fname: Union[str, Path] = Path(__file__).parent / "triggers.ini"
-) -> TriggerDef:
+) -> Dict[str, int]:
     """Load triggers from triggers.ini into a TriggerDef instance.
 
     Parameters
     ----------
     fname : str | Path
         Path to the configuration file.
-        Default to 'eeg_flow/config/triggers.ini'.
+        Default to ``'eeg_flow/config/triggers.ini'``.
 
     Returns
     -------
-    tdef : TriggerDef
+    triggers : dict
         Trigger definitiopn containing: standard, target, novel.
     """
-    tdef = TriggerDef(fname)
+    fname = ensure_path(fname, must_exist=True)
+    config = ConfigParser(inline_comment_prefixes=("#", ";"))
+    config.optionxform = str
+    config.read(str(fname))
 
+    triggers = dict()
+    for name, value in config.items("events"):
+        triggers[name] = int(value)
+
+    # verification
     keys = (
         "standard",
         "target",
         "novel",
     )
     for key in keys:
-        if not hasattr(tdef, key):
+        if key not in triggers:
             raise ValueError(
-                f"Key '{key}' is missing from trigger definition."
+                f"Key '{key}' is missing from trigger definition file."
             )
 
-    return tdef
+    return triggers

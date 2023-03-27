@@ -38,11 +38,10 @@ classifiers = [
 ]
 dependencies = [
     'autoreject',
-    'bsl==0.5.1',
-    'mne>=1.1.0',
+    'mne>=1.3.0',
     'mne-icalabel>=0.4',
-    'mne-qt-browser',
     'numpy<1.24',
+    'packaging',
     'psutil',
     'pyprep>=0.4.0',
     'python-picard',
@@ -132,6 +131,7 @@ omit = [
     '**/__init__.py',
     '**/eeg_flow/_version.py',
     '**/eeg_flow/commands/*',
+    '**/eeg_flow/utils/_fixes.py',
     '**/tests/**',
 ]
 

@@ -10,7 +10,7 @@ from mne.utils import check_version
 from mne.viz import plot_bridged_electrodes as plot_bridged_electrodes_mne
 from numpy.typing import NDArray
 
-from ..utils._checks import _check_type
+from ..utils._checks import check_type
 
 
 def plot_bridged_electrodes(
@@ -29,7 +29,7 @@ def plot_bridged_electrodes(
     fig : Figure
     ax : Array of Axes
     """
-    _check_type(raw, (BaseRaw,), "raw")
+    check_type(raw, (BaseRaw,), "raw")
     if 0.5 < raw.info["highpass"]:
         raise RuntimeError(
             "The raw instance should not be highpass-filtered above 0.5 Hz."
@@ -69,13 +69,13 @@ def plot_bridged_electrodes_array(
     fig : Figure
     ax : Array of Axes
     """
-    _check_type(bridged_idx, (list,), "bridged_idx")
+    check_type(bridged_idx, (list,), "bridged_idx")
     for bridge in bridged_idx:
-        _check_type(bridge, (tuple,), "bridge")
+        check_type(bridge, (tuple,), "bridge")
         assert len(bridge) == 2
-    _check_type(ed_matrix, (np.ndarray,), "ed_matrix")
+    check_type(ed_matrix, (np.ndarray,), "ed_matrix")
     assert ed_matrix.ndim == 3
-    _check_type(info, (Info,), "info")
+    check_type(info, (Info,), "info")
     assert info.get_montage() is not None
 
     # create figure
