@@ -186,6 +186,7 @@ def add_mouse_position(
     check_type(k, ("int",), item_name="k")
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
+
 # -------------------------------- GameEvents --------------------------------
 @fill_doc
 def add_game_events(
@@ -255,6 +256,7 @@ def _add_misc_channel(
     )
     misc_raw = RawArray(raw_array, info)
     raw.add_channels([misc_raw], force_update_info=True)
+
 
 # ------------------------------- MouseButtons -------------------------------
 @fill_doc

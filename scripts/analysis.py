@@ -19,7 +19,7 @@ from eeg_flow.io import create_raw, find_streams, load_xdf
 from eeg_flow.viz import plot_bridged_electrodes
 
 #%% Load recording from .xdf
-fname = "/home/scheltie/Downloads/sub-feb1_ses-S001_task-2_run-001_eeg.xdf"
+fname = "-raw.xdf"
 
 streams = load_xdf(fname)
 eeg_stream = find_streams(streams, "eego")[0][1]
