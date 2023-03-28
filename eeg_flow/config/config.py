@@ -56,7 +56,7 @@ def create_config(
 
     Parameters
     ----------
-    xdf_folder : path-likederivatives_folder = ensure_path(derivatives_folder, must_exist=True)
+    xdf_folder : path-like
         Path to the folder containing the recorded raw data.
     derivatives_folder : path-like
         Path to the folder where all the derivatives will be saved.
