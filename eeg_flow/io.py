@@ -241,9 +241,7 @@ def _add_misc_channel(
         raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
 
     # add channel
-    info = create_info(
-        ch_names, sfreq=raw.info["sfreq"], ch_types="misc"
-    )
+    info = create_info(ch_names, sfreq=raw.info["sfreq"], ch_types="misc")
     misc_raw = RawArray(raw_array, info)
     raw.add_channels([misc_raw], force_update_info=True)
 

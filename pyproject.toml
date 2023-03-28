@@ -55,7 +55,7 @@ build = [
     'twine',
 ]
 style = [
-    'black',
+    'black[jupyter]',
     'codespell',
     'isort',
     'flake8',

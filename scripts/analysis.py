@@ -18,6 +18,8 @@ from pyprep import NoisyChannels
 from eeg_flow.io import create_raw, find_streams, load_xdf
 from eeg_flow.viz import plot_bridged_electrodes
 
+# fmt: off
+
 #%% Load recording from .xdf
 fname = "-raw.xdf"
 
