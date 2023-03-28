@@ -38,6 +38,28 @@ docdict[
 raw : Raw
     Raw instance."""
 
+# ------------------------------ file convention -----------------------------
+docdict[
+    "participant"
+] = """
+participant : int
+    ID of the participant."""
+docdict[
+    "group"
+] = """
+group : int
+    ID of the group, 1 to 8."""
+docdict[
+    "task"
+] = """
+task : "oddball" | "UT"
+    Task name."""
+docdict[
+    "run"
+] = """
+run : int
+    ID of the run, 1 or 2."""
+
 # ------------------------- Documentation functions --------------------------
 docdict_indented: Dict[int, Dict[str, str]] = dict()
 

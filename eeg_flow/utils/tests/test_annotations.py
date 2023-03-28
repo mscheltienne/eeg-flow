@@ -5,7 +5,6 @@ from mne.io import RawArray
 from eeg_flow.config import load_triggers
 from eeg_flow.utils.annotations import annotations_from_events
 
-
 # create fake data
 rng = np.random.default_rng()
 fs = 100  # Hz
@@ -13,7 +12,7 @@ data = np.zeros(fs * 10)
 onsets = dict()
 triggers = load_triggers()
 for k, (key, value) in enumerate(triggers.items()):
-    idx = rng.integers(low=0, high=int(data.size - 0.2 * fs), size=k+1)
+    idx = rng.integers(low=0, high=int(data.size - 0.2 * fs), size=k + 1)
     data[idx] = value
     onsets[key] = idx / fs
 info = create_info(["TRIGGER"], fs, "stim")

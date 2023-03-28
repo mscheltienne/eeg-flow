@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from eeg_flow.config import load_triggers, create_config, load_config
+from eeg_flow.config import create_config, load_config, load_triggers
 
 fname_valid = Path(__file__).parent / "data" / "test_triggers.ini"
 fname_invalid = Path(__file__).parent / "data" / "test_triggers_invalid.ini"
