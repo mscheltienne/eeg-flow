@@ -13,7 +13,7 @@ data = np.zeros(fs * 10)
 onsets = dict()
 triggers = load_triggers()
 for k, (key, value) in enumerate(triggers.items()):
-    idx = rng.integers(low=0, high=data.size, size=k+1)
+    idx = rng.integers(low=0, high=int(data.size - 0.2 * fs), size=k+1)
     data[idx] = value
     onsets[key] = idx / fs
 info = create_info(["TRIGGER"], fs, "stim")
