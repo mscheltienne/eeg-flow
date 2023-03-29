@@ -54,6 +54,8 @@ def convert_xdf_to_fiff(
     try:
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
     finally:
+        for lock in locks:
+            lock.release()
         del locks
 
 
