@@ -1,7 +1,7 @@
 from mne import find_events
 
-from eeg_flow.config import load_config
-from eeg_flow.io import (
+from ..config import load_config
+from ..io import (
     add_game_events,
     add_keyboard_buttons,
     add_mouse_buttons,
@@ -10,13 +10,55 @@ from eeg_flow.io import (
     find_streams,
     load_xdf,
 )
-from eeg_flow.utils._docs import fill_doc
-from eeg_flow.utils.annotations import annotations_from_events
-from eeg_flow.utils.bids import get_fname, get_folder
+from ..utils._docs import fill_doc
+from ..utils.annotations import annotations_from_events
+from ..utils.bids import get_fname, get_folder
+from ..utils.concurrency import lock_files, release_files
 
 
 @fill_doc
 def convert_xdf_to_fiff(
+    participant: int,
+    group: int,
+    task: str,
+    run: int,
+    overwrite: bool = False,
+    *,
+    timeout: float = 10,
+) -> None:
+    """Convert the XDF recording to a raw FIFF file.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    %(timeout)s
+    """
+    # prepare folders
+    xdf_folder, derivatives_folder, experimenter = load_config()
+    xdf_folder = get_folder(xdf_folder, participant, group)
+    derivatives_folder = get_folder(derivatives_folder, participant, group)
+    fname_stem = get_fname(participant, group, task, run)
+
+    # lock the output derivative files
+    derivatives = (
+        derivatives_folder / (fname_stem + "_stream_annot.fif"),
+        derivatives_folder / (fname_stem + "_oddball_annot.fif"),
+        derivatives_folder / (fname_stem + "_raw.fif"),
+    )
+    lock_files(*derivatives)
+    try:
+        _convert_xdf_to_fiff(participant, group, task, run, overwrite)
+    finally:
+        release_files(*derivatives)
+
+
+@fill_doc
+def _convert_xdf_to_fiff(
     participant: int,
     group: int,
     task: str,
