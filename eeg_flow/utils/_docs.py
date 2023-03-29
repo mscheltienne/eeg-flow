@@ -37,7 +37,9 @@ docdict[
 ] = """
 raw : Raw
     Raw instance."""
-docdict["timeout"] = """
+docdict[
+    "timeout"
+] = """
 timeout : float
     Maximum duration during which it will attempt to acquire the locks on
     the derivative files."""
