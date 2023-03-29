@@ -46,11 +46,11 @@ def convert_xdf_to_fiff(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / (fname_stem + "_stream_annot.fif"),
-        derivatives_folder / (fname_stem + "_oddball_annot.fif"),
-        derivatives_folder / (fname_stem + "_raw.fif"),
+        derivatives_folder / (fname_stem + "_stream_1_annot.fif"),
+        derivatives_folder / (fname_stem + "_oddball_1_annot.fif"),
+        derivatives_folder / (fname_stem + "_1_raw.fif"),
     )
-    locks = lock_files(*derivatives)
+    locks = lock_files(*derivatives, timeout=timeout)
     try:
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
     finally:
@@ -115,17 +115,17 @@ def _convert_xdf_to_fiff(
     raw.crop(tmin, tmax)
 
     # save stream-annotations to the derivatives folder
-    fname = derivatives_folder / (fname_stem + "_stream_annot.fif")
+    fname = derivatives_folder / (fname_stem + "_stream_1_annot.fif")
     raw.annotations.save(fname, overwrite=overwrite)
     # x-ref: https://github.com/mne-tools/mne-qt-browser/issues/161
     raw.set_annotations(None)
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
-    fname = derivatives_folder / (fname_stem + "_oddball_annot.fif")
+    fname = derivatives_folder / (fname_stem + "_oddball_1_annot.fif")
     annotations.save(fname, overwrite=overwrite)
     raw.set_annotations(annotations)
 
     # save the raw recording
-    fname = derivatives_folder / (fname_stem + "_raw.fif")
+    fname = derivatives_folder / (fname_stem + "_1_raw.fif")
     raw.save(fname, overwrite=overwrite)
