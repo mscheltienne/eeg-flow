@@ -13,7 +13,7 @@ from ..io import (
 from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_fname, get_folder
-from ..utils.concurrency import lock_files, release_files
+from ..utils.concurrency import lock_files
 
 
 @fill_doc
@@ -50,11 +50,11 @@ def convert_xdf_to_fiff(
         derivatives_folder / (fname_stem + "_oddball_annot.fif"),
         derivatives_folder / (fname_stem + "_raw.fif"),
     )
-    lock_files(*derivatives)
+    locks = lock_files(*derivatives)
     try:
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
     finally:
-        release_files(*derivatives)
+        del locks
 
 
 @fill_doc
