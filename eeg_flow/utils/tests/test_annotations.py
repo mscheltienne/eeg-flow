@@ -6,7 +6,7 @@ from eeg_flow.config import load_triggers
 from eeg_flow.utils.annotations import annotations_from_events
 
 # create fake data
-rng = np.random.default_rng()
+rng = np.random.default_rng(101)
 fs = 100  # Hz
 data = np.zeros(fs * 10)
 onsets = dict()
