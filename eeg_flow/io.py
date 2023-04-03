@@ -305,7 +305,7 @@ def add_mouse_buttons(
 
     # create annotations
     annotations = Annotations(onset, duration, description)
-    raw.set_annotations(annotations)
+    raw.set_annotations(raw.annotations + annotations)
 
 
 # --------------------------------- Keyboard ---------------------------------
@@ -363,4 +363,4 @@ def add_keyboard_buttons(
 
     # create annotations
     annotations = Annotations(onset, duration, description)
-    raw.set_annotations(annotations)
+    raw.set_annotations(raw.annotations + annotations)
