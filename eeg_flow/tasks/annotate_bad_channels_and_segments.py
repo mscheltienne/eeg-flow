@@ -47,7 +47,7 @@ def annotate_bad_channels_and_segments(
         derivatives_folder / (fname_stem + "_2_info.fif"),
         derivatives_folder / (fname_stem + "_oddball_with_bads_2_annot.fif"),
     )
-    locks = lock_files(*derivatives)
+    locks = lock_files(*derivatives, timeout=timeout)
     try:
         _annotate_bad_channels_and_segments(
             participant, group, task, run, overwrite
