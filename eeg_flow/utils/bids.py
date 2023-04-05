@@ -30,7 +30,12 @@ def get_fname(participant: int, group: int, task: str, run: int) -> str:
     check_type(task, (str,), "task")
     check_value(task, ("UT", "oddball"), "task")
     check_type(run, ("int",), "run")
-    return f"sub-P{participant}-G{group}_task-{task}_run-{run}"
+
+    if participant < 10:
+        return f"sub-P0{participant}-G{group}_task-{task}_run-{run}"
+    else:
+        return f"sub-P{participant}-G{group}_task-{task}_run-{run}"
+
 
 
 @fill_doc
