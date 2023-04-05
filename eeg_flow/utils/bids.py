@@ -52,4 +52,8 @@ def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
     root = ensure_path(root, must_exist=True)
     check_type(participant, ("int",), "participant")
     check_type(group, ("int",), "group")
-    return root / f"sub-{participant}-G{group}"
+
+    if participant < 10:
+        return root / f"sub-P0{participant}-G{group}"
+    else:
+        return root / f"sub-P{participant}-G{group}"
