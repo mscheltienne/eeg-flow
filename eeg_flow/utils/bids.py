@@ -32,9 +32,7 @@ def get_fname(participant: int, group: int, task: str, run: int) -> str:
     check_type(run, ("int",), "run")
 
     if participant > 99:
-        raise ValueError(
-            msg.format("The current code handles Participant IDs with 2 digits only. If PID is 100 or above, zfill needs to have 3 as argument in function get_fname() of bids.py")
-        )
+        raise ValueError("The current code handles Participant IDs with 2 digits only. If PID is 100 or above, zfill needs to have 3 as argument in function get_fname() of bids.py")
     return f"sub-P{str(participant).zfill(2)}-G{group}_task-{task}_run-{run}"
 
 
@@ -61,8 +59,6 @@ def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
     check_type(group, ("int",), "group")
 
     if participant > 99:
-        raise ValueError(
-            msg.format("The current code handles Participant IDs with 2 digits only. If PID is 100 or above, zfill needs to have 3 as argument in function get_folder() of bids.py")
-        )
+        raise ValueError("The current code handles Participant IDs with 2 digits only. If PID is 100 or above, zfill needs to have 3 as argument in function get_folder() of bids.py")
 
     return root / f"sub-{str(participant).zfill(2)}-G{group}"
