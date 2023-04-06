@@ -61,4 +61,4 @@ def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
     if participant > 99:
         raise ValueError("The current code handles Participant IDs with 2 digits only. If PID is 100 or above, zfill needs to have 3 as argument in function get_folder() of bids.py")
 
-    return root / f"sub-{str(participant).zfill(2)}-G{group}"
+    return root / f"sub-P{str(participant).zfill(2)}-G{group}"
