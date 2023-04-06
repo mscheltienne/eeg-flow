@@ -20,7 +20,7 @@ def lock_files(*args, timeout: float = 10) -> List[SoftFileLock]:
         The list of locks. When deleted, a lock is automatically released.
     """
     check_type(timeout, ("numeric",), "timeout")
-    files = [ensure_path(arg, must_exist=True) for arg in args]
+    files = [ensure_path(arg, must_exist=False) for arg in args]
     locks = list()
     failed = list()
     for file in files:
