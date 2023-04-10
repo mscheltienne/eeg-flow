@@ -30,7 +30,7 @@ def get_fname(participant: int, group: int, task: str, run: int) -> str:
     check_type(task, (str,), "task")
     check_value(task, ("UT", "oddball"), "task")
     check_type(run, ("int",), "run")
-    if 0 <= participant or 100 <= participant:
+    if 0 >= participant or 100 <= participant:
         raise ValueError(
             "The participant ID should be set between 1 and 100. "
             f"{participant} is not valid."
