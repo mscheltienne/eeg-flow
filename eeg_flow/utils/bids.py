@@ -30,7 +30,7 @@ def get_fname(participant: int, group: int, task: str, run: int) -> str:
     check_type(task, (str,), "task")
     check_value(task, ("UT", "oddball"), "task")
     check_type(run, ("int",), "run")
-    if 0 >= participant or 100 <= participant:
+    if participant <= 0 or 100 <= participant:
         raise ValueError(
             "The participant ID should be set between 1 and 100. "
             f"{participant} is not valid."
@@ -59,7 +59,7 @@ def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
     root = ensure_path(root, must_exist=True)
     check_type(participant, ("int",), "participant")
     check_type(group, ("int",), "group")
-    if 0 >= participant or 100 <= participant:
+    if participant <= 0 or 100 <= participant:
         raise ValueError(
             "The participant ID should be set between 1 and 100. "
             f"{participant} is not valid."
