@@ -38,8 +38,6 @@ def get_fname(participant: int, group: int, task: str, run: int) -> str:
     return f"sub-P{str(participant).zfill(2)}-G{group}_task-{task}_run-{run}"
 
 
-
-
 @fill_doc
 def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
     """Get the folder from the participant and group.
