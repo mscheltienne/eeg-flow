@@ -1,12 +1,17 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from ._checks import check_type, check_value, ensure_path
 from ._docs import fill_doc
 
 
 @fill_doc
-def get_fname(participant: int, group: int, task: str, run: int) -> str:
+def get_fname(
+        participant: int,
+        group: int,
+        task: str,
+        run: int,
+) -> str:
     """Get the file name stem from the participant, group, task and run.
 
     Parameters
@@ -39,7 +44,12 @@ def get_fname(participant: int, group: int, task: str, run: int) -> str:
 
 
 @fill_doc
-def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
+def get_folder(root: Union[str, Path],
+               participant: int,
+               group: int,
+               task: Optional[str] = "",
+               run: Optional[int] = "",
+               ) -> Path:
     """Get the folder from the participant and group.
 
     Parameters
@@ -62,4 +72,40 @@ def get_folder(root: Union[str, Path], participant: int, group: int) -> Path:
             "The participant ID should be set between 1 and 100. "
             f"{participant} is not valid."
         )
-    return root / f"sub-P{str(participant).zfill(2)}-G{group}"
+    if not task or not run:
+        return root / f"sub-P{str(participant).zfill(2)}-G{group}"
+    else:
+        fname_stem = get_fname(participant, group, task, run)
+        return root / f"sub-P{str(participant).zfill(2)}-G{group}" / fname_stem
+
+
+@fill_doc
+def get_subfolder(
+        root: Union[str, Path],
+        participant: int,
+        group: int,
+        fname_stem: Union[str, Path],
+) -> Path:
+    """Get the subfolder for a specific run.
+
+    Parameters
+    ----------
+    root : path-like
+        Path to the BIDS-like root folder.
+    %(participant)s
+    %(group)s
+
+    Returns
+    -------
+    folder : Path
+        Path to the folder.
+    """
+    root = ensure_path(root, must_exist=True)
+    check_type(participant, ("int",), "participant")
+    check_type(group, ("int",), "group")
+    if participant <= 0 or 100 <= participant:
+        raise ValueError(
+            "The participant ID should be set between 1 and 100. "
+            f"{participant} is not valid."
+        )
+    return root / f"sub-P{str(participant).zfill(2)}-G{group}" / fname_stem
