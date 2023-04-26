@@ -276,7 +276,6 @@ def add_mouse_buttons(
 
     # find the unique set of buttons
     unique_buttons = set(elt.split()[0] for elt in set(data))
-    assert len(unique_buttons) == 4  # sanity-check
 
     # create annotations-like in LSL time
     onset_lsl = list()
