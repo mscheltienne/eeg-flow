@@ -48,13 +48,13 @@ timeout : float
 docdict[
     "participant"
 ] = """
-participant : int
-    ID of the participant."""
+participant : str
+    ID of the participant, for example P08, S02"""
 docdict[
     "group"
 ] = """
-group : int
-    ID of the group, 1 to 8."""
+group : str
+    ID of the group, G1 to G8."""
 docdict[
     "task"
 ] = """

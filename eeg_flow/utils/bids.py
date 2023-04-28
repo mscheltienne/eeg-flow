@@ -7,8 +7,8 @@ from ._docs import fill_doc
 
 @fill_doc
 def get_fname(
-        participant: int,
-        group: int,
+        participant: str,
+        group: str,
         task: str,
         run: int,
 ) -> str:
@@ -30,23 +30,24 @@ def get_fname(
     -----
     The file name stem can be used to create the derivatives file names.
     """
-    check_type(participant, ("int",), "participant")
-    check_type(group, ("int",), "group")
+    check_type(participant, ("str",), "participant")
+    check_type(group, ("str",), "group")
     check_type(task, (str,), "task")
     check_value(task, ("UT", "oddball"), "task")
     check_type(run, ("int",), "run")
-    if participant <= 0 or 100 <= participant:
-        raise ValueError(
-            "The participant ID should be set between 1 and 100. "
-            f"{participant} is not valid."
-        )
-    return f"sub-P{str(participant).zfill(2)}-G{group}_task-{task}_run-{run}"
+    # if participant <= 0 or 100 <= participant:
+    #     raise ValueError(
+    #         "The participant ID should be set between 1 and 100. "
+    #         f"{participant} is not valid."
+    #     )
+    # return f"sub-P{str(participant).zfill(2)}-G{group}_task-{task}_run-{run}"
+    return f"sub-{participant}-{group}_task-{task}_run-{run}"
 
 
 @fill_doc
 def get_folder(root: Union[str, Path],
-               participant: int,
-               group: int,
+               participant: str,
+               group: str,
                task: Optional[str] = "",
                run: Optional[int] = "",
                ) -> Path:
@@ -65,18 +66,20 @@ def get_folder(root: Union[str, Path],
         Path to the folder.
     """
     root = ensure_path(root, must_exist=True)
-    check_type(participant, ("int",), "participant")
-    check_type(group, ("int",), "group")
-    if participant <= 0 or 100 <= participant:
-        raise ValueError(
-            "The participant ID should be set between 1 and 100. "
-            f"{participant} is not valid."
-        )
+    check_type(participant, ("str",), "participant")
+    check_type(group, ("istrnt",), "group")
+    # if participant <= 0 or 100 <= participant:
+    #     raise ValueError(
+    #         "The participant ID should be set between 1 and 100. "
+    #         f"{participant} is not valid."
+    #     )
     if not task or not run:
-        return root / f"sub-P{str(participant).zfill(2)}-G{group}"
+        # return root / f"sub-P{str(participant).zfill(2)}-G{group}"
+        return root / f"sub-{participant}-{group}"
     else:
         fname_stem = get_fname(participant, group, task, run)
-        return root / f"sub-P{str(participant).zfill(2)}-G{group}" / fname_stem
+        # return root / f"sub-P{str(participant).zfill(2)}-G{group}" / fname_stem
+        return root / f"sub-{participant}-{group}" / fname_stem
 
 
 @fill_doc
