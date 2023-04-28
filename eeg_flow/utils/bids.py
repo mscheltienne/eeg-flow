@@ -30,8 +30,8 @@ def get_fname(
     -----
     The file name stem can be used to create the derivatives file names.
     """
-    check_type(participant, ("str",), "participant")
-    check_type(group, ("str",), "group")
+    check_type(participant, (str,), "participant")
+    check_type(group, (str,), "group")
     check_type(task, (str,), "task")
     check_value(task, ("UT", "oddball"), "task")
     check_type(run, ("int",), "run")
@@ -66,8 +66,8 @@ def get_folder(root: Union[str, Path],
         Path to the folder.
     """
     root = ensure_path(root, must_exist=True)
-    check_type(participant, ("str",), "participant")
-    check_type(group, ("istrnt",), "group")
+    check_type(participant, (str,), "participant")
+    check_type(group, (str,), "group")
     # if participant <= 0 or 100 <= participant:
     #     raise ValueError(
     #         "The participant ID should be set between 1 and 100. "
