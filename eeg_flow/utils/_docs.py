@@ -49,7 +49,7 @@ docdict[
     "participant"
 ] = """
 participant : str
-    ID of the participant, for example P08, S02"""
+    ID of the participant, for example P08, S02."""
 docdict[
     "group"
 ] = """

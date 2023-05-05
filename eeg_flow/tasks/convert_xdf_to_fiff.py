@@ -25,7 +25,7 @@ from ..utils.concurrency import lock_files
 @fill_doc
 def convert_xdf_to_fiff(
     participant: str,
-    group: int,
+    group: str,
     task: str,
     run: int,
     overwrite: bool = False,
@@ -52,6 +52,7 @@ def convert_xdf_to_fiff(
 
     # create derivatives preprocessed subfolder
     os.makedirs(DERIVATIVES_SUBFOLDER, exist_ok=True)
+    print("Created folder", DERIVATIVES_SUBFOLDER)
 
     # lock the output derivative files
     derivatives = [
@@ -75,7 +76,7 @@ def convert_xdf_to_fiff(
 @fill_doc
 def _convert_xdf_to_fiff(
     participant: str,
-    group: int,
+    group: str,
     task: str,
     run: int,
     overwrite: bool = False,
@@ -142,6 +143,7 @@ def _convert_xdf_to_fiff(
             DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_stream_annot.fif")
         )
         raw.annotations.save(FNAME_STREAM_ANNOT, overwrite=False)
+        print("Saved: ", FNAME_STREAM_ANNOT)
         # x-ref: https://github.com/mne-tools/mne-qt-browser/issues/161
         raw.set_annotations(None)
 
@@ -151,9 +153,11 @@ def _convert_xdf_to_fiff(
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_oddball_annot.fif")
     )
     annotations.save(FNAME_OB_ANNOT, overwrite=overwrite)
+    print("Saved: ", FNAME_OB_ANNOT)
     raw.set_annotations(annotations)
 
     raw.set_montage("standard_1020")
     # save the raw recording
     FNAME_RAW = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_raw.fif")
     raw.save(FNAME_RAW, overwrite=False)
+    print("Saved: ", FNAME_RAW)
