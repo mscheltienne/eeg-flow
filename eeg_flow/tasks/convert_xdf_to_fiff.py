@@ -73,6 +73,10 @@ def convert_xdf_to_fiff(
     return
 
 
+def convert_xdf_to_fiff_star(args):
+    return convert_xdf_to_fiff(*args)
+
+
 @fill_doc
 def _convert_xdf_to_fiff(
     participant: str,

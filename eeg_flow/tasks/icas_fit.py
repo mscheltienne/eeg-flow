@@ -64,6 +64,10 @@ def fit_two_icas(
     return
 
 
+def fit_two_icas_star(args):
+    return fit_two_icas(*args)
+
+
 @fill_doc
 def _fit_two_icas(
     participant: str,
