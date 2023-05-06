@@ -1,0 +1,139 @@
+# ########################################
+# Modified on Sat May 06 01:50:00 2023
+# @anguyen
+
+from copy import deepcopy
+from joblib import Parallel, delayed
+import numpy as np
+import os
+import pandas as pd
+
+from mne import pick_types, read_annotations
+from mne.io import read_info, read_raw_fif
+from mne.preprocessing import ICA, read_ica
+from mne.viz.ica import _prepare_data_ica_properties
+from mne_icalabel import label_components
+
+from ..config import load_config
+from ..utils._docs import fill_doc
+from ..utils.bids import get_fname, get_folder
+from ..utils.concurrency import lock_files
+
+
+@fill_doc
+def prep_ica_selection(
+    participant: str,
+    group: str,
+    task: str,
+    run: int,
+    overwrite: bool = False,
+    *,
+    timeout: float = 10,
+) -> None:
+    """XXXXXXXXXX.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    """
+    # prepare folders
+    _, DERIVATIVES_FOLDER_ROOT, EXPERIMENTER = load_config()
+    FNAME_STEM = get_fname(participant, group, task, run)
+    DERIVATIVES_SUBFOLDER = get_folder(
+        DERIVATIVES_FOLDER_ROOT, participant, group, task, run
+    )
+    DERIVATIVES_ICA = DERIVATIVES_SUBFOLDER / "plots" / "ica"
+
+    # create derivatives ica plots subfolder
+    os.makedirs(DERIVATIVES_ICA, exist_ok=True)
+
+    # lock the output derivative files
+    # create locks
+    derivatives = [
+        DERIVATIVES_SUBFOLDER
+        / (f"{FNAME_STEM}_step4_reviewed-1st-{EXPERIMENTER}-ica.fif"),
+        DERIVATIVES_SUBFOLDER
+        / (f"{FNAME_STEM}_step4_reviewed-2nd-{EXPERIMENTER}-ica.fif"),
+    ]
+
+    locks = lock_files(*derivatives, timeout=timeout)
+    try:
+        ica1, ica2, raw_ica_fit1, raw, locks = _prep_ica_selection(participant, group, task, run, overwrite)
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks
+    return (ica1, ica2, DERIVATIVES_SUBFOLDER, FNAME_STEM, EXPERIMENTER, raw_ica_fit1, raw)
+
+
+@fill_doc
+def _prep_ica_selection(
+    participant: str,
+    group: str,
+    task: str,
+    run: int,
+    overwrite: bool = False,
+) -> None:
+    """Convert the XDF recording to a raw FIFF file.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    """
+    # prepare folders
+    _, DERIVATIVES_FOLDER_ROOT, EXPERIMENTER = load_config()
+    FNAME_STEM = get_fname(participant, group, task, run)
+    DERIVATIVES_SUBFOLDER = get_folder(
+        DERIVATIVES_FOLDER_ROOT, participant, group, task, run
+    )
+    DERIVATIVES_ICA = DERIVATIVES_SUBFOLDER / "plots" / "ica"
+
+    # load previous steps
+    # # load raw recording
+    raw = read_raw_fif(
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_raw.fif"),
+        preload=True,
+    )
+    # # load following annots
+    info = read_info(
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif")
+    )
+    annot = read_annotations(
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
+    )
+
+    # merge info and annots into current raw
+    raw.info["bads"] = info["bads"]
+    raw.set_annotations(annot)
+
+    # load ICA
+    fname_ica1 = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step3_1st-ica.fif")
+    fname_ica2 = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step3_2nd-ica.fif")
+
+    ica1 = read_ica(fname_ica1)
+    ica2 = read_ica(fname_ica2)
+
+    # Filter to final BP (1, 40) Hz
+    raw_ica_fit1 = raw.copy()
+    raw_ica_fit1.filter(
+        l_freq=1.0,
+        h_freq=40.0,
+        picks="eeg",
+        method="fir",
+        phase="zero-double",
+        fir_window="hamming",
+        fir_design="firwin",
+        pad="edge",
+    )
+
+    return (ica1, ica2, raw_ica_fit1, raw)
