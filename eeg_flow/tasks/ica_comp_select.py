@@ -2,17 +2,11 @@
 # Modified on Sat May 06 01:50:00 2023
 # @anguyen
 
-from copy import deepcopy
-from joblib import Parallel, delayed
-import numpy as np
 import os
-import pandas as pd
 
-from mne import pick_types, read_annotations
+from mne import read_annotations
 from mne.io import read_info, read_raw_fif
-from mne.preprocessing import ICA, read_ica
-from mne.viz.ica import _prepare_data_ica_properties
-from mne_icalabel import label_components
+from mne.preprocessing import read_ica
 
 from ..config import load_config
 from ..utils._docs import fill_doc
@@ -62,13 +56,8 @@ def prep_ica_selection(
     ]
 
     locks = lock_files(*derivatives, timeout=timeout)
-    try:
-        ica1, ica2, raw_ica_fit1, raw, locks = _prep_ica_selection(participant, group, task, run, overwrite)
-    finally:
-        for lock in locks:
-            lock.release()
-        del locks
-    return (ica1, ica2, DERIVATIVES_SUBFOLDER, FNAME_STEM, EXPERIMENTER, raw_ica_fit1, raw)
+    ica1, ica2, raw_ica_fit1, raw = _prep_ica_selection(participant, group, task, run, overwrite)
+    return (ica1, ica2, DERIVATIVES_SUBFOLDER, FNAME_STEM, EXPERIMENTER, raw_ica_fit1, raw, locks)
 
 
 @fill_doc
@@ -96,7 +85,6 @@ def _prep_ica_selection(
     DERIVATIVES_SUBFOLDER = get_folder(
         DERIVATIVES_FOLDER_ROOT, participant, group, task, run
     )
-    DERIVATIVES_ICA = DERIVATIVES_SUBFOLDER / "plots" / "ica"
 
     # load previous steps
     # # load raw recording
