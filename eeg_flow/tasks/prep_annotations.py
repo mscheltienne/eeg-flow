@@ -1,5 +1,5 @@
 # ########################################
-# Modified on Sat May 06 01:50:00 2023
+# Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
 
@@ -9,7 +9,7 @@ from itertools import chain
 from mne.io import read_raw_fif
 from mne.preprocessing import (
     compute_bridged_electrodes,
-    interpolate_bridged_electrodes
+    interpolate_bridged_electrodes,
 )
 from pyprep import NoisyChannels
 from ..config import load_config
@@ -53,7 +53,8 @@ def load_for_annotations(
     # create locks
     derivatives = (
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"),
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif"),
+        DERIVATIVES_SUBFOLDER
+        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif"),
         DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step2_bridges.svg"),
     )
     locks = lock_files(*derivatives, timeout=timeout)
@@ -61,7 +62,7 @@ def load_for_annotations(
     # load XDF file and create raw object
     raw = read_raw_fif(
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_raw.fif"), preload=True
-        )
+    )
     # for lock in locks:
     #    lock.release()
     # del locks

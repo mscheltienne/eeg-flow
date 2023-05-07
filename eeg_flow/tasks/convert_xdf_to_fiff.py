@@ -1,5 +1,5 @@
 # ########################################
-# Modified on Fri Apr 28 02:19:23 2023
+# Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
 
@@ -62,7 +62,7 @@ def convert_xdf_to_fiff(
     if task == "UT":
         derivatives.append(
             DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_stream_annot.fif")
-            )
+        )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
@@ -115,8 +115,8 @@ def _convert_xdf_to_fiff(
         {"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"}
     )
     raw.set_channel_types(
-        mapping={"ECG": "ecg", "vEOG": "eog", "hEOG": "eog", 'EDA': 'gsr'}
-        )
+        mapping={"ECG": "ecg", "vEOG": "eog", "hEOG": "eog", "EDA": "gsr"}
+    )
     if task == "UT":
         # add the mouse position and the game events as channels
         mouse_pos_stream = find_streams(streams, "MousePosition")[0][1]
@@ -133,18 +133,18 @@ def _convert_xdf_to_fiff(
     # crop the recording
     events = find_events(raw, stim_channel="TRIGGER")
     # get the last event that is not a button response (ie that is a stim)
-    for i in range(events.shape[0]-1, -1, -1):
+    for i in range(events.shape[0] - 1, -1, -1):
         if events[i, 2] != 64:
             last_stim_onset = events[i, 0]
             break
     tmin = max(events[0, 0] / raw.info["sfreq"] - 5, 0)
-    tmax = min(last_stim_onset / raw.info['sfreq'] + 5, raw.times[-1])
+    tmax = min(last_stim_onset / raw.info["sfreq"] + 5, raw.times[-1])
     raw.crop(tmin, tmax)
 
     # save stream-annotations to the derivatives folder
     if task == "UT":
-        FNAME_STREAM_ANNOT = (
-            DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_stream_annot.fif")
+        FNAME_STREAM_ANNOT = DERIVATIVES_SUBFOLDER / (
+            FNAME_STEM + "_step1_stream_annot.fif"
         )
         raw.annotations.save(FNAME_STREAM_ANNOT, overwrite=False)
         print("Saved: ", FNAME_STREAM_ANNOT)
@@ -153,8 +153,8 @@ def _convert_xdf_to_fiff(
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
-    FNAME_OB_ANNOT = (
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_oddball_annot.fif")
+    FNAME_OB_ANNOT = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step1_oddball_annot.fif"
     )
     annotations.save(FNAME_OB_ANNOT, overwrite=overwrite)
     print("Saved: ", FNAME_OB_ANNOT)

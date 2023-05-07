@@ -1,5 +1,5 @@
 # ########################################
-# Modified on Sun May 07 21:19:00 2023
+# Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
 from mne import read_annotations
@@ -97,7 +97,8 @@ def _ica_apply_prep(
     # # load following annots
     info = read_info(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"))
     annot = read_annotations(
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
+        DERIVATIVES_SUBFOLDER
+        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
     )
 
     # merge info and annots into current raw
@@ -106,8 +107,12 @@ def _ica_apply_prep(
 
     # load ICAs
     # --- TODO: load the final ICAs with reviewed labels
-    FNAME_ICA1 = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step5_reviewed-1st-ica.fif")
-    FNAME_ICA2 = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step5_reviewed-2nd-ica.fif")
+    FNAME_ICA1 = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step5_reviewed-1st-ica.fif"
+    )
+    FNAME_ICA2 = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step5_reviewed-2nd-ica.fif"
+    )
 
     ica1 = read_ica(FNAME_ICA1)
     ica2 = read_ica(FNAME_ICA2)
@@ -185,5 +190,7 @@ def _ica_apply_prep(
 
     # save deratives
 
-    FNAME_FILT_RAW = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step6_preprocessed-raw.fif")
+    FNAME_FILT_RAW = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step6_preprocessed-raw.fif"
+    )
     raw.save(FNAME_FILT_RAW, overwrite=False)

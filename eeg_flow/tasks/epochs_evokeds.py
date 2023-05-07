@@ -1,5 +1,5 @@
 # ########################################
-# Modified on Mon May 08 00:25:00 2023
+# Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
 from scipy.stats import norm
@@ -53,12 +53,12 @@ def behav_prep_epoching(
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_a-metadata.csv"),
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_b-behav.txt"),
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_c-cleaned-epo.fif"),
-        DERIVATIVES_SUBFOLDER / (
-            FNAME_STEM + "_step7_d1-standard_evoked-ave.fif"),
-        DERIVATIVES_SUBFOLDER / (
-            FNAME_STEM + "_step7_d2-target_evoked-ave.fif"),
-        DERIVATIVES_SUBFOLDER / (
-            FNAME_STEM + "_step7_d3-novel_evoked-ave.fif"),
+        DERIVATIVES_SUBFOLDER
+        / (FNAME_STEM + "_step7_d1-standard_evoked-ave.fif"),
+        DERIVATIVES_SUBFOLDER
+        / (FNAME_STEM + "_step7_d2-target_evoked-ave.fif"),
+        DERIVATIVES_SUBFOLDER
+        / (FNAME_STEM + "_step7_d3-novel_evoked-ave.fif"),
     ]
 
     locks = lock_files(*derivatives, timeout=timeout)
@@ -163,30 +163,44 @@ def _behav_prep_epoching(
 
     # %%
     # visualize response times of TP
-    ax_rt = hits['response'].plot.hist(
+    ax_rt = hits["response"].plot.hist(
         bins=100,
-        title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(responses_std)})"
+        title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(responses_std)})",
     )
 
-    FNAME_RT_PLOT = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_RT.svg")
+    FNAME_RT_PLOT = (
+        DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_RT.svg")
+    )
     ax_rt.figure.suptitle(FNAME_STEM, fontsize=16, y=1)
     ax_rt.figure.savefig(FNAME_RT_PLOT, transparent=True)
     ax_rt
 
     # %%
     metadata.response_correct = False
-    metadata.loc[(metadata['response_type'] == "CorrectRejections"), 'response_correct'] = True
-    metadata.loc[(metadata['response_type'] == "Hits"), 'response_correct'] = True
+    metadata.loc[
+        (metadata["response_type"] == "CorrectRejections"), "response_correct"
+    ] = True
+    metadata.loc[
+        (metadata["response_type"] == "Hits"), "response_correct"
+    ] = True
 
-    metadata.loc[(metadata['response_type'] == "FalseAlarms"), 'response_correct'] = False
-    metadata.loc[(metadata['response_type'] == "Misses"), 'response_correct'] = False
+    metadata.loc[
+        (metadata["response_type"] == "FalseAlarms"), "response_correct"
+    ] = False
+    metadata.loc[
+        (metadata["response_type"] == "Misses"), "response_correct"
+    ] = False
 
-    correct_response_count = metadata['response_correct'].sum()
+    correct_response_count = metadata["response_correct"].sum()
 
-    print(f'Correct responses: {correct_response_count}\n'
-          f'Incorrect responses: {len(metadata) - correct_response_count}')
+    print(
+        f"Correct responses: {correct_response_count}\n"
+        f"Incorrect responses: {len(metadata) - correct_response_count}"
+    )
 
-    FNAME_METADATA = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_a-metadata.csv")
+    FNAME_METADATA = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step7_a-metadata.csv"
+    )
     metadata.to_csv(FNAME_METADATA)
 
     # %%
@@ -209,19 +223,32 @@ def _behav_prep_epoching(
         + "\t "
         + str(num_CorrectRejections)
         + "\t"
-        + str(num_FalseAlarms))
+        + str(num_FalseAlarms)
+    )
 
     file_behav.write("\n\nStandard, Novel, Target\n")
+    metadata_count_correct = metadata.groupby(by="event_name").count()[
+        "response_correct"
+    ]
+    count_corr_standard = str(metadata_count_correct["standard"])
+    count_corr_target = str(metadata_count_correct["target"])
+    count_corr_novel = str(metadata_count_correct["novel"])
+
     file_behav.write(
-        str(metadata.groupby(by="event_name").count()["response_correct"]["standard"]) + "\t" +
-        str(metadata.groupby(by="event_name").count()["response_correct"]["novel"]) + "\t" +
-        str(metadata.groupby(by="event_name").count()["response_correct"]["target"]))
+        f"{count_corr_standard}\t{count_corr_novel}\t{count_corr_target}"
+    )
 
     file_behav.write("\n\nResponse_mean, Response_std\n")
     file_behav.write(str(response_mean) + "\t" + str(responses_std))
 
     file_behav.write("\n\nd'\n")
-    file_behav.write(str(SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)['d']))
+    file_behav.write(
+        str(
+            SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)[
+                "d"
+            ]
+        )
+    )
 
     file_behav.close()  # to change file access modes
 
@@ -234,12 +261,12 @@ def _behav_prep_epoching(
     st = time.time()
     reject = get_rejection_threshold(
         epochs, decim=1, ch_types="eeg", random_state=888
-        )
+    )
     et = time.time()
-    diff = et-st
+    diff = et - st
     minutes = str(int(diff // 60)).zfill(2)
     seconds = str(int(diff % 60)).zfill(2)
-    print('Peak-to-peak rejection threshold computed: %s', reject)
+    print("Peak-to-peak rejection threshold computed: %s", reject)
     print(f"Elapsed {minutes}:{seconds}")
 
     # %%
@@ -251,21 +278,32 @@ def _behav_prep_epoching(
     fig = epochs.plot_drop_log(subject=FNAME_STEM)
 
     # %%
-    FNAME_DROP_LOG = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_epochs-rejected.svg")
+    FNAME_DROP_LOG = (
+        DERIVATIVES_SUBFOLDER
+        / "plots"
+        / (FNAME_STEM + "_step7_epochs-rejected.svg")
+    )
     fig.savefig(FNAME_DROP_LOG, transparent=True)
     # %%
     FNAME_CLEANED_EPOCHS = DERIVATIVES_SUBFOLDER / (
         FNAME_STEM + "_step7_c-cleaned-epo.fif"
-        )
+    )
     print(FNAME_CLEANED_EPOCHS)
     epochs.save(FNAME_CLEANED_EPOCHS)
 
-    epochs.metadata.groupby(by=["event_name", "response_correct",]).count()
+    epochs.metadata.groupby(
+        by=[
+            "event_name",
+            "response_correct",
+        ]
+    ).count()
     # this keeps correct responses only (hits and correct rejection)
     epochs["response_correct"]
 
     # %%
-    all_evokeds = dict((cond, epochs["response_correct"][cond].average()) for cond in event_id)
+    all_evokeds = dict(
+        (cond, epochs["response_correct"][cond].average()) for cond in event_id
+    )
     # all_evokeds = {cond: epochs["response_correct"][cond].average() for cond in event_id}
     all_evokeds
 
@@ -278,9 +316,15 @@ def _behav_prep_epoching(
 
     """
     # %%
-    FNAME_EV_STANDARD = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d1-standard_evoked-ave.fif")
-    FNAME_EV_TARGET = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d2-target_evoked-ave.fif")
-    FNAME_EV_NOVEL = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d3-novel_evoked-ave.fif")
+    FNAME_EV_STANDARD = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step7_d1-standard_evoked-ave.fif"
+    )
+    FNAME_EV_TARGET = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step7_d2-target_evoked-ave.fif"
+    )
+    FNAME_EV_NOVEL = DERIVATIVES_SUBFOLDER / (
+        FNAME_STEM + "_step7_d3-novel_evoked-ave.fif"
+    )
 
     all_evokeds["standard"].save(FNAME_EV_STANDARD)
     all_evokeds["target"].save(FNAME_EV_TARGET)
@@ -321,10 +365,10 @@ def SDT2(hits, misses, fas, crs):
 
     # Return d', beta, c and Ad'
     out = {}
-    out['d'] = Z(hit_rate) - Z(fa_rate)
-    out['beta'] = math.exp((Z(fa_rate)**2 - Z(hit_rate)**2) / 2)
-    out['c'] = -(Z(hit_rate) + Z(fa_rate)) / 2
-    out['Ad'] = norm.cdf(out['d'] / math.sqrt(2))
+    out["d"] = Z(hit_rate) - Z(fa_rate)
+    out["beta"] = math.exp((Z(fa_rate) ** 2 - Z(hit_rate) ** 2) / 2)
+    out["c"] = -(Z(hit_rate) + Z(fa_rate)) / 2
+    out["Ad"] = norm.cdf(out["d"] / math.sqrt(2))
 
     return out
 
@@ -352,9 +396,9 @@ def SDT(hits, misses, fas, crs):
 
     # Return d', beta, c and Ad'
     out = {}
-    out['d'] = Z(hit_rate) - Z(fa_rate)
-    out['beta'] = math.exp((Z(fa_rate)**2 - Z(hit_rate)**2) / 2)
-    out['c'] = -(Z(hit_rate) + Z(fa_rate)) / 2
-    out['Ad'] = norm.cdf(out['d'] / math.sqrt(2))
+    out["d"] = Z(hit_rate) - Z(fa_rate)
+    out["beta"] = math.exp((Z(fa_rate) ** 2 - Z(hit_rate) ** 2) / 2)
+    out["c"] = -(Z(hit_rate) + Z(fa_rate)) / 2
+    out["Ad"] = norm.cdf(out["d"] / math.sqrt(2))
 
     return out

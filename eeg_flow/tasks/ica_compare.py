@@ -1,5 +1,5 @@
 # ########################################
-# Modified on Sun May 07 05:04:00 2023
+# Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
 from mne import read_annotations
@@ -46,14 +46,14 @@ def prep_ica_compare(
     # create locks
 
     derivatives = [
-        DERIVATIVES_SUBFOLDER
-        / (f"{FNAME_STEM}_step5_reviewed-1st-ica.fif"),
-        DERIVATIVES_SUBFOLDER
-        / (f"{FNAME_STEM}_step5_reviewed-2nd-ica.fif"),
-        ]
+        DERIVATIVES_SUBFOLDER / (f"{FNAME_STEM}_step5_reviewed-1st-ica.fif"),
+        DERIVATIVES_SUBFOLDER / (f"{FNAME_STEM}_step5_reviewed-2nd-ica.fif"),
+    ]
 
     locks = lock_files(*derivatives, timeout=timeout)
-    raw, raw_ica_fit = _prep_ica_compare(participant, group, task, run, ica_nb, overwrite)
+    raw, raw_ica_fit = _prep_ica_compare(
+        participant, group, task, run, ica_nb, overwrite
+    )
     return DERIVATIVES_SUBFOLDER, FNAME_STEM, raw, raw_ica_fit, locks
 
 
@@ -92,11 +92,10 @@ def _prep_ica_compare(
         preload=True,
     )
     # # load following annots
-    info = read_info(
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif")
-    )
+    info = read_info(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"))
     annot = read_annotations(
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
+        DERIVATIVES_SUBFOLDER
+        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
     )
 
     # merge info and annots into current raw
@@ -141,16 +140,24 @@ def _prep_ica_compare(
 
 
 def load_ica_rev(
-        DERIVATIVES_SUBFOLDER, FNAME_STEM, REVIEWER1, REVIEWER2, ica_nb
-        ):
+    DERIVATIVES_SUBFOLDER, FNAME_STEM, REVIEWER1, REVIEWER2, ica_nb
+):
     # load ICA
 
     if ica_nb == 1:
-        fname_ica_rev1 = DERIVATIVES_SUBFOLDER / (f"{FNAME_STEM}_step4_reviewed-1st-{REVIEWER1}-ica.fif")
-        fname_ica_rev2 = DERIVATIVES_SUBFOLDER / (f"{FNAME_STEM}_step4_reviewed-1st-{REVIEWER2}-ica.fif")
+        fname_ica_rev1 = DERIVATIVES_SUBFOLDER / (
+            f"{FNAME_STEM}_step4_reviewed-1st-{REVIEWER1}-ica.fif"
+        )
+        fname_ica_rev2 = DERIVATIVES_SUBFOLDER / (
+            f"{FNAME_STEM}_step4_reviewed-1st-{REVIEWER2}-ica.fif"
+        )
     elif ica_nb == 2:
-        fname_ica_rev1 = DERIVATIVES_SUBFOLDER / (f"{FNAME_STEM}_step4_reviewed-2nd-{REVIEWER1}-ica.fif")
-        fname_ica_rev2 = DERIVATIVES_SUBFOLDER / (f"{FNAME_STEM}_step4_reviewed-2nd-{REVIEWER2}-ica.fif")
+        fname_ica_rev1 = DERIVATIVES_SUBFOLDER / (
+            f"{FNAME_STEM}_step4_reviewed-2nd-{REVIEWER1}-ica.fif"
+        )
+        fname_ica_rev2 = DERIVATIVES_SUBFOLDER / (
+            f"{FNAME_STEM}_step4_reviewed-2nd-{REVIEWER2}-ica.fif"
+        )
 
     ica_rev1 = read_ica(fname_ica_rev1)
     ica_rev2 = read_ica(fname_ica_rev2)
@@ -160,7 +167,9 @@ def load_ica_rev(
 
 def compare_two_revs(ica_rev1, ica_rev2):
     # find components which have been excluded in both ICAs
-    exclude_common = list(set(ica_rev1.exclude).intersection(set(ica_rev2.exclude)))
+    exclude_common = list(
+        set(ica_rev1.exclude).intersection(set(ica_rev2.exclude))
+    )
     exclude_diff = list(
         set(
             list(set(ica_rev1.exclude) - set(ica_rev2.exclude))
