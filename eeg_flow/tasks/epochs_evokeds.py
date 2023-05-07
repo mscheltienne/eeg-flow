@@ -168,7 +168,7 @@ def _behav_prep_epoching(
         title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(responses_std)})"
     )
 
-    FNAME_RT_PLOT = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step6_RT.svg")
+    FNAME_RT_PLOT = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_RT.svg")
     ax_rt.figure.suptitle(FNAME_STEM, fontsize=16, y=1)
     ax_rt.figure.savefig(FNAME_RT_PLOT, transparent=True)
     ax_rt
@@ -251,12 +251,13 @@ def _behav_prep_epoching(
     fig = epochs.plot_drop_log(subject=FNAME_STEM)
 
     # %%
-    FNAME_DROP_LOG = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step6_epochs-rejected.svg")
+    FNAME_DROP_LOG = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_epochs-rejected.svg")
     fig.savefig(FNAME_DROP_LOG, transparent=True)
     # %%
     FNAME_CLEANED_EPOCHS = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step6_c-cleaned-epo.fif"
+        FNAME_STEM + "_step7_c-cleaned-epo.fif"
         )
+    print(FNAME_CLEANED_EPOCHS)
     epochs.save(FNAME_CLEANED_EPOCHS)
 
     epochs.metadata.groupby(by=["event_name", "response_correct",]).count()
@@ -277,9 +278,9 @@ def _behav_prep_epoching(
 
     """
     # %%
-    FNAME_EV_STANDARD = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step6_d1-standard_evoked-ave.fif")
-    FNAME_EV_TARGET = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step6_d2-target_evoked-ave.fif")
-    FNAME_EV_NOVEL = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step6_d3-novel_evoked-ave.fif")
+    FNAME_EV_STANDARD = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d1-standard_evoked-ave.fif")
+    FNAME_EV_TARGET = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d2-target_evoked-ave.fif")
+    FNAME_EV_NOVEL = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d3-novel_evoked-ave.fif")
 
     all_evokeds["standard"].save(FNAME_EV_STANDARD)
     all_evokeds["target"].save(FNAME_EV_TARGET)
