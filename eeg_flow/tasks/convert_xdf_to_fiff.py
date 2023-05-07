@@ -4,6 +4,7 @@
 
 
 import os
+
 from mne import find_events
 
 from ..config import load_config

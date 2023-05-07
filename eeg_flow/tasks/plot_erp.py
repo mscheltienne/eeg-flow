@@ -2,11 +2,10 @@
 # Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
-
+from scipy.stats import norm
 import math
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
 import time
 
 from autoreject import get_rejection_threshold

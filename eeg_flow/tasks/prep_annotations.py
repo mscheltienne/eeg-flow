@@ -2,9 +2,8 @@
 # Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
-
-import os
 from itertools import chain
+import os
 
 from mne.io import read_raw_fif
 from mne.preprocessing import (

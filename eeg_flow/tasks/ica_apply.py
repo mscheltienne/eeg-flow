@@ -7,7 +7,6 @@ from mne.io import read_info, read_raw_fif
 from mne.io.constants import FIFF
 from mne.preprocessing import read_ica
 
-
 from ..config import load_config
 from ..utils._docs import fill_doc
 from ..utils.bids import get_fname, get_folder
