@@ -65,6 +65,11 @@ docdict[
 ] = """
 run : int
     ID of the run, 1 or 2."""
+docdict[
+    "ica_nb"
+] = """
+ica_nb : int
+    ID of the ICA, 1 or 2."""
 
 # ------------------------- Documentation functions --------------------------
 docdict_indented: Dict[int, Dict[str, str]] = dict()
