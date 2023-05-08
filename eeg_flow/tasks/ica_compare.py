@@ -19,11 +19,10 @@ def prep_ica_compare(
     task: str,
     run: int,
     ica_nb: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
 ) -> None:
-    """XXXXXXXXXX.
+    """Compare the components selection of 2 reviewers.
 
     Parameters
     ----------
@@ -32,8 +31,6 @@ def prep_ica_compare(
     %(task)s
     %(run)s
     %(ica_nb)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     _, DERIVATIVES_FOLDER_ROOT, EXPERIMENTER = load_config()
@@ -52,7 +49,7 @@ def prep_ica_compare(
 
     locks = lock_files(*derivatives, timeout=timeout)
     raw, raw_ica_fit = _prep_ica_compare(
-        participant, group, task, run, ica_nb, overwrite
+        participant, group, task, run, ica_nb,
     )
     return DERIVATIVES_SUBFOLDER, FNAME_STEM, raw, raw_ica_fit, locks
 
@@ -64,7 +61,6 @@ def _prep_ica_compare(
     task: str,
     run: int,
     ica_nb: int,
-    overwrite: bool = False,
 ) -> None:
     """Convert the XDF recording to a raw FIFF file.
 
@@ -75,8 +71,6 @@ def _prep_ica_compare(
     %(task)s
     %(run)s
     %(ica_nb)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     _, DERIVATIVES_FOLDER_ROOT, EXPERIMENTER = load_config()
@@ -139,9 +133,20 @@ def _prep_ica_compare(
     return raw, raw_ica_fit
 
 
+@fill_doc
 def load_ica_rev(
     DERIVATIVES_SUBFOLDER, FNAME_STEM, REVIEWER1, REVIEWER2, ica_nb
 ):
+    """Load the 2 reviews.
+
+    Parameters
+    ----------
+    %(DERIVATIVES_SUBFOLDER)s
+    %(FNAME_STEM)s
+    %(REVIEWER1)s
+    %(REVIEWER2)s
+    %(ica_nb)s
+    """
     # load ICA
 
     if ica_nb == 1:
@@ -165,7 +170,15 @@ def load_ica_rev(
     return (ica_rev1, ica_rev2)
 
 
+@fill_doc
 def compare_two_revs(ica_rev1, ica_rev2):
+    """Report similarities and diff between the 2 reviews.
+
+    Parameters
+    ----------
+    %(ica_rev1)s
+    %(ica_rev2)s
+    """
     # find components which have been excluded in both ICAs
     exclude_common = list(
         set(ica_rev1.exclude).intersection(set(ica_rev2.exclude))
