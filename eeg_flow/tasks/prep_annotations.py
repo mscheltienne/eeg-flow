@@ -24,11 +24,10 @@ def load_for_annotations(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
 ) -> None:
-    """Convert the XDF recording to a raw FIFF file.
+    """Load the necessary files for the annotation.
 
     Parameters
     ----------
@@ -36,8 +35,6 @@ def load_for_annotations(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     _, DERIVATIVES_FOLDER_ROOT, _ = load_config()
@@ -68,7 +65,17 @@ def load_for_annotations(
     return (DERIVATIVES_SUBFOLDER, FNAME_STEM, raw, locks)
 
 
-def check_bridges(DERIVATIVES_SUBFOLDER, FNAME_STEM, raw):
+@fill_doc
+def check_bridges(
+        DERIVATIVES_SUBFOLDER, FNAME_STEM, raw):
+    """Check for bridges.
+
+    Parameters
+    ----------
+    %(DERIVATIVES_SUBFOLDER)s
+    %(FNAME_STEM)s
+    %(raw)s
+    """
     FNAME_BRIDGE_PLOT = (
         DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step2_bridges.svg")
     )
@@ -80,7 +87,14 @@ def check_bridges(DERIVATIVES_SUBFOLDER, FNAME_STEM, raw):
     return
 
 
+@fill_doc
 def interpolate_bridge_try(raw):
+    """Attempt to interpolate bridged channels.
+
+    Parameters
+    ----------
+    %(raw)s
+    """
     bridged_idx, _ = compute_bridged_electrodes(raw)
     try:
         raw = interpolate_bridged_electrodes(raw, bridged_idx)
@@ -92,7 +106,14 @@ def interpolate_bridge_try(raw):
     return
 
 
+@fill_doc
 def auto_bad_channels(raw):
+    """Look for bad channels.
+
+    Parameters
+    ----------
+    %(raw)s
+    """
     raw.filter(
         l_freq=1.0,
         h_freq=100.0,
