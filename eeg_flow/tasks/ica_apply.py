@@ -23,7 +23,7 @@ def ica_apply_prep(
     *,
     timeout: float = 10,
 ) -> None:
-    """XXXXXXXXXX.
+    """Apply ICAs.
 
     Parameters
     ----------
@@ -57,7 +57,17 @@ def ica_apply_prep(
     return
 
 
+@fill_doc
 def ica_apply_prep_star(args):
+    """Modification so that the function accepts *args instead.
+
+    https://stackoverflow.com/a/67845088
+
+    Parameters
+    ----------
+    %(args)s
+    Reuse the args of convert_xdf_to_fiff
+    """
     return ica_apply_prep(*args)
 
 
@@ -69,7 +79,7 @@ def _ica_apply_prep(
     run: int,
     overwrite: bool = False,
 ) -> None:
-    """Convert the XDF recording to a raw FIFF file.
+    """Apply ICAs
 
     Parameters
     ----------
@@ -139,21 +149,26 @@ def _ica_apply_prep(
     with raw_mastoids.info._unlock():
         raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
 
-    # At this stage, the reference have been denoised. We have in 'raw_mastoids'
-    # the 2 mastoids M1 and M2 referenced to CPz. Now, let's clean the rest.
-
+    """
+    At this stage, the reference have been denoised.
+    We have in 'raw_mastoids' the 2 mastoids M1 and M2 referenced to CPz.
+    Now, let's clean the rest.
+    """
     # %% Clean the other channels
-    # The first step is to prepare the raw object for an ICA, and for suggestions
-    # from ICLabel. The steps are very similar to the previous ones.
+    """
+    The first step is to prepare the raw object for an ICA, and for suggestions
+    from ICLabel. The steps are very similar to the previous ones.
+    """
     raw.drop_channels(["M1", "M2"])
 
-    # 5.2 Apply ICA2 on raw
-
     # %% Apply ICA
-    # At this stage, we have an ICA decomposition with labeled components. Now, we
-    # can apply it on the initial raw object, filtered between the final
-    # frequencies.
-    # But for this operation to be valid, it needs to be referenced as raw_ica_fit.
+    """
+    At this stage, we have an ICA decomposition with labeled components.
+    Now, we can apply it on the initial raw object, filtered between the final
+    frequencies.
+    But for this operation to be valid, it needs to be referenced as
+    raw_ica_fit.
+    """
 
     raw.filter(
         l_freq=0.5,
