@@ -19,11 +19,10 @@ def prep_evoked(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
 ) -> None:
-    """XXXXXXXXXX.
+    """Load the necessary files for the plots.
 
     Parameters
     ----------
@@ -31,8 +30,6 @@ def prep_evoked(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     _, DERIVATIVES_FOLDER_ROOT, _ = load_config()
@@ -60,7 +57,17 @@ def prep_evoked(
     return DERIVATIVES_SUBFOLDER, FNAME_STEM, all_evokeds
 
 
+@fill_doc
 def find_ylim(all_evokeds):
+    """Find the appropriate ylim for all given the min and max of each stim.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    """
     event_id = dict(standard=1, target=2, novel=3)
 
     max_peak = False
@@ -95,6 +102,7 @@ def find_ylim(all_evokeds):
     return ylim_values, min_peak, max_peak
 
 
+@fill_doc
 def plot_fixed_scale(
     DERIVATIVES_SUBFOLDER,
     FNAME_STEM,
@@ -102,6 +110,16 @@ def plot_fixed_scale(
     new_min_peak=None,
     new_max_peak=None,
 ):
+    """Plot ERPs with the same scale for all three stims.
+
+    Parameters
+    ----------
+    %(DERIVATIVES_SUBFOLDER)s
+    %(FNAME_STEM)s
+    %(all_evokeds)s
+    %(new_min_peak)s
+    %(new_max_peak)s
+    """
     ylim_values, min_peak, max_peak = find_ylim(all_evokeds)
 
     # %%
@@ -136,6 +154,7 @@ def plot_fixed_scale(
     return
 
 
+@fill_doc
 def plot_adapt_scale(
     DERIVATIVES_SUBFOLDER,
     FNAME_STEM,
@@ -143,6 +162,16 @@ def plot_adapt_scale(
     min_peak=None,
     max_peak=None,
 ):
+    """Plot ERPs with the appropriate scale for each three stims.
+
+    Parameters
+    ----------
+    %(DERIVATIVES_SUBFOLDER)s
+    %(FNAME_STEM)s
+    %(all_evokeds)s
+    %(new_min_peak)s
+    %(new_max_peak)s
+    """
     ylim_values, _, _ = find_ylim(all_evokeds)
     fig = plt.figure(figsize=(8, 8))
 
