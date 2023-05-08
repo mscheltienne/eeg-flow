@@ -26,11 +26,10 @@ def behav_prep_epoching(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
 ) -> None:
-    """XXXXXXXXXX.
+    """Compute behav report and output metadata.
 
     Parameters
     ----------
@@ -38,8 +37,6 @@ def behav_prep_epoching(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     _, DERIVATIVES_FOLDER_ROOT, _ = load_config()
@@ -65,7 +62,7 @@ def behav_prep_epoching(
     locks = lock_files(*derivatives, timeout=timeout)
 
     try:
-        _behav_prep_epoching(participant, group, task, run, overwrite)
+        _behav_prep_epoching(participant, group, task, run)
     finally:
         for lock in locks:
             lock.release()
@@ -79,9 +76,8 @@ def _behav_prep_epoching(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
 ) -> None:
-    """Convert the XDF recording to a raw FIFF file.
+    """Compute behav report and output metadata.
 
     Parameters
     ----------
@@ -89,8 +85,6 @@ def _behav_prep_epoching(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     XDF_FOLDER_ROOT, DERIVATIVES_FOLDER_ROOT, _ = load_config()
@@ -111,13 +105,18 @@ def _behav_prep_epoching(
     events_id = dict(standard=1, target=2, novel=3, response=64)
     row_events = ["standard", "target", "novel"]
 
-    # metadata for each epoch shall include events from the range: [0.0, 1.5] s,
-    # i.e. starting with stimulus onset and expanding beyond the end of the epoch
+    """
+    metadata for each epoch shall include events from the range: [0.0, 1.5] s,
+    i.e. starting with stimulus onset and expanding beyond the end of the epoch
+    """
     metadata_tmin, metadata_tmax = 0.0, 0.999
 
-    # auto-create metadata
-    # this also returns a new events array and an event_id dictionary. we'll see
-    # later why this is important
+    """
+    auto-create metadata
+    this also returns a new events array and an event_id dictionary.
+    we'll see later why this is important
+    """
+
     metadata, events, event_id = make_metadata(
         events=events,
         event_id=events_id,
@@ -334,7 +333,17 @@ def _behav_prep_epoching(
     return raw, events, event_id, metadata
 
 
+@fill_doc
 def epoching(raw, events, event_id, metadata):
+    """Epoching.
+
+    Parameters
+    ----------
+    %(raw)s
+    %(events)s
+    %(event_id)s
+    %(metadata)s
+    """
     epochs_tmin, epochs_tmax = -0.2, 0.8
     epochs = Epochs(
         raw=raw,
@@ -351,12 +360,18 @@ def epoching(raw, events, event_id, metadata):
     return epochs
 
 
+@fill_doc
 def SDT2(hits, misses, fas, crs):
-    """Return a dict with d-prime measures given hits, misses, false alarms, and correct rejections."""
+    """Return a dict with d-prime measures.
+
+    Parameters
+    ----------
+    %(hits)s
+    %(misses)s
+    %(fas)s
+    %(crs)s
+    """
     Z = norm.ppf
-    # Floors an ceilings are replaced by half hits and half FA's
-    half_hit = 0.5 / (hits + misses)
-    half_fa = 0.5 / (fas + crs)
 
     # Calculate hit_rate and avoid d' infinity
     hit_rate = hits / (hits + misses)
@@ -374,8 +389,17 @@ def SDT2(hits, misses, fas, crs):
     return out
 
 
+@fill_doc
 def SDT(hits, misses, fas, crs):
-    """Return a dict with d-prime measures given hits, misses, false alarms, and correct rejections."""
+    """Return a dict with d-prime measures + tweeks to avoid d' infinity.
+
+    Parameters
+    ----------
+    %(hits)s
+    %(misses)s
+    %(fas)s
+    %(crs)s
+    """
     Z = norm.ppf
     # Floors an ceilings are replaced by half hits and half FA's
     half_hit = 0.5 / (hits + misses)
