@@ -175,3 +175,4 @@ def _convert_xdf_to_fiff(
     FNAME_RAW = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_raw.fif")
     raw.save(FNAME_RAW, overwrite=False)
     print("Saved: ", FNAME_RAW)
+    return
