@@ -29,7 +29,7 @@ def fit_two_icas(
     *,
     timeout: float = 10,
 ) -> None:
-    """XXXXXXXXXX.
+    """Fit ICAs.
 
     Parameters
     ----------
@@ -64,7 +64,17 @@ def fit_two_icas(
     return
 
 
+@fill_doc
 def fit_two_icas_star(args):
+    """Modification so that the function accepts *args instead.
+
+    https://stackoverflow.com/a/67845088
+
+    Parameters
+    ----------
+    %(args)s
+    Reuse the args of convert_xdf_to_fiff
+    """
     return fit_two_icas(*args)
 
 
@@ -76,7 +86,7 @@ def _fit_two_icas(
     run: int,
     overwrite: bool = False,
 ) -> None:
-    """Convert the XDF recording to a raw FIFF file.
+    """Fit ICAs.
 
     Parameters
     ----------
@@ -226,6 +236,18 @@ def _fit_two_icas(
     ica2.save(FNAME_ICA2, overwrite=False)
 
 
+@fill_doc
 def fit_ica_on_data(filtered_sessions, session_picks, ica, i):
+    """Prep the args to be fit.
+
+    Parameters
+    ----------
+    %(filtered_sessions)s
+    %(session_picks)s
+    %(ica)s
+    %(i)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    """
     ica = ica.fit(filtered_sessions[i], session_picks[i])
     return ica, i
