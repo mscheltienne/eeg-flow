@@ -4,7 +4,6 @@
 
 
 import os
-
 from mne import find_events
 
 from ..config import load_config
@@ -74,7 +73,17 @@ def convert_xdf_to_fiff(
     return
 
 
+@fill_doc
 def convert_xdf_to_fiff_star(args):
+    """Modification so that the function accepts *args instead.
+
+    https://stackoverflow.com/a/67845088
+
+    Parameters
+    ----------
+    %(args)s
+    Reuse the args of convert_xdf_to_fiff
+    """
     return convert_xdf_to_fiff(*args)
 
 
