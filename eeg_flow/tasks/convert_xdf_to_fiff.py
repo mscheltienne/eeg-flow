@@ -73,7 +73,6 @@ def convert_xdf_to_fiff(
     return
 
 
-@fill_doc
 def convert_xdf_to_fiff_star(args):
     """Modification so that the function accepts *args instead.
 
