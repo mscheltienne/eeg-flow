@@ -1,12 +1,8 @@
-# ########################################
-# Modified on Mon May 08 01:01:00 2023
-# @anguyen
-
-
 import os
 
 from mne import find_events
 
+from .. import logger
 from ..config import load_config
 from ..io import (
     add_game_events,
@@ -21,7 +17,6 @@ from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_fname, get_folder
 from ..utils.concurrency import lock_files
-from .. import logger
 
 
 @fill_doc
@@ -46,29 +41,29 @@ def convert_xdf_to_fiff(
         If True, overwrites existing derivatives.
     """
     # prepare folders
-    XDF_FOLDER_ROOT, DERIVATIVES_FOLDER_ROOT, _ = load_config()
-    FNAME_STEM = get_fname(participant, group, task, run)
-    DERIVATIVES_SUBFOLDER = get_folder(
-        DERIVATIVES_FOLDER_ROOT, participant, group, task, run
+    _, derivatives_folder_root, _ = load_config()
+    derivatives_folder = get_folder(
+        derivatives_folder_root, participant, group, task, run
     )
+    fname_stem = get_fname(participant, group, task, run)
 
     # create derivatives preprocessed subfolder
-    if DERIVATIVES_SUBFOLDER.exists():
+    if derivatives_folder.exists():
         logger.debug(
-            "The derivatives subfolder %s already exists.", DERIVATIVES_SUBFOLDER
+            "The derivatives subfolder %s already exists.", derivatives_folder.name
         )
     else:
-        os.makedirs(DERIVATIVES_SUBFOLDER, exist_ok=False)
-        logger.debug("Derivatives subfolder %s created.", DERIVATIVES_SUBFOLDER)
+        os.makedirs(derivatives_folder, exist_ok=False)
+        logger.debug("Derivatives subfolder %s created.", derivatives_folder.name)
 
     # lock the output derivative files
     derivatives = [
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_oddball_annot.fif"),
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_raw.fif"),
+        derivatives_folder / (fname_stem + "_step1_oddball_annot.fif"),
+        derivatives_folder / (fname_stem + "_step1_raw.fif"),
     ]
     if task == "UT":
         derivatives.append(
-            DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_stream_annot.fif")
+            derivatives_folder / (fname_stem + "_step1_stream_annot.fif")
         )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -109,16 +104,15 @@ def _convert_xdf_to_fiff(
         If True, overwrites existing derivatives.
     """
     # prepare folders
-    XDF_FOLDER_ROOT, DERIVATIVES_FOLDER_ROOT, _ = load_config()
-    XDF_FOLDER = get_folder(XDF_FOLDER_ROOT, participant, group)
-    FNAME_STEM = get_fname(participant, group, task, run)
-    DERIVATIVES_SUBFOLDER = get_folder(
-        DERIVATIVES_FOLDER_ROOT, participant, group, task, run
+    xdf_folder_root, derivatives_folder_root, _ = load_config()
+    xdf_foler = get_folder(xdf_folder_root, participant, group)
+    derivatives_folder = get_folder(
+        derivatives_folder_root, participant, group, task, run
     )
+    fname_stem = get_fname(participant, group, task, run)
 
     # load XDF file and create raw object
-    FNAME_XDF = XDF_FOLDER / (FNAME_STEM + "_eeg.xdf")
-    streams = load_xdf(FNAME_XDF)
+    streams = load_xdf(xdf_foler / (fname_stem + "_eeg.xdf"))
     eeg_stream = find_streams(streams, "eego")[0][1]
     raw = create_raw(eeg_stream)
 
@@ -154,24 +148,21 @@ def _convert_xdf_to_fiff(
 
     # save stream-annotations to the derivatives folder
     if task == "UT":
-        FNAME_STREAM_ANNOT = DERIVATIVES_SUBFOLDER / (
-            FNAME_STEM + "_step1_stream_annot.fif"
-        )
-        raw.annotations.save(FNAME_STREAM_ANNOT, overwrite=False)
-        print("Saved: ", FNAME_STREAM_ANNOT)
+        fname = derivatives_folder / (fname_stem + "_step1_stream_annot.fif")
+        raw.annotations.save(fname, overwrite=False)
+        logger.debug("Saved: %s", fname.name)
         # x-ref: https://github.com/mne-tools/mne-qt-browser/issues/161
         raw.set_annotations(None)
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
-    FNAME_OB_ANNOT = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_oddball_annot.fif")
-    annotations.save(FNAME_OB_ANNOT, overwrite=overwrite)
-    print("Saved: ", FNAME_OB_ANNOT)
+    fname = derivatives_folder / (fname_stem + "_step1_oddball_annot.fif")
+    annotations.save(fname, overwrite=overwrite)
+    logger.debug("Saved: %s", fname.name)
     raw.set_annotations(annotations)
 
     raw.set_montage("standard_1020")
     # save the raw recording
-    FNAME_RAW = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_raw.fif")
-    raw.save(FNAME_RAW, overwrite=False)
-    print("Saved: ", FNAME_RAW)
-    return
+    fname = derivatives_folder / (fname_stem + "_step1_raw.fif")
+    raw.save(fname, overwrite=False)
+    logger.debug("Saved: %s", fname.name)

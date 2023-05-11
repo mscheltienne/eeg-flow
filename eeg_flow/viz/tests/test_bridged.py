@@ -9,7 +9,7 @@ from mne.io import read_raw_fif
 from eeg_flow.viz import plot_bridged_electrodes
 
 raw = read_raw_fif(
-    files("eeg_flow.viz.tests")  / "data" / "test-bridged.fif", preload=True
+    files("eeg_flow.viz.tests") / "data" / "test-bridged.fif", preload=True
 )
 
 

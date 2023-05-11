@@ -19,7 +19,7 @@ from ..utils._checks import check_type
 if TYPE_CHECKING:
     from typing import List, Tuple
 
-    from matplotlib.pyplot import Figure, Axes
+    from matplotlib.pyplot import Axes, Figure
     from numpy.typing import NDArray
 
 
