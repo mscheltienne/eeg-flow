@@ -50,6 +50,7 @@ dependencies = [
     'python-picard',
     'pyxdf',
     'scipy',
+    'tqdm',
 ]
 
 [project.optional-dependencies]
