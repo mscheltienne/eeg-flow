@@ -1,20 +1,28 @@
+# postponed evaluation of annotations, c.f. PEP 563 and PEP 649 alternatively, the type
+# hints can be defined as strings which will be evaluated with eval() prior to type
+# checking.
+from __future__ import annotations
+
 from configparser import ConfigParser
+from importlib.resources import files
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import TYPE_CHECKING
 
 from ..utils._checks import check_type, ensure_path
 
+if TYPE_CHECKING:
+    from typing import Dict, Tuple, Union
+
 
 def load_triggers(
-    fname: Union[str, Path] = Path(__file__).parent / "triggers.ini"
+    fname: Union[str, Path] = files("eeg_flow.config") / "triggers.ini",
 ) -> Dict[str, int]:
     """Load triggers from triggers.ini into a TriggerDef instance.
 
     Parameters
     ----------
     fname : str | Path
-        Path to the configuration file.
-        Default to ``'eeg_flow/config/triggers.ini'``.
+        Path to the configuration file. Default to ``'eeg_flow/config/triggers.ini'``.
 
     Returns
     -------
@@ -63,8 +71,8 @@ def create_config(
 
     Notes
     -----
-    The xdf_folder and the derivatives_folder should be on a network share
-    and should be the same for all experimenters.
+    The xdf_folder and the derivatives_folder should be on a network share and should be
+    the same for all experimenters.
     """
     xdf_folder = ensure_path(xdf_folder, must_exist=True)
     derivatives_folder = ensure_path(derivatives_folder, must_exist=True)
@@ -98,9 +106,9 @@ def load_config() -> Tuple[Path, Path, str]:
     fname = Path.home() / ".eeg_flow"
     if not fname.exists():
         raise RuntimeError(
-            "The configuration file with the paths to the XDF and derivatives "
-            "folder does not exists. Call eeg_flow.config.create_config() to "
-            "create the file '~/.eeg_flow'."
+            "The configuration file with the paths to the XDF and derivatives folder "
+            "does not exists. Call eeg_flow.config.create_config() to create the file "
+            "'~/.eeg_flow'."
         )
 
     config = ConfigParser(inline_comment_prefixes=("#", ";"))
