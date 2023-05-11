@@ -13,6 +13,7 @@ from ..io import (
     find_streams,
     load_xdf,
 )
+from ..utils._checks import check_type
 from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_fname, get_folder
@@ -40,6 +41,7 @@ def convert_xdf_to_fiff(
     overwrite : bool
         If True, overwrites existing derivatives.
     """
+    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, _ = load_config()
     derivatives_folder = get_folder(
@@ -58,12 +60,12 @@ def convert_xdf_to_fiff(
 
     # lock the output derivative files
     derivatives = [
-        derivatives_folder / (fname_stem + "_step1_oddball_annot.fif"),
-        derivatives_folder / (fname_stem + "_step1_raw.fif"),
+        derivatives_folder / f"{fname_stem}_step1_oddball_annot.fif",
+        derivatives_folder / f"{fname_stem}_step1_raw.fif",
     ]
     if task == "UT":
         derivatives.append(
-            derivatives_folder / (fname_stem + "_step1_stream_annot.fif")
+            derivatives_folder / f"{fname_stem}_step1_stream_annot.fif",
         )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -81,7 +83,6 @@ def convert_xdf_to_fiff(
         for lock in locks:
             lock.release()
         del locks
-    return
 
 
 @fill_doc
@@ -148,21 +149,21 @@ def _convert_xdf_to_fiff(
 
     # save stream-annotations to the derivatives folder
     if task == "UT":
-        fname = derivatives_folder / (fname_stem + "_step1_stream_annot.fif")
-        raw.annotations.save(fname, overwrite=False)
+        fname = derivatives_folder / f"{fname_stem}_step1_stream_annot.fif"
+        raw.annotations.save(fname, overwrite=overwrite)
         logger.debug("Saved: %s", fname.name)
         # x-ref: https://github.com/mne-tools/mne-qt-browser/issues/161
         raw.set_annotations(None)
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
-    fname = derivatives_folder / (fname_stem + "_step1_oddball_annot.fif")
+    fname = derivatives_folder / f"{fname_stem}_step1_oddball_annot.fif"
     annotations.save(fname, overwrite=overwrite)
     logger.debug("Saved: %s", fname.name)
     raw.set_annotations(annotations)
 
     raw.set_montage("standard_1020")
     # save the raw recording
-    fname = derivatives_folder / (fname_stem + "_step1_raw.fif")
-    raw.save(fname, overwrite=False)
+    fname = derivatives_folder / f"{fname_stem}_step1_raw.fif"
+    raw.save(fname, overwrite=overwrite)
     logger.debug("Saved: %s", fname.name)

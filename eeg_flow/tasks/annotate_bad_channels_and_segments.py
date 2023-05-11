@@ -5,6 +5,7 @@ from mne.preprocessing import compute_bridged_electrodes, interpolate_bridged_el
 from pyprep import NoisyChannels
 
 from ..config import load_config
+from ..utils._checks import check_type
 from ..utils._docs import fill_doc
 from ..utils.annotations import merge_bad_annotations
 from ..utils.bids import get_fname, get_folder
@@ -14,8 +15,8 @@ from ..viz import plot_bridged_electrodes
 
 @fill_doc
 def annotate_bad_channels_and_segments(
-    participant: int,
-    group: int,
+    participant: str,
+    group: str,
     task: str,
     run: int,
     overwrite: bool = False,
@@ -34,15 +35,17 @@ def annotate_bad_channels_and_segments(
         If True, overwrites existing derivatives.
     %(timeout)s
     """
+    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
-    _, derivatives_folder, experimenter = load_config()
+    _, derivatives_folder, _ = load_config()
     derivatives_folder = get_folder(derivatives_folder, participant, group)
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / (fname_stem + "_2_info.fif"),
-        derivatives_folder / (fname_stem + "_oddball_with_bads_2_annot.fif"),
+        derivatives_folder / f"{fname_stem}_step2_info.fif",
+        derivatives_folder / f"{fname_stem}_step2_oddball_with_bads_annot.fif",
+        derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg",
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -55,8 +58,8 @@ def annotate_bad_channels_and_segments(
 
 @fill_doc
 def _annotate_bad_channels_and_segments(
-    participant: int,
-    group: int,
+    participant: str,
+    group: str,
     task: str,
     run: int,
     overwrite: bool = False,
@@ -124,4 +127,4 @@ def _annotate_bad_channels_and_segments(
         assert not fname.exists()  # write_info always overwrites
     write_info(fname, raw.info)
     derivatives_folder / (fname_stem + "_oddball_with_bads_2_annot.fif"),
-    annotations.save(fname, overwrite=False)
+    annotations.save(fname, overwrite=overwrite)
