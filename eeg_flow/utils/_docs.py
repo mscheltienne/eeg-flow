@@ -15,11 +15,10 @@ docdict[
     "verbose"
 ] = """
 verbose : int | str | bool | None
-    Sets the verbosity level. The verbosity increases gradually between
-    ``"CRITICAL"``, ``"ERROR"``, ``"WARNING"``, ``"INFO"`` and ``"DEBUG"``.
-    If None is provided, the verbosity is set to ``"WARNING"``.
-    If a bool is provided, the verbosity is set to ``"WARNING"`` for False and
-    to ``"INFO"`` for True."""
+    Sets the verbosity level. The verbosity increases gradually between ``"CRITICAL"``,
+    ``"ERROR"``, ``"WARNING"``, ``"INFO"`` and ``"DEBUG"``. If None is provided, the
+    verbosity is set to ``"WARNING"``. If a bool is provided, the verbosity is set to
+    ``"WARNING"`` for False and to ``"INFO"`` for True."""
 
 # ------------------------------------ I/O -----------------------------------
 docdict[
@@ -27,22 +26,18 @@ docdict[
 ] = """
 streams : list of dict
     List of streams recorded in the .xdf file."""
+
 docdict[
     "eeg_stream"
 ] = """
 eeg_stream : dict
     Stream containing the EEG data."""
+
 docdict[
     "raw"
 ] = """
 raw : Raw
     Raw instance."""
-docdict[
-    "timeout"
-] = """
-timeout : float
-    Maximum duration during which it will attempt to acquire the locks on
-    the derivative files."""
 
 # ------------------------------ file convention -----------------------------
 docdict[
@@ -50,26 +45,37 @@ docdict[
 ] = """
 participant : str
     ID of the participant, for example P08, S02."""
+
 docdict[
     "group"
 ] = """
 group : str
     ID of the group, G1 to G8."""
+
 docdict[
     "task"
 ] = """
 task : "oddball" | "UT"
     Task name."""
+
 docdict[
     "run"
 ] = """
 run : int
     ID of the run, 1 or 2."""
+
 docdict[
     "ica_nb"
 ] = """
 ica_nb : int
     ID of the ICA, 1 or 2."""
+
+docdict[
+    "timeout"
+] = """
+timeout : float
+    Maximum duration during which it will attempt to acquire the locks on the derivative
+    files."""
 
 # ------------------------- Documentation functions --------------------------
 docdict_indented: Dict[int, Dict[str, str]] = dict()
@@ -146,11 +152,11 @@ def _indentcount_lines(lines: List[str]) -> int:
 def copy_doc(source: Callable) -> Callable:
     """Copy the docstring from another function (decorator).
 
-    The docstring of the source function is prepepended to the docstring of the
-    function wrapped by this decorator.
+    The docstring of the source function is prepepended to the docstring of the function
+    wrapped by this decorator.
 
-    This is useful when inheriting from a class and overloading a method. This
-    decorator can be used to copy the docstring of the original method.
+    This is useful when inheriting from a class and overloading a method. This decorator
+    can be used to copy the docstring of the original method.
 
     Parameters
     ----------
@@ -180,8 +186,8 @@ def copy_doc(source: Callable) -> Callable:
     def wrapper(func):
         if source.__doc__ is None or len(source.__doc__) == 0:
             raise RuntimeError(
-                f"The docstring from {source.__name__} could not be copied "
-                "because it was empty."
+                f"The docstring from {source.__name__} could not be copied because it "
+                "was empty."
             )
         doc = source.__doc__
         if func.__doc__ is not None:

@@ -9,9 +9,7 @@ from ._fixes import _WrapStdOut
 
 
 @fill_doc
-def _init_logger(
-    *, verbose: Optional[Union[bool, str, int]] = None
-) -> logging.Logger:
+def _init_logger(*, verbose: Optional[Union[bool, str, int]] = None) -> logging.Logger:
     """Initialize a logger.
 
     Assigns sys.stdout as the first handler of the logger.
@@ -67,8 +65,8 @@ def add_file_handler(
 
 
 @fill_doc
-def set_log_level(verbose: Union[bool, str, int, None]) -> None:
-    """Set the log level for the logger and the first handler ``sys.stdout``.
+def set_log_level(verbose: Optional[Union[bool, str, int]]) -> None:
+    """Set the log level for the logger.
 
     Parameters
     ----------
@@ -101,8 +99,7 @@ class _LoggerFormatter(logging.Formatter):
         super().__init__(fmt="%(levelname): %(message)s")
 
     def format(self, record: logging.LogRecord):
-        """
-        Format the received log record.
+        """Format the received log record.
 
         Parameters
         ----------
