@@ -79,6 +79,15 @@ def convert_xdf_to_fiff(
             task,
             run,
         )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s and run %i "
+            "alrady exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
     finally:
         for lock in locks:
             lock.release()
