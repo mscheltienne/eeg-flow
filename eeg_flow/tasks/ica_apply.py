@@ -43,9 +43,7 @@ def ica_apply_prep(
 
     # lock the output derivative files
     # create locks
-    derivatives = [
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step6_preprocessed-raw.fif")
-    ]
+    derivatives = [DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step6_preprocessed-raw.fif")]
 
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -106,8 +104,7 @@ def _ica_apply_prep(
     # # load following annots
     info = read_info(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"))
     annot = read_annotations(
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
     )
 
     # merge info and annots into current raw
@@ -116,12 +113,8 @@ def _ica_apply_prep(
 
     # load ICAs
     # --- TODO: load the final ICAs with reviewed labels
-    FNAME_ICA1 = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step5_reviewed-1st-ica.fif"
-    )
-    FNAME_ICA2 = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step5_reviewed-2nd-ica.fif"
-    )
+    FNAME_ICA1 = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step5_reviewed-1st-ica.fif")
+    FNAME_ICA2 = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step5_reviewed-2nd-ica.fif")
 
     ica1 = read_ica(FNAME_ICA1)
     ica2 = read_ica(FNAME_ICA2)

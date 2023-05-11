@@ -4,6 +4,7 @@
 
 
 import os
+
 from mne import find_events
 
 from ..config import load_config
@@ -120,9 +121,7 @@ def _convert_xdf_to_fiff(
     raw = create_raw(eeg_stream)
 
     # fix the AUX channel name/types
-    raw.rename_channels(
-        {"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"}
-    )
+    raw.rename_channels({"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"})
     raw.set_channel_types(
         mapping={"ECG": "ecg", "vEOG": "eog", "hEOG": "eog", "EDA": "gsr"}
     )
@@ -162,9 +161,7 @@ def _convert_xdf_to_fiff(
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
-    FNAME_OB_ANNOT = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step1_oddball_annot.fif"
-    )
+    FNAME_OB_ANNOT = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step1_oddball_annot.fif")
     annotations.save(FNAME_OB_ANNOT, overwrite=overwrite)
     print("Saved: ", FNAME_OB_ANNOT)
     raw.set_annotations(annotations)

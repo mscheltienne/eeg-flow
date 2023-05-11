@@ -1,10 +1,7 @@
 from itertools import chain
 
 from mne.io import read_raw_fif, write_info
-from mne.preprocessing import (
-    compute_bridged_electrodes,
-    interpolate_bridged_electrodes,
-)
+from mne.preprocessing import compute_bridged_electrodes, interpolate_bridged_electrodes
 from pyprep import NoisyChannels
 
 from ..config import load_config
@@ -49,9 +46,7 @@ def annotate_bad_channels_and_segments(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        _annotate_bad_channels_and_segments(
-            participant, group, task, run, overwrite
-        )
+        _annotate_bad_channels_and_segments(participant, group, task, run, overwrite)
     finally:
         for lock in locks:
             lock.release()
@@ -83,9 +78,7 @@ def _annotate_bad_channels_and_segments(
     fname_stem = get_fname(participant, group, task, run)
 
     # load raw
-    raw = read_raw_fif(
-        derivatives_folder / (fname_stem + "_1_raw.fif"), preload=True
-    )
+    raw = read_raw_fif(derivatives_folder / (fname_stem + "_1_raw.fif"), preload=True)
 
     # fix bridge electrodes
     plot_bridged_electrodes(raw)
@@ -118,9 +111,7 @@ def _annotate_bad_channels_and_segments(
     ns.find_bad_by_nan_flat()
     ns.find_bad_by_ransac()  # requires electrode position
 
-    raw.info["bads"].extend(
-        [ch for ch in ns.get_bads() if ch not in ("M1", "M2")]
-    )
+    raw.info["bads"].extend([ch for ch in ns.get_bads() if ch not in ("M1", "M2")])
     raw.info["bads"] = list(set(raw.info["bads"]))
 
     # visual inspection and annotate bad segments

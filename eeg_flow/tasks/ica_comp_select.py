@@ -56,8 +56,19 @@ def prep_ica_selection(
     ]
 
     locks = lock_files(*derivatives, timeout=timeout)
-    ica1, ica2, raw_ica_fit1, raw = _prep_ica_selection(participant, group, task, run, overwrite)
-    return (ica1, ica2, DERIVATIVES_SUBFOLDER, FNAME_STEM, EXPERIMENTER, raw_ica_fit1, raw, locks)
+    ica1, ica2, raw_ica_fit1, raw = _prep_ica_selection(
+        participant, group, task, run, overwrite
+    )
+    return (
+        ica1,
+        ica2,
+        DERIVATIVES_SUBFOLDER,
+        FNAME_STEM,
+        EXPERIMENTER,
+        raw_ica_fit1,
+        raw,
+        locks,
+    )
 
 
 @fill_doc
@@ -93,9 +104,7 @@ def _prep_ica_selection(
         preload=True,
     )
     # # load following annots
-    info = read_info(
-        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif")
-    )
+    info = read_info(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"))
     annot = read_annotations(
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
     )

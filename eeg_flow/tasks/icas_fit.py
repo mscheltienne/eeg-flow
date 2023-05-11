@@ -3,10 +3,10 @@
 # @anguyen
 
 from copy import deepcopy
-from joblib import Parallel, delayed
+
 import numpy as np
 import pandas as pd
-
+from joblib import Parallel, delayed
 from mne import pick_types, read_annotations
 from mne.io import read_info, read_raw_fif
 from mne.preprocessing import ICA
@@ -113,8 +113,7 @@ def _fit_two_icas(
     # load following annots
     info = read_info(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"))
     annot = read_annotations(
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
     )
 
     # merge info and annots into current raw
@@ -174,9 +173,7 @@ def _fit_two_icas(
         for i in range(2)
     ]
     fitted_icas = Parallel(n_jobs=2)(
-        delayed(fit_ica_on_data)(
-            filtered_sessions, session_picks, deepcopy(ica), i
-        )
+        delayed(fit_ica_on_data)(filtered_sessions, session_picks, deepcopy(ica), i)
         for i in range(2)
     )
     del raw_ica_fit1
@@ -195,16 +192,12 @@ def _fit_two_icas(
         "labels": component_dict["labels"],
     }
     df_icalabel = pd.DataFrame.from_dict(data_icalabel)
-    fname_icalabel = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step3_iclabel.xlsx"
-    )
+    fname_icalabel = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step3_iclabel.xlsx")
     df_icalabel.to_excel(fname_icalabel)
     # let's remove eye-blink and heart beat
     labels = component_dict["labels"]
     exclude = [
-        k
-        for k, name in enumerate(labels)
-        if name in ("eye blink", "heart beat")
+        k for k, name in enumerate(labels) if name in ("eye blink", "heart beat")
     ]
     # let's remove other non-brain components that occur often
     _, _, _, data = _prepare_data_ica_properties(

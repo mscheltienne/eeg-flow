@@ -2,15 +2,13 @@
 # Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
-from itertools import chain
 import os
+from itertools import chain
 
 from mne.io import read_raw_fif
-from mne.preprocessing import (
-    compute_bridged_electrodes,
-    interpolate_bridged_electrodes,
-)
+from mne.preprocessing import compute_bridged_electrodes, interpolate_bridged_electrodes
 from pyprep import NoisyChannels
+
 from ..config import load_config
 from ..utils._docs import fill_doc
 from ..utils.bids import get_fname, get_folder
@@ -49,8 +47,7 @@ def load_for_annotations(
     # create locks
     derivatives = (
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"),
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif"),
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif"),
         DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step2_bridges.svg"),
     )
     locks = lock_files(*derivatives, timeout=timeout)
@@ -66,8 +63,7 @@ def load_for_annotations(
 
 
 @fill_doc
-def check_bridges(
-        DERIVATIVES_SUBFOLDER, FNAME_STEM, raw):
+def check_bridges(DERIVATIVES_SUBFOLDER, FNAME_STEM, raw):
     """Check for bridges.
 
     Parameters
@@ -132,8 +128,6 @@ def auto_bad_channels(raw):
     # ns.find_bad_by_ransac()  # requires electrode position
     print(ns.get_bads())
 
-    raw.info["bads"].extend(
-        [ch for ch in ns.get_bads() if ch not in ("M1", "M2")]
-    )
+    raw.info["bads"].extend([ch for ch in ns.get_bads() if ch not in ("M1", "M2")])
     raw.info["bads"] = list(set(raw.info["bads"]))
     return

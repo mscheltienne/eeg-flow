@@ -42,9 +42,7 @@ def load_xdf(fname: Union[str, Path]) -> List[dict]:
 
 
 @fill_doc
-def find_streams(
-    streams: List[dict], stream_name: str
-) -> List[Tuple[int, dict]]:
+def find_streams(streams: List[dict], stream_name: str) -> List[Tuple[int, dict]]:
     """Find the stream including 'stream_name' in the name attribute.
 
     Parameters
@@ -211,9 +209,7 @@ def add_game_events(
 
 
 # ----------------------------- Misc channel interpolated ------------------------------
-def _add_misc_channel(
-    raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1
-) -> None:
+def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) -> None:
     """Add data from stream to the raw as a misc channel.
 
     The data from stream is interpolated on the timestamps of eeg_stream.
@@ -227,8 +223,7 @@ def _add_misc_channel(
     data = _get_stream_data(stream)
 
     ch_names = [
-        elt["label"][0]
-        for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
+        elt["label"][0] for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
     ]
 
     # interpolate spline on mouse position
@@ -317,9 +312,7 @@ def add_mouse_buttons(
 
 # -------------------------------------- Keyboard --------------------------------------
 @fill_doc
-def add_keyboard_buttons(
-    raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict
-) -> None:
+def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) -> None:
     """Add the keyboard buttons press/release to the raw as annotations.
 
     Parameters

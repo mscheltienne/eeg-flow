@@ -3,9 +3,9 @@
 # @anguyen
 
 from datetime import datetime
-from matplotlib import pyplot as plt  # viz
-import numpy as np
 
+import numpy as np
+from matplotlib import pyplot as plt  # viz
 from mne import read_evokeds
 
 from ..config import load_config

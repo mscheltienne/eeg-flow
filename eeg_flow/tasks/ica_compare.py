@@ -49,7 +49,11 @@ def prep_ica_compare(
 
     locks = lock_files(*derivatives, timeout=timeout)
     raw, raw_ica_fit = _prep_ica_compare(
-        participant, group, task, run, ica_nb,
+        participant,
+        group,
+        task,
+        run,
+        ica_nb,
     )
     return DERIVATIVES_SUBFOLDER, FNAME_STEM, raw, raw_ica_fit, locks
 
@@ -88,8 +92,7 @@ def _prep_ica_compare(
     # # load following annots
     info = read_info(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_info.fif"))
     annot = read_annotations(
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step2_oddball_with_bads_annot.fif")
     )
 
     # merge info and annots into current raw
@@ -134,9 +137,7 @@ def _prep_ica_compare(
 
 
 @fill_doc
-def load_ica_rev(
-    DERIVATIVES_SUBFOLDER, FNAME_STEM, REVIEWER1, REVIEWER2, ica_nb
-):
+def load_ica_rev(DERIVATIVES_SUBFOLDER, FNAME_STEM, REVIEWER1, REVIEWER2, ica_nb):
     """Load the 2 reviews.
 
     Parameters
@@ -180,9 +181,7 @@ def compare_two_revs(ica_rev1, ica_rev2):
     %(ica_rev2)s
     """
     # find components which have been excluded in both ICAs
-    exclude_common = list(
-        set(ica_rev1.exclude).intersection(set(ica_rev2.exclude))
-    )
+    exclude_common = list(set(ica_rev1.exclude).intersection(set(ica_rev2.exclude)))
     exclude_diff = list(
         set(
             list(set(ica_rev1.exclude) - set(ica_rev2.exclude))

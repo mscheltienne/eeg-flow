@@ -4,15 +4,15 @@
 
 
 import math
-import numpy as np
-import pandas as pd
-from scipy.stats import norm
 import time
 
+import numpy as np
+import pandas as pd
 from autoreject import get_rejection_threshold
-from mne import find_events, Epochs
+from mne import Epochs, find_events
 from mne.epochs import make_metadata
 from mne.io import read_raw_fif
+from scipy.stats import norm
 
 from ..config import load_config
 from ..utils._docs import fill_doc
@@ -51,12 +51,9 @@ def behav_prep_epoching(
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_a-metadata.csv"),
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_b-behav.txt"),
         DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_c-cleaned-epo.fif"),
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step7_d1-standard_evoked-ave.fif"),
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step7_d2-target_evoked-ave.fif"),
-        DERIVATIVES_SUBFOLDER
-        / (FNAME_STEM + "_step7_d3-novel_evoked-ave.fif"),
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d1-standard_evoked-ave.fif"),
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d2-target_evoked-ave.fif"),
+        DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_d3-novel_evoked-ave.fif"),
     ]
 
     locks = lock_files(*derivatives, timeout=timeout)
@@ -168,9 +165,7 @@ def _behav_prep_epoching(
         title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(responses_std)})",
     )
 
-    FNAME_RT_PLOT = (
-        DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_RT.svg")
-    )
+    FNAME_RT_PLOT = DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_RT.svg")
     ax_rt.figure.suptitle(FNAME_STEM, fontsize=16, y=1)
     ax_rt.figure.savefig(FNAME_RT_PLOT, transparent=True)
     ax_rt
@@ -180,16 +175,12 @@ def _behav_prep_epoching(
     metadata.loc[
         (metadata["response_type"] == "CorrectRejections"), "response_correct"
     ] = True
-    metadata.loc[
-        (metadata["response_type"] == "Hits"), "response_correct"
-    ] = True
+    metadata.loc[(metadata["response_type"] == "Hits"), "response_correct"] = True
 
     metadata.loc[
         (metadata["response_type"] == "FalseAlarms"), "response_correct"
     ] = False
-    metadata.loc[
-        (metadata["response_type"] == "Misses"), "response_correct"
-    ] = False
+    metadata.loc[(metadata["response_type"] == "Misses"), "response_correct"] = False
 
     correct_response_count = metadata["response_correct"].sum()
 
@@ -198,9 +189,7 @@ def _behav_prep_epoching(
         f"Incorrect responses: {len(metadata) - correct_response_count}"
     )
 
-    FNAME_METADATA = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step7_a-metadata.csv"
-    )
+    FNAME_METADATA = DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step7_a-metadata.csv")
     metadata.to_csv(FNAME_METADATA)
 
     # %%
@@ -234,20 +223,14 @@ def _behav_prep_epoching(
     count_corr_target = str(metadata_count_correct["target"])
     count_corr_novel = str(metadata_count_correct["novel"])
 
-    file_behav.write(
-        f"{count_corr_standard}\t{count_corr_novel}\t{count_corr_target}"
-    )
+    file_behav.write(f"{count_corr_standard}\t{count_corr_novel}\t{count_corr_target}")
 
     file_behav.write("\n\nResponse_mean, Response_std\n")
     file_behav.write(str(response_mean) + "\t" + str(responses_std))
 
     file_behav.write("\n\nd'\n")
     file_behav.write(
-        str(
-            SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)[
-                "d"
-            ]
-        )
+        str(SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)["d"])
     )
 
     file_behav.close()  # to change file access modes
@@ -259,9 +242,7 @@ def _behav_prep_epoching(
 
     # %%
     st = time.time()
-    reject = get_rejection_threshold(
-        epochs, decim=1, ch_types="eeg", random_state=888
-    )
+    reject = get_rejection_threshold(epochs, decim=1, ch_types="eeg", random_state=888)
     et = time.time()
     diff = et - st
     minutes = str(int(diff // 60)).zfill(2)
@@ -279,9 +260,7 @@ def _behav_prep_epoching(
 
     # %%
     FNAME_DROP_LOG = (
-        DERIVATIVES_SUBFOLDER
-        / "plots"
-        / (FNAME_STEM + "_step7_epochs-rejected.svg")
+        DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step7_epochs-rejected.svg")
     )
     fig.savefig(FNAME_DROP_LOG, transparent=True)
     # %%
