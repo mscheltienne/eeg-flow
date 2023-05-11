@@ -59,8 +59,6 @@ def plot_bridged_electrodes(
     return fig, ax
 
 
-# TODO: Why is 'ed_matrix' of shape (n_epochs, n_channels, n_channels) and not
-# (n_channels, n_channels)?
 def plot_bridged_electrodes_array(
     bridged_idx: List[Tuple[int, int]],
     ed_matrix: NDArray[float],

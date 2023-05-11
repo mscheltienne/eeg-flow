@@ -64,8 +64,10 @@ def get_folder(
     check_type(participant, (str,), "participant")
     check_type(group, (str,), "group")
 
-    if task is None or run is None:
+    if task is None and run is None:
         return root / f"sub-{participant}-{group}"
+    elif sum(elt is None for elt in (task, run)):
+        raise RuntimeError("Either both task and run are provided, or neither.")
     else:
         fname_stem = get_fname(participant, group, task, run)
         return root / f"sub-{participant}-{group}" / fname_stem
