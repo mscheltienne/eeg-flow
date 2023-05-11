@@ -1,5 +1,10 @@
-from pathlib import Path
-from typing import List, Tuple, Union
+# postponed evaluation of annotations, c.f. PEP 563 and PEP 649 alternatively, the type
+# hints can be defined as strings which will be evaluated with eval() prior to type
+# checking.
+from __future__ import annotations
+
+from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pyxdf
@@ -9,11 +14,15 @@ from mne.io.pick import _DATA_CH_TYPES_ORDER_DEFAULT
 from numpy.typing import NDArray
 from scipy.interpolate import UnivariateSpline
 
-from .utils._checks import check_type
+from .utils._checks import check_type, ensure_path
 from .utils._docs import fill_doc
 
+if TYPE_CHECKING:
+    from pathlib import Path
+    from typing import List, Tuple, Union
 
-# ------------------------------- Load streams -------------------------------
+
+# ------------------------------------ Load streams ------------------------------------
 @fill_doc
 def load_xdf(fname: Union[str, Path]) -> List[dict]:
     """Load XDF file.
@@ -27,7 +36,7 @@ def load_xdf(fname: Union[str, Path]) -> List[dict]:
     -------
     %(streams)s
     """
-    assert Path(fname).exists()
+    fname = ensure_path(fname, must_exist=True)
     streams, _ = pyxdf.load_xdf(fname)
     return streams
 
@@ -78,9 +87,9 @@ def _get_stream_data(stream: dict):
     return stream["time_series"]
 
 
-# ------------------------------- EEG stream --------------------------------
+# ------------------------------------- EEG stream -------------------------------------
 @fill_doc
-def create_raw(eeg_stream):
+def create_raw(eeg_stream: dict) -> BaseRaw:
     """Create raw from EEG stream.
 
     Parameters
@@ -91,7 +100,7 @@ def create_raw(eeg_stream):
     -------
     %(raw)s
     """
-    ch_names, ch_types, units = _get_eeg_ch_info(eeg_stream)
+    ch_names, ch_types = _get_eeg_ch_info(eeg_stream)
     sfreq = _get_eeg_sfreq(eeg_stream)
     data = _get_stream_data(eeg_stream).T
 
@@ -128,9 +137,9 @@ def create_raw(eeg_stream):
     return raw
 
 
-def _get_eeg_ch_info(stream: dict):
+def _get_eeg_ch_info(stream: dict) -> Tuple[List[str], List[str]]:
     """Extract the info for each eeg channels (label, type and unit)."""
-    ch_names, ch_types, units = [], [], []
+    ch_names, ch_types = [], []
 
     # get channels labels, types and units
     for ch in stream["info"]["desc"][0]["channels"][0]["channel"]:
@@ -142,17 +151,16 @@ def _get_eeg_ch_info(stream: dict):
 
         ch_names.append(ch["label"][0])
         ch_types.append(ch_type)
-        units.append(ch["unit"][0])
 
-    return ch_names, ch_types, units
+    return ch_names, ch_types
 
 
-def _get_eeg_sfreq(stream: dict) -> int:
+def _get_eeg_sfreq(stream: dict) -> float:
     """Retrieve the nominal sampling rate from the stream."""
-    return int(stream["info"]["nominal_srate"][0])
+    return float(Decimal(stream["info"]["nominal_srate"][0]))
 
 
-# ------------------------------- MousePosition ------------------------------
+# ------------------------------------ MousePosition -----------------------------------
 @fill_doc
 def add_mouse_position(
     raw: BaseRaw, eeg_stream: dict, mouse_pos_stream: dict, *, k: int = 1
@@ -177,7 +185,7 @@ def add_mouse_position(
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
 
-# -------------------------------- GameEvents --------------------------------
+# ------------------------------------- GameEvents -------------------------------------
 @fill_doc
 def add_game_events(
     raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *, k: int = 1
@@ -202,7 +210,7 @@ def add_game_events(
     _add_misc_channel(raw, eeg_stream, game_events_stream, k)
 
 
-# ------------------------ Misc channel interpolated -------------------------
+# ----------------------------- Misc channel interpolated ------------------------------
 def _add_misc_channel(
     raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1
 ) -> None:
@@ -246,7 +254,7 @@ def _add_misc_channel(
     raw.add_channels([misc_raw], force_update_info=True)
 
 
-# ------------------------------- MouseButtons -------------------------------
+# ------------------------------------ MouseButtons ------------------------------------
 @fill_doc
 def add_mouse_buttons(
     raw: BaseRaw, eeg_stream: dict, mouse_buttons_stream: dict
@@ -307,7 +315,7 @@ def add_mouse_buttons(
     raw.set_annotations(raw.annotations + annotations)
 
 
-# --------------------------------- Keyboard ---------------------------------
+# -------------------------------------- Keyboard --------------------------------------
 @fill_doc
 def add_keyboard_buttons(
     raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict
