@@ -21,6 +21,7 @@ from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_fname, get_folder
 from ..utils.concurrency import lock_files
+from .. import logger
 
 
 @fill_doc
@@ -52,8 +53,13 @@ def convert_xdf_to_fiff(
     )
 
     # create derivatives preprocessed subfolder
-    os.makedirs(DERIVATIVES_SUBFOLDER, exist_ok=True)
-    print("Created folder", DERIVATIVES_SUBFOLDER)
+    if DERIVATIVES_SUBFOLDER.exists():
+        logger.debug(
+            "The derivatives subfolder %s already exists.", DERIVATIVES_SUBFOLDER
+        )
+    else:
+        os.makedirs(DERIVATIVES_SUBFOLDER, exist_ok=False)
+        logger.debug("Derivatives subfolder %s created.", DERIVATIVES_SUBFOLDER)
 
     # lock the output derivative files
     derivatives = [
@@ -67,24 +73,20 @@ def convert_xdf_to_fiff(
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s and run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
     finally:
         for lock in locks:
             lock.release()
         del locks
     return
-
-
-def convert_xdf_to_fiff_star(args):
-    """Modification so that the function accepts *args instead.
-
-    https://stackoverflow.com/a/67845088
-
-    Parameters
-    ----------
-    %(args)s
-    Reuse the args of convert_xdf_to_fiff
-    """
-    return convert_xdf_to_fiff(*args)
 
 
 @fill_doc
@@ -123,7 +125,8 @@ def _convert_xdf_to_fiff(
     # fix the AUX channel name/types
     raw.rename_channels({"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"})
     raw.set_channel_types(
-        mapping={"ECG": "ecg", "vEOG": "eog", "hEOG": "eog", "EDA": "gsr"}
+        mapping={"ECG": "ecg", "vEOG": "eog", "hEOG": "eog", "EDA": "gsr"},
+        on_unit_change="ignore",
     )
     if task == "UT":
         # add the mouse position and the game events as channels

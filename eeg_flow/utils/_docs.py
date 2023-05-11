@@ -44,13 +44,13 @@ docdict[
     "participant"
 ] = """
 participant : str
-    ID of the participant, for example P08, S02."""
+    ID of the participant, for example "P08", "S02"."""
 
 docdict[
     "group"
 ] = """
 group : str
-    ID of the group, G1 to G8."""
+    ID of the group, "G1" to "G8"."""
 
 docdict[
     "task"
