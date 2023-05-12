@@ -72,7 +72,7 @@ def convert_xdf_to_fiff(
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
     except FileNotFoundError:
         logger.error(
-            "The requested file for participant %s, group %s, task %s and run %i does "
+            "The requested file for participant %s, group %s, task %s, run %i does "
             "not exist and will be skipped.",
             participant,
             group,
@@ -81,8 +81,8 @@ def convert_xdf_to_fiff(
         )
     except FileExistsError:
         logger.error(
-            "The destination file for participant %s, group %s, task %s and run %i "
-            "alrady exists. Please use 'overwrite=True' to force overwriting.",
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
             participant,
             group,
             task,

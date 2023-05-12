@@ -12,6 +12,7 @@ from mne.io import read_raw_fif, write_info
 from mne.preprocessing import compute_bridged_electrodes, interpolate_bridged_electrodes
 from pyprep import NoisyChannels
 
+from .. import logger
 from ..config import load_config
 from ..utils._checks import check_type
 from ..utils._cli import query_yes_no
@@ -95,6 +96,24 @@ def annotate_bad_channels_and_segments(
         # save interpolated raw
         fname = derivatives_folder / f"{fname_stem}_step2_raw.fif"
         raw.save(fname, overwrite=overwrite)
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
     finally:
         for lock in locks:
             lock.release()
