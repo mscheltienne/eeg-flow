@@ -3,16 +3,18 @@
 # checking.
 from __future__ import annotations
 
+import os
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from mne import pick_types
 from mne.io import read_raw_fif
-from mne.preprocessing import ICA
+from mne.preprocessing import ICA, read_ica
 from mne.viz.ica import _prepare_data_ica_properties
-from mne_icalabel import label_components
+from mne_icalabel import label_components as label_components_iclabel
 
 from .. import logger
 from ..config import load_config
@@ -22,7 +24,8 @@ from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:
-    from typing import Any, Dict
+    from pathlib import Path
+    from typing import Any, Dict, Tuple
 
     from mne.io import BaseRaw
 
@@ -68,38 +71,9 @@ def fit_icas(
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
-        raw1 = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step2_raw.fif", preload=True
+        raw1, raw2 = _load_and_filter_raws(
+            derivatives_folder / f"{fname_stem}_step2_raw.fif"
         )
-        raw2 = raw1.copy()
-
-        # ICA 1 for mastoids, referenced to CPz and filtered between 1 and 40 Hz
-        raw1.filter(
-            l_freq=1.0,
-            h_freq=40.0,
-            picks="eeg",
-            method="fir",
-            phase="zero-double",
-            fir_window="hamming",
-            fir_design="firwin",
-            pad="edge",
-        )
-
-        # ICA 2 for EEG channels, referenced to CAR and filtered between 1 and 100 Hz
-        raw2.filter(
-            l_freq=1.0,
-            h_freq=100.0,
-            picks=["eeg"],
-            method="fir",
-            phase="zero-double",
-            fir_window="hamming",
-            fir_design="firwin",
-            pad="edge",
-        )
-        raw2.set_montage(None)
-        raw2.add_reference_channels(ref_channels="CPz")
-        raw2.set_montage("standard_1020")
-        raw2.set_eeg_reference("average", projection=False)
 
         # define ICAs argument, simpler to serialize than ICas classes
         kwargs = dict(
@@ -123,7 +97,7 @@ def fit_icas(
 
         # label components
         logger.info("Running ICLabel.")
-        df_iclabel = _label_components(raw2, ica2)
+        df_iclabel = _auto_label_components(raw2, ica2)
 
         # save deriatives
         logger.info("Saving derivatives.")
@@ -158,6 +132,41 @@ def fit_icas(
         del locks
 
 
+def _load_and_filter_raws(fname: Path) -> Tuple[BaseRaw, BaseRaw]:
+    """Load raw recording and filter for ICA fits."""
+    raw1 = read_raw_fif(fname, preload=True)
+    raw2 = raw1.copy()
+
+    # ICA 1 for mastoids, referenced to CPz and filtered between 1 and 40 Hz
+    raw1.filter(
+        l_freq=1.0,
+        h_freq=40.0,
+        picks="eeg",
+        method="fir",
+        phase="zero-double",
+        fir_window="hamming",
+        fir_design="firwin",
+        pad="edge",
+    )
+
+    # ICA 2 for EEG channels, referenced to CAR and filtered between 1 and 100 Hz
+    raw2.filter(
+        l_freq=1.0,
+        h_freq=100.0,
+        picks=["eeg"],
+        method="fir",
+        phase="zero-double",
+        fir_window="hamming",
+        fir_design="firwin",
+        pad="edge",
+    )
+    raw2.set_montage(None)
+    raw2.add_reference_channels(ref_channels="CPz")
+    raw2.set_montage("standard_1020")
+    raw2.set_eeg_reference("average", projection=False)
+    return raw1, raw2
+
+
 def _fit_ica(raw: BaseRaw, ica_kwargs: Dict[str, Any]) -> ICA:
     """Create and fit an ICA decomposition on the provided raw recoridng."""
     ica = ICA(**ica_kwargs)
@@ -166,9 +175,9 @@ def _fit_ica(raw: BaseRaw, ica_kwargs: Dict[str, Any]) -> ICA:
     return ica
 
 
-def _label_components(raw: BaseRaw, ica: ICA) -> pd.DataFrame:
+def _auto_label_components(raw: BaseRaw, ica: ICA) -> pd.DataFrame:
     """Label components with ICLabel."""
-    component_dict = label_components(raw, ica, method="iclabel")
+    component_dict = label_components_iclabel(raw, ica, method="iclabel")
     data_icalabel = {
         "y_pred": component_dict["y_pred_proba"],
         "labels": component_dict["labels"],
@@ -203,3 +212,124 @@ def _label_components(raw: BaseRaw, ica: ICA) -> pd.DataFrame:
     ica.exclude = exclude
 
     return df_iclabel
+
+
+@fill_doc
+def label_components(
+    participant: str,
+    group: str,
+    task: str,
+    run: int,
+    overwrite: bool = False,
+    *,
+    timeout: float = 10,
+) -> None:
+    """Label both ICA decomposition.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    %(timeout)s
+    """
+    check_type(overwrite, (bool,), "overwrite")
+    # prepare folders
+    _, derivatives_folder_root, username = load_config()
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder_root, participant, group, task, run
+    )
+    fname_stem = get_fname(participant, group, task, run)
+    os.makedirs(derivatives_folder / "plots" / "ica", exist_ok=True)
+
+    # lock the output derivative files
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step4_reviewed_1st_{username}_ica.fif",
+        derivatives_folder / f"{fname_stem}_step4_reviewed_2nd_{username}_ica.fif",
+    )
+    locks = lock_files(*derivatives, timeout=timeout)
+    try:
+        # The raw saved after interpolation of bridges already contains bad channels and
+        # segments. No need to reload the "info" and "oddball_with_bads" annotations.
+        # However, it is not filtered.
+        raw1, raw2 = _load_and_filter_raws(
+            derivatives_folder / f"{fname_stem}_step2_raw.fif"
+        )
+
+        # define ICAs argument, simpler to serialize than ICas classes
+        ica1 = read_ica(derivatives_folder / f"{fname_stem}_step3_1st_ica.fif")
+        ica2 = read_ica(derivatives_folder / f"{fname_stem}_step3_2nd_ica.fif")
+        # sanity-checks
+        assert ica1.info["lowpass"] == 40.0
+        assert ica1.info["custom_ref_applied"] == 0
+        assert ica2.info["lowpass"] == 100.0
+        assert ica2.info["custom_ref_applied"] == 1
+
+        # annotate ICA 1 for mastoids
+        figs = ica1.plot_components(inst=raw1, show=True)
+        plt.pause(0.1)
+        ica1.plot_sources(
+            inst=raw1,
+            title=f"{fname_stem} | ICA1 sources Mastoids | {username}",
+            show=True,
+            block=True,
+        )
+        for k, fig in enumerate(figs):
+            fig.savefig(
+                derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
+                transparent=True,
+            )
+        plt.close("all")
+
+
+        # annotate ICA 2 for EEG
+        figs = ica2.plot_components(inst=raw2, show=True)
+        plt.pause(0.1)
+        ica2.plot_sources(
+            inst=raw2,
+            title=f"{fname_stem} | ICA1 sources Mastoids | {username}",
+            show=True,
+            block=True,
+        )
+        for k, fig in enumerate(figs):
+            fig.savefig(
+                derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
+                transparent=True,
+            )
+        plt.close("all")
+
+        # save deriatives
+        logger.info("Saving derivatives.")
+        ica1.save(
+            derivatives_folder / f"{fname_stem}_step4_reviewed_1st_{username}_ica.fif",
+            overwrite=overwrite,
+        )
+        ica2.save(
+            derivatives_folder / f"{fname_stem}_step4_reviewed_2nd_{username}_ica.fif",
+            overwrite=overwrite,
+        )
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks
