@@ -55,7 +55,9 @@ def annotate_bad_channels_and_segments(
     check_type(ransac, (bool,), "ransac")
     # prepare folders
     _, derivatives_folder, _ = load_config()
-    derivatives_folder = get_folder(derivatives_folder, participant, group, task, run)
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder, participant, group, task, run
+    )
     fname_stem = get_fname(participant, group, task, run)
     os.makedirs(derivatives_folder / "plots", exist_ok=True)
 
@@ -75,6 +77,7 @@ def annotate_bad_channels_and_segments(
         _interpolate_gel_bridges(raw)
         if not query_yes_no("Do you want to continue with this dataset?"):
             raise RuntimeError("Execution aborted by the user.")
+        plt.close("all")
         _auto_bad_channels(raw, ransac=ransac)
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
 
@@ -87,7 +90,7 @@ def annotate_bad_channels_and_segments(
 
         # save oddball + bad segments annotations
         fname = derivatives_folder / f"{fname_stem}_step2_oddball_with_bads_annot.fif"
-        annotations.save(fname, overwrite=overwrite)
+        raw.annotations.save(fname, overwrite=overwrite)
 
         # save interpolated raw
         fname = derivatives_folder / f"{fname_stem}_step2_raw.fif"
@@ -106,7 +109,8 @@ def _plot_gel_bridges(
         fig, _ = plot_bridged_electrodes(raw)
         fig.suptitle(fname_stem, fontsize=16, y=1.0)
         fig.savefig(fname, transparent=True)
-        plt.show()
+        plt.show(block=False)
+        plt.pause(0.1)
 
 
 def _interpolate_gel_bridges(raw: BaseRaw):
