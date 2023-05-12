@@ -16,7 +16,7 @@ from ..io import (
 from ..utils._checks import check_type
 from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
-from ..utils.bids import get_fname, get_folder
+from ..utils.bids import get_fname, get_xdf_folder, get_derivative_folder
 from ..utils.concurrency import lock_files
 
 
@@ -44,7 +44,7 @@ def convert_xdf_to_fiff(
     check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, _ = load_config()
-    derivatives_folder = get_folder(
+    derivatives_folder = get_derivative_folder(
         derivatives_folder_root, participant, group, task, run
     )
     fname_stem = get_fname(participant, group, task, run)
@@ -115,8 +115,8 @@ def _convert_xdf_to_fiff(
     """
     # prepare folders
     xdf_folder_root, derivatives_folder_root, _ = load_config()
-    xdf_foler = get_folder(xdf_folder_root, participant, group)
-    derivatives_folder = get_folder(
+    xdf_foler = get_xdf_folder(xdf_folder_root, participant, group)
+    derivatives_folder = get_derivative_folder(
         derivatives_folder_root, participant, group, task, run
     )
     fname_stem = get_fname(participant, group, task, run)

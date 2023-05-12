@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 from ._checks import check_type, check_value, ensure_path
 from ._docs import fill_doc
@@ -39,14 +39,43 @@ def get_fname(
 
 
 @fill_doc
-def get_folder(
+def get_derivative_folder(
     root: Union[str, Path],
     participant: str,
     group: str,
-    task: Optional[str] = None,
-    run: Optional[int] = None,
+    task: str = None,
+    run: int = None,
 ) -> Path:
     """Get the folder from the participant and group.
+
+    Parameters
+    ----------
+    root : path-like
+        Path to the BIDS-like root folder.
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+
+    Returns
+    -------
+    folder : Path
+        Path to the folder.
+    """
+    root = ensure_path(root, must_exist=True)
+    check_type(participant, (str,), "participant")
+    check_type(group, (str,), "group")
+    fname_stem = get_fname(participant, group, task, run)
+    return root / f"sub-{participant}-{group}" / fname_stem
+
+
+@fill_doc
+def get_xdf_folder(
+    root: Union[str, Path],
+    participant: str,
+    group: str,
+) -> Path:
+    """Get the XDF folder from the participant and group.
 
     Parameters
     ----------
@@ -63,11 +92,4 @@ def get_folder(
     root = ensure_path(root, must_exist=True)
     check_type(participant, (str,), "participant")
     check_type(group, (str,), "group")
-
-    if task is None and run is None:
-        return root / f"sub-{participant}-{group}"
-    elif sum(elt is None for elt in (task, run)):
-        raise RuntimeError("Either both task and run are provided, or neither.")
-    else:
-        fname_stem = get_fname(participant, group, task, run)
-        return root / f"sub-{participant}-{group}" / fname_stem
+    return root / f"sub-{participant}-{group}"

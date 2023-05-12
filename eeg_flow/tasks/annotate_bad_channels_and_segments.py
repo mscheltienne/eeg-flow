@@ -14,8 +14,9 @@ from pyprep import NoisyChannels
 
 from ..config import load_config
 from ..utils._checks import check_type
+from ..utils._cli import query_yes_no
 from ..utils._docs import fill_doc
-from ..utils.bids import get_fname, get_folder
+from ..utils.bids import get_fname, get_derivative_folder
 from ..utils.concurrency import lock_files
 from ..viz import plot_bridged_electrodes
 
@@ -54,7 +55,7 @@ def annotate_bad_channels_and_segments(
     check_type(ransac, (bool,), "ransac")
     # prepare folders
     _, derivatives_folder, _ = load_config()
-    derivatives_folder = get_folder(derivatives_folder, participant, group)
+    derivatives_folder = get_folder(derivatives_folder, participant, group, task, run)
     fname_stem = get_fname(participant, group, task, run)
     os.makedirs(derivatives_folder / "plots", exist_ok=True)
 
@@ -72,6 +73,8 @@ def annotate_bad_channels_and_segments(
         )
         _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
         _interpolate_gel_bridges(raw)
+        if not query_yes_no("Do you want to continue with this dataset?"):
+            raise RuntimeError("Execution aborted by the user.")
         _auto_bad_channels(raw, ransac=ransac)
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
 
