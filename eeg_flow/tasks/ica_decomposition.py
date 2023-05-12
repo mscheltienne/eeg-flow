@@ -18,7 +18,7 @@ from .. import logger
 from ..config import load_config
 from ..utils._checks import check_type
 from ..utils._docs import fill_doc
-from ..utils.bids import get_fname, get_derivative_folder
+from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:

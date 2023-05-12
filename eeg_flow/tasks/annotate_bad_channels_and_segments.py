@@ -17,7 +17,7 @@ from ..config import load_config
 from ..utils._checks import check_type
 from ..utils._cli import query_yes_no
 from ..utils._docs import fill_doc
-from ..utils.bids import get_fname, get_derivative_folder
+from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
 from ..viz import plot_bridged_electrodes
 
