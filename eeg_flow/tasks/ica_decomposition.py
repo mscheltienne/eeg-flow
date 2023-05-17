@@ -18,7 +18,7 @@ from mne_icalabel import label_components as label_components_iclabel
 
 from .. import logger
 from ..config import load_config
-from ..utils._checks import check_type
+from ..utils._checks import check_type, check_value
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
@@ -306,7 +306,7 @@ def label_components(
             overwrite=overwrite,
         )
 
-        # save after ICAs to catch the except FileExistsError first if needed
+        # save figures after ICAs to catch the except FileExistsError first if needed
         figs = ica1.plot_components(inst=raw1, show=False)
         plt.pause(0.1)
         for k, fig in enumerate(figs):
@@ -358,10 +358,12 @@ def _disconnect_onclick_title(figs):
                 break
 
 
-def compare_labels(participant: str,
+def compare_labels(
+    participant: str,
     group: str,
     task: str,
     run: int,
+    ica_id: int,
     reviewers: Tuple[str, str],
     *,
     timeout: float = 10,
@@ -375,14 +377,21 @@ def compare_labels(participant: str,
     %(group)s
     %(task)s
     %(run)s
+    ica_id : int
+        ID of the ICA, 1 (mastoids) or 2 (EEG).
+    reviewers : tuple of length (2,)
+        Username of the reviewers to load.
     %(timeout)s
     overwrite : bool
         If True, overwrites existing derivatives.
     """
+    check_type(ica_id, ("int",), "ica_id")
+    check_value(ica_id, (1, 2), "ica_id")
     check_type(reviewers, (tuple,), "reviewers")
     assert len(reviewers) == 2
     for reviewer in reviewers:
         check_type(reviewer, (str,), "reviewer")
+    assert reviewers[0] != reviewers[1]  # sanity-check
     check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, username = load_config()
@@ -392,13 +401,102 @@ def compare_labels(participant: str,
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (
-        derivatives_folder / f"{fname_stem}_step5_reviewed_1st_ica.fif",
-        derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_ica.fif",
-    )
+    idx = "1st" if ica_id == 1 else "2nd"
+    derivatives = (derivatives_folder / f"{fname_stem}_step5_reviewed_{idx}_ica.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        pass
+        # The raw saved after interpolation of bridges already contains bad channels and
+        # segments. No need to reload the "info" and "oddball_with_bads" annotations.
+        # However, it is not filtered.
+        raw1, raw2 = _load_and_filter_raws(
+            derivatives_folder / f"{fname_stem}_step2_raw.fif"
+        )
+        # keep only the one we need for this function to free resources
+        if ica_id == 1:
+            raw = raw1
+            del raw2
+        else:
+            raw = raw2
+            del raw1
+
+        # load ICAs
+        icas = [
+            read_ica(
+                derivatives_folder
+                / f"{fname_stem}_step4_reviewed_{idx}_{username}_ica.fif"
+            )
+            for username in reviewers
+        ]
+
+        # compare the sets of excluded components
+        exclude_common = list(set(icas[0].exclude).intersection(set(icas[1].exclude)))
+        exclude_diff = list(
+            set(
+                list(set(icas[0].exclude) - set(icas[1].exclude))
+                + list(set(icas[1].exclude) - set(icas[0].exclude))
+            )
+        )
+        logger.info("Set of common excluded ICs: %s", exclude_common)
+        logger.info("Set of different excluded ICs: %s", exclude_diff)
+
+        # check if we need to go further
+        if len(exclude_diff) == 0:
+            logger.critical(
+                "Congratulation! There is no difference between the labels of both "
+                "reviewers! This function aborts early. The ICA topography plot is "
+                "replaced with a .txt file for traceback."
+            )
+            with open(
+                derivatives_folder / "plots" / "ica" / f"ICA{ica_id}_rev-diff.txt", "w"
+            ) as file:
+                file.write("No difference between the labels of both reviewers!")
+            return None
+
+        # keep only one ICA to free resources
+        ica = icas[0]
+        del icas
+
+        # create figures to review the set of differently labelled ICs
+        ica.exclude = []  # reset for render
+        figs = ica.plot_components(inst=raw, show=True, picks=exclude_diff)
+        _disconnect_onclick_title(figs)
+        plt.pause(0.1)
+        ica.plot_sources(
+            inst=raw,
+            picks=exclude_diff,
+            title=f"{fname_stem} | ICA{ica_id} sources",
+            show=True,
+            block=True,
+        )
+        plt.close("all")
+        del figs
+
+        # merge exclude_common which contains ICs commonly excluded with the ICs
+        # selected now for exclusion
+        ica.exclude += exclude_common
+        ica.exclude = sorted(ica.exclude)  # for readability
+        assert len(ica.exclude) == len(set(ica.exclude)), "Please contact a developer."
+
+        # save derivatives
+        logger.info("Saving derivatives.")
+        ica.save(
+            derivatives_folder / f"{fname_stem}_step5_reviewed_{idx}_ica.fif",
+            overwrite=overwrite,
+        )
+
+        # save figures after ICAs to catch the except FileExistsError first if needed
+        figs = ica.plot_components(inst=raw, show=False)
+        plt.pause(0.1)
+        for k, fig in enumerate(figs):
+            fig.savefig(
+                derivatives_folder
+                / "plots"
+                / "ica"
+                / f"ICA{ica_id}_rev-diff_fig{k}.svg",
+                transparent=True,
+            )
+        plt.close("all")  # because show=False does not work at the moment
+        del figs
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
