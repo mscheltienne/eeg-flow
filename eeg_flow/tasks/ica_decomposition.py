@@ -271,6 +271,7 @@ def label_components(
 
         # annotate ICA 1 for mastoids
         figs = ica1.plot_components(inst=raw1, show=True)
+        _disconnect_onclick_title(figs)
         plt.pause(0.1)
         ica1.plot_sources(
             inst=raw1,
@@ -283,6 +284,7 @@ def label_components(
 
         # annotate ICA 2 for EEG
         figs = ica2.plot_components(inst=raw2, show=True)
+        _disconnect_onclick_title(figs)
         plt.pause(0.1)
         ica2.plot_sources(
             inst=raw2,
@@ -343,3 +345,12 @@ def label_components(
         for lock in locks:
             lock.release()
         del locks
+
+
+def _disconnect_onclick_title(figs):
+    """Disconnect the onclick_title events added by MNE to select/deselect ICs."""
+    for fig in figs:
+        for cid, func in fig.canvas.callbacks.callbacks['button_press_event'].items():
+            if func().__name__ == "onclick_title":
+                fig.canvas.mpl_disconnect(cid)
+                break
