@@ -36,9 +36,9 @@ def fit_icas(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
+    overwrite: bool = False,
 ) -> None:
     """Fit ICAs decomposition.
 
@@ -48,9 +48,9 @@ def fit_icas(
     %(group)s
     %(task)s
     %(run)s
+    %(timeout)s
     overwrite : bool
         If True, overwrites existing derivatives.
-    %(timeout)s
     """
     check_type(overwrite, (bool,), "overwrite")
     # prepare folders
@@ -221,9 +221,9 @@ def label_components(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
+    overwrite: bool = False,
 ) -> None:
     """Label both ICA decomposition.
 
@@ -233,9 +233,9 @@ def label_components(
     %(group)s
     %(task)s
     %(run)s
+    %(timeout)s
     overwrite : bool
         If True, overwrites existing derivatives.
-    %(timeout)s
     """
     check_type(overwrite, (bool,), "overwrite")
     # prepare folders
@@ -356,3 +356,68 @@ def _disconnect_onclick_title(figs):
             if func().__name__ == "onclick_title":
                 fig.canvas.mpl_disconnect(cid)
                 break
+
+
+def compare_labels(participant: str,
+    group: str,
+    task: str,
+    run: int,
+    reviewers: Tuple[str, str],
+    *,
+    timeout: float = 10,
+    overwrite: bool = False,
+):
+    """Compare labels assigned to ICs by 2 reviewers.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    %(timeout)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    """
+    check_type(reviewers, (tuple,), "reviewers")
+    assert len(reviewers) == 2
+    for reviewer in reviewers:
+        check_type(reviewer, (str,), "reviewer")
+    check_type(overwrite, (bool,), "overwrite")
+    # prepare folders
+    _, derivatives_folder_root, username = load_config()
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder_root, participant, group, task, run
+    )
+    fname_stem = get_fname(participant, group, task, run)
+
+    # lock the output derivative files
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step5_reviewed_1st_ica.fif",
+        derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_ica.fif",
+    )
+    locks = lock_files(*derivatives, timeout=timeout)
+    try:
+        pass
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks

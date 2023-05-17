@@ -26,9 +26,9 @@ def convert_xdf_to_fiff(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     *,
     timeout: float = 10,
+    overwrite: bool = False,
 ) -> None:
     """Convert the XDF recording to a raw FIFF file.
 

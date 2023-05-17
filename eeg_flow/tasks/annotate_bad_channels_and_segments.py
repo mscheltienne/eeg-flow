@@ -33,10 +33,10 @@ def annotate_bad_channels_and_segments(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
     ransac: bool = False,
     *,
     timeout: float = 10,
+    overwrite: bool = False,
 ) -> None:
     """Annotate bad channels and segments.
 
@@ -46,11 +46,11 @@ def annotate_bad_channels_and_segments(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     ransac : bool
         If True, uses RANSAC to auto-detect bad channels (slow).
     %(timeout)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
     """
     check_type(overwrite, (bool,), "overwrite")
     check_type(ransac, (bool,), "ransac")
