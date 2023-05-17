@@ -270,7 +270,7 @@ def label_components(
         assert ica2.info["custom_ref_applied"] == 1
 
         # annotate ICA 1 for mastoids
-        figs_ica1 = ica1.plot_components(inst=raw1, show=True)
+        figs = ica1.plot_components(inst=raw1, show=True)
         plt.pause(0.1)
         ica1.plot_sources(
             inst=raw1,
@@ -279,9 +279,10 @@ def label_components(
             block=True,
         )
         plt.close("all")
+        del figs
 
         # annotate ICA 2 for EEG
-        figs_ica2 = ica2.plot_components(inst=raw2, show=True)
+        figs = ica2.plot_components(inst=raw2, show=True)
         plt.pause(0.1)
         ica2.plot_sources(
             inst=raw2,
@@ -290,6 +291,7 @@ def label_components(
             block=True,
         )
         plt.close("all")
+        del figs
 
         # save deriatives
         logger.info("Saving derivatives.")
@@ -303,16 +305,22 @@ def label_components(
         )
 
         # save after ICAs to catch the except FileExistsError first if needed
-        for k, fig in enumerate(figs_ica1):
+        figs = ica1.plot_components(inst=raw1, show=False)
+        plt.pause(0.1)
+        for k, fig in enumerate(figs):
             fig.savefig(
                 derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
                 transparent=True,
             )
-        for k, fig in enumerate(figs_ica2):
+        del figs
+        figs = ica2.plot_components(inst=raw2, show=False)
+        plt.pause(0.1)
+        for k, fig in enumerate(figs):
             fig.savefig(
                 derivatives_folder / "plots" / "ica" / f"ICA2_{username}_fig{k}.svg",
                 transparent=True,
             )
+        del figs
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
