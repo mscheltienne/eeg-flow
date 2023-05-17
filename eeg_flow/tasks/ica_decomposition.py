@@ -519,3 +519,61 @@ def compare_labels(
         for lock in locks:
             lock.release()
         del locks
+
+
+def apply_ica(
+    participant: str,
+    group: str,
+    task: str,
+    run: int,
+    *,
+    timeout: float = 10,
+    overwrite: bool = False,
+):
+    """Apply the reviewed ICA decomposition.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    %(timeout)s
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    """
+    check_type(overwrite, (bool,), "overwrite")
+    # prepare folders
+    _, derivatives_folder_root, username = load_config()
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder_root, participant, group, task, run
+    )
+    fname_stem = get_fname(participant, group, task, run)
+
+    # lock the output derivative files
+    derivatives = (derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif",)
+    locks = lock_files(*derivatives, timeout=timeout)
+    try:
+       pass
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks
