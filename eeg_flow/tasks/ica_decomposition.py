@@ -314,6 +314,7 @@ def label_components(
                 derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
                 transparent=True,
             )
+        plt.close("all")  # because show=False does not work at the moment
         del figs
         figs = ica2.plot_components(inst=raw2, show=False)
         plt.pause(0.1)
@@ -322,6 +323,7 @@ def label_components(
                 derivatives_folder / "plots" / "ica" / f"ICA2_{username}_fig{k}.svg",
                 transparent=True,
             )
+        plt.close("all")  # because show=False does not work at the moment
         del figs
     except FileNotFoundError:
         logger.error(
@@ -350,7 +352,7 @@ def label_components(
 def _disconnect_onclick_title(figs):
     """Disconnect the onclick_title events added by MNE to select/deselect ICs."""
     for fig in figs:
-        for cid, func in fig.canvas.callbacks.callbacks['button_press_event'].items():
+        for cid, func in fig.canvas.callbacks.callbacks["button_press_event"].items():
             if func().__name__ == "onclick_title":
                 fig.canvas.mpl_disconnect(cid)
                 break
