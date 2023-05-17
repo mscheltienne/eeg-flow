@@ -136,6 +136,7 @@ def _load_and_filter_raws(fname: Path) -> Tuple[BaseRaw, BaseRaw]:
     """Load raw recording and filter for ICA fits."""
     raw1 = read_raw_fif(fname, preload=True)
     raw2 = raw1.copy()
+    raw2.drop_channels(["M1", "M2"])
 
     # ICA 1 for mastoids, referenced to CPz and filtered between 1 and 40 Hz
     raw1.filter(
@@ -269,7 +270,7 @@ def label_components(
         assert ica2.info["custom_ref_applied"] == 1
 
         # annotate ICA 1 for mastoids
-        figs = ica1.plot_components(inst=raw1, show=True)
+        figs_ica1 = ica1.plot_components(inst=raw1, show=True)
         plt.pause(0.1)
         ica1.plot_sources(
             inst=raw1,
@@ -277,16 +278,10 @@ def label_components(
             show=True,
             block=True,
         )
-        for k, fig in enumerate(figs):
-            fig.savefig(
-                derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
-                transparent=True,
-            )
         plt.close("all")
 
-
         # annotate ICA 2 for EEG
-        figs = ica2.plot_components(inst=raw2, show=True)
+        figs_ica2 = ica2.plot_components(inst=raw2, show=True)
         plt.pause(0.1)
         ica2.plot_sources(
             inst=raw2,
@@ -294,11 +289,6 @@ def label_components(
             show=True,
             block=True,
         )
-        for k, fig in enumerate(figs):
-            fig.savefig(
-                derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
-                transparent=True,
-            )
         plt.close("all")
 
         # save deriatives
@@ -311,6 +301,18 @@ def label_components(
             derivatives_folder / f"{fname_stem}_step4_reviewed_2nd_{username}_ica.fif",
             overwrite=overwrite,
         )
+
+        # save after ICAs to catch the except FileExistsError first if needed
+        for k, fig in enumerate(figs_ica1):
+            fig.savefig(
+                derivatives_folder / "plots" / "ica" / f"ICA1_{username}_fig{k}.svg",
+                transparent=True,
+            )
+        for k, fig in enumerate(figs_ica2):
+            fig.savefig(
+                derivatives_folder / "plots" / "ica" / f"ICA2_{username}_fig{k}.svg",
+                transparent=True,
+            )
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
