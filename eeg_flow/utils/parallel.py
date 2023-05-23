@@ -29,7 +29,8 @@ def parallel(function: Callable, n_jobs: int, args: List[Any]) -> List[Any]:
     check_type(n_jobs, ("int",), "n_jobs")
     if mp.cpu_count() < n_jobs:
         logger.warning(
-            "The number of requested jobs %i is superior to the number of CPU cores %i.",
+            "The number of requested jobs %i is superior to the number of CPU cores "
+            "%i.",
             n_jobs,
             mp.cpu_count(),
         )
