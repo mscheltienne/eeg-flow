@@ -271,7 +271,11 @@ def label_components(
         assert ica2.info["custom_ref_applied"] == 1
 
         # annotate ICA 1 for mastoids
-        figs = ica1.plot_components(inst=raw1, show=True)
+        figs = ica1.plot_components(
+            inst=raw1,
+            title=f"{fname_stem} | ICA1 components Mastoids | {username}",
+            show=True,
+        )
         _disconnect_onclick_title(figs)
         plt.pause(0.1)
         ica1.plot_sources(
@@ -284,12 +288,16 @@ def label_components(
         del figs
 
         # annotate ICA 2 for EEG
-        figs = ica2.plot_components(inst=raw2, show=True)
+        figs = ica2.plot_components(
+            inst=raw2,
+            title=f"{fname_stem} | ICA2 compoments | {username}",
+            show=True,
+        )
         _disconnect_onclick_title(figs)
         plt.pause(0.1)
         ica2.plot_sources(
             inst=raw2,
-            title=f"{fname_stem} | ICA1 sources Mastoids | {username}",
+            title=f"{fname_stem} | ICA2 sources | {username}",
             show=True,
             block=True,
         )
