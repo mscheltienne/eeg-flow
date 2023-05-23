@@ -10,7 +10,7 @@ def query_yes_no(question, default="yes", *, retries=5):
     question : str
         Question presented to the user.
     default : str
-        Key correspoinding to the presumed answer if the user just hits <Enter>. If
+        Key corresponding to the presumed answer if the user just hits <Enter>. If
         None, an answer is required from the user.
     retries : int
         Number of retries for a given input until an error is raised.

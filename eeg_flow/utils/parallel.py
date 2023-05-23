@@ -33,7 +33,7 @@ def parallel(function: Callable, n_jobs: int, args: List[Any]) -> List[Any]:
             n_jobs,
             mp.cpu_count(),
         )
-    # preprend the function to each input in args
+    # prepend the function to each input in args
     args = [[function] + list(arg) for arg in args]
     with mp.Pool(processes=n_jobs) as pool:
         results = list(tqdm(pool.imap(_function_for_imap, args), total=len(args)))
