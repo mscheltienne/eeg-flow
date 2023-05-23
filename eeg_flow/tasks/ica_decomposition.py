@@ -12,6 +12,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from mne import pick_types
 from mne.io import read_raw_fif
+from mne.io.constants import FIFF
 from mne.preprocessing import ICA, read_ica
 from mne.viz.ica import _prepare_data_ica_properties
 from mne_icalabel import label_components as label_components_iclabel
@@ -554,7 +555,64 @@ def apply_ica(
     derivatives = (derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-       pass
+        # The raw saved after interpolation of bridges already contains bad channels and
+        # segments. No need to reload the "info" and "oddball_with_bads" annotations.
+        raw = read_raw_fif(
+            derivatives_folder / f"{fname_stem}_step2_raw.fif", preload=True
+        )
+
+        # apply ICA for mastoids
+        raw_mastoids = raw.copy()
+        raw_mastoids.filter(
+            l_freq=0.5,
+            h_freq=40.0,
+            picks="eeg",
+            method="fir",
+            phase="zero-double",
+            fir_window="hamming",
+            fir_design="firwin",
+            pad="edge",
+        )
+        ica = read_ica(derivatives_folder / f"{fname_stem}_step5_reviewed_1st_ica.fif")
+        ica.apply(raw_mastoids)
+        del ica  # free resources
+        raw_mastoids.pick_channels(["M1", "M2"])
+
+        # trick MNE in thinking that a custom-ref has been applied
+        with raw_mastoids.info._unlock():
+            raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
+
+        # apply ICA for EEG channels
+        raw.drop_channels(["M1", "M2"])
+        raw.filter(
+            l_freq=0.5,
+            h_freq=40.0,
+            picks="eeg",
+            method="fir",
+            phase="zero-double",
+            fir_window="hamming",
+            fir_design="firwin",
+            pad="edge",
+        )
+        raw.set_montage(None)  # just in case we have a montage left
+        raw.add_reference_channels(ref_channels="CPz")
+        raw.set_eeg_reference("average", projection=False)
+        ica = read_ica(derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_ica.fif")
+        ica.apply(raw_mastoids)
+        del ica  # free resources
+
+        raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
+        raw.add_channels([raw_mastoids])
+        del raw_mastoids
+        raw.set_montage("standard_1020")  # add montage for non-mastoids
+        raw.set_eeg_reference(["M1", "M2"])
+
+        # plot for inspection
+        raw.plot(theme="light", block=True)
+
+        # save derivative
+        fname = derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif"
+        raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
