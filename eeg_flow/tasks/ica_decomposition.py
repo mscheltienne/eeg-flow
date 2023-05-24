@@ -275,6 +275,7 @@ def label_components(
             inst=raw1,
             title=f"{fname_stem} | ICA1 components Mastoids | {username}",
             show=True,
+            block=True,
         )
         _disconnect_onclick_title(figs)
         plt.pause(0.1)
@@ -292,6 +293,7 @@ def label_components(
             inst=raw2,
             title=f"{fname_stem} | ICA2 compoments | {username}",
             show=True,
+            block=True,
         )
         _disconnect_onclick_title(figs)
         plt.pause(0.1)
