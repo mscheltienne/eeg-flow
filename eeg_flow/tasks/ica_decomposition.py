@@ -461,6 +461,12 @@ def compare_labels(
                 derivatives_folder / "plots" / "ica" / f"ICA{ica_id}_rev-diff.txt", "w"
             ) as file:
                 file.write("No difference between the labels of both reviewers!")
+            # save derivatives
+            logger.info("Saving derivatives.")
+            icas[0].save(
+                derivatives_folder / f"{fname_stem}_step5_reviewed_{idx}_ica.fif",
+                overwrite=overwrite,
+            )
             return None
 
         # keep only one ICA to free resources
