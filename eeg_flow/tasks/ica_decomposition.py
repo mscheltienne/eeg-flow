@@ -360,6 +360,8 @@ def label_components(
 
 def _disconnect_onclick_title(figs):
     """Disconnect the onclick_title events added by MNE to select/deselect ICs."""
+    if not isinstance(figs, list):
+        figs = [figs]
     for fig in figs:
         for cid, func in fig.canvas.callbacks.callbacks["button_press_event"].items():
             if func().__name__ == "onclick_title":
