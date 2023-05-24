@@ -51,12 +51,12 @@ def convert_xdf_to_fiff(
 
     # create derivatives preprocessed subfolder
     if derivatives_folder.exists():
-        logger.debug(
+        logger.info(
             "The derivatives subfolder %s already exists.", derivatives_folder.name
         )
     else:
         os.makedirs(derivatives_folder, exist_ok=False)
-        logger.debug("Derivatives subfolder %s created.", derivatives_folder.name)
+        logger.info("Derivatives subfolder %s created.", derivatives_folder.name)
 
     # lock the output derivative files
     derivatives = [
@@ -160,7 +160,7 @@ def _convert_xdf_to_fiff(
     if task == "UT":
         fname = derivatives_folder / f"{fname_stem}_step1_stream_annot.fif"
         raw.annotations.save(fname, overwrite=overwrite)
-        logger.debug("Saved: %s", fname.name)
+        logger.info("Saved: %s", fname.name)
         # x-ref: https://github.com/mne-tools/mne-qt-browser/issues/161
         raw.set_annotations(None)
 
@@ -168,11 +168,11 @@ def _convert_xdf_to_fiff(
     annotations = annotations_from_events(raw, duration=0.1)
     fname = derivatives_folder / f"{fname_stem}_step1_oddball_annot.fif"
     annotations.save(fname, overwrite=overwrite)
-    logger.debug("Saved: %s", fname.name)
+    logger.info("Saved: %s", fname.name)
     raw.set_annotations(annotations)
 
     raw.set_montage("standard_1020")
     # save the raw recording
     fname = derivatives_folder / f"{fname_stem}_step1_raw.fif"
     raw.save(fname, overwrite=overwrite)
-    logger.debug("Saved: %s", fname.name)
+    logger.info("Saved: %s", fname.name)

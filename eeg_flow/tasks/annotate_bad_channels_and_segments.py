@@ -156,5 +156,6 @@ def _auto_bad_channels(raw: BaseRaw, *, ransac: bool = False):
 
     # raw.info["bads"] should be empty at this point, but just in case, let's merge both
     # list together.
+    logger.info("Bad channel suggested by PyPREP: %s", ns.get_bads())
     raw.info["bads"].extend([ch for ch in ns.get_bads() if ch not in ("M1", "M2")])
     raw.info["bads"] = list(set(raw.info["bads"]))
