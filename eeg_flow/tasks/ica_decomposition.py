@@ -597,7 +597,7 @@ def apply_ica(
         ica = read_ica(derivatives_folder / f"{fname_stem}_step5_reviewed_1st_ica.fif")
         ica.apply(raw_mastoids)
         del ica  # free resources
-        raw_mastoids.pick_channels(["M1", "M2"])
+        raw_mastoids.pick(["M1", "M2"])
 
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
@@ -619,7 +619,7 @@ def apply_ica(
         raw.add_reference_channels(ref_channels="CPz")
         raw.set_eeg_reference("average", projection=False)
         ica = read_ica(derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_ica.fif")
-        ica.apply(raw_mastoids)
+        ica.apply(raw)
         del ica  # free resources
 
         raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
