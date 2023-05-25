@@ -11,7 +11,7 @@ import numpy as np
 from ._docs import fill_doc
 
 
-def _ensure_int(item: Any, item_name: Optional[str] = None) -> int:
+def ensure_int(item: Any, item_name: Optional[str] = None) -> int:
     """Ensure a variable is an integer.
 
     Parameters
@@ -36,9 +36,7 @@ def _ensure_int(item: Any, item_name: Optional[str] = None) -> int:
         item = int(operator.index(item))
     except TypeError:
         item_name = "Item" if item_name is None else "'%s'" % item_name
-        raise TypeError(
-            f"{item_name} must be an integer, got {type(item)} instead."
-        )
+        raise TypeError(f"{item_name} must be an integer, got {type(item)} instead.")
 
     return item
 
@@ -47,7 +45,7 @@ class _IntLike:
     @classmethod
     def __instancecheck__(cls, other: Any) -> bool:
         try:
-            _ensure_int(other)
+            ensure_int(other)
         except TypeError:
             return False
         else:
@@ -68,9 +66,7 @@ _types = {
 }
 
 
-def check_type(
-    item: Any, types: tuple, item_name: Optional[str] = None
-) -> None:
+def check_type(item: Any, types: tuple, item_name: Optional[str] = None) -> None:
     """Check that item is an instance of types.
 
     Parameters
@@ -79,8 +75,7 @@ def check_type(
         Item to check.
     types : tuple of types | tuple of str
         Types to be checked against.
-        If str, must be one of:
-            ('int', 'str', 'numeric', 'path-like', 'callable')
+        If str, must be one of ('int', 'numeric', 'path-like', 'callable').
     item_name : str | None
         Name of the item to show inside the error message.
 
@@ -119,8 +114,7 @@ def check_type(
             type_name = ", ".join(type_name)
         item_name = "Item" if item_name is None else "'%s'" % item_name
         raise TypeError(
-            f"{item_name} must be an instance of {type_name}, "
-            f"got {type(item)} instead."
+            f"{item_name} must be an instance of {type_name}, got {type(item)} instead."
         )
 
 
@@ -141,8 +135,7 @@ def check_value(
     item_name : str | None
         Name of the item to show inside the error message.
     extra : str | None
-        Extra string to append to the invalid value sentence, e.g.
-        "when using ico mode".
+        Extra string to append to the invalid value sentence, e.g. "when using DC mode".
 
     Raises
     ------
@@ -169,9 +162,7 @@ def check_value(
             options += ", ".join([f"{repr(v)}" for v in allowed_values[:-1]])
             options += f", and {repr(allowed_values[-1])}"
         raise ValueError(
-            msg.format(
-                item_name=item_name, extra=extra, options=options, item=item
-            )
+            msg.format(item_name=item_name, extra=extra, options=options, item=item)
         )
 
 
@@ -210,11 +201,11 @@ def check_verbose(verbose: Any) -> int:
         else:
             verbose = logging.WARNING
     elif isinstance(verbose, int):
-        verbose = _ensure_int(verbose)
+        verbose = ensure_int(verbose)
         if verbose <= 0:
             raise ValueError(
-                "Argument 'verbose' can not be a negative integer, "
-                f"{verbose} is invalid."
+                f"Argument 'verbose' can not be a negative integer, {verbose} is "
+                "invalid."
             )
 
     return verbose
@@ -243,12 +234,9 @@ def ensure_path(item: Any, must_exist: bool) -> Path:
         except Exception:
             str_ = ""
         raise TypeError(
-            f"The provided path {str_}is invalid and can not be converted. "
-            "Please provide a str, an os.PathLike or a pathlib.Path object, "
-            f"not {type(item)}."
+            f"The provided path {str_}is invalid and can not be converted. Please "
+            f"provide a str, an os.PathLike or a pathlib.Path object, not {type(item)}."
         )
     if must_exist and not item.exists():
-        raise FileNotFoundError(
-            f"The provided path '{str(item)}' does not exist."
-        )
+        raise FileNotFoundError(f"The provided path '{str(item)}' does not exist.")
     return item

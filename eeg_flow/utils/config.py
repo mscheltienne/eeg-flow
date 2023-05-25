@@ -16,8 +16,8 @@ def sys_info(fid: Optional[IO] = None, developer: bool = False):
     Parameters
     ----------
     fid : file-like | None
-        The file to write to, passed to :func:`print`.
-        Can be None to use :data:`sys.stdout`.
+        The file to write to, passed to :func:`print`. Can be None to use
+        :data:`sys.stdout`.
     developer : bool
         If True, display information about optional dependencies.
     """
@@ -47,9 +47,7 @@ def sys_info(fid: Optional[IO] = None, developer: bool = False):
     # dependencies
     out("\nCore dependencies\n")
     dependencies = [Requirement(elt) for elt in requires(package)]
-    core_dependencies = [
-        dep for dep in dependencies if "extra" not in str(dep.marker)
-    ]
+    core_dependencies = [dep for dep in dependencies if "extra" not in str(dep.marker)]
     _list_dependencies_info(out, ljust, package, core_dependencies)
 
     # extras

@@ -1,4 +1,9 @@
-from typing import List, Tuple
+# postponed evaluation of annotations, c.f. PEP 563 and PEP 649 alternatively, the type
+# hints can be defined as strings which will be evaluated with eval() prior to type
+# checking.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -8,26 +13,33 @@ from mne.preprocessing import (
 )
 from mne.utils import check_version
 from mne.viz import plot_bridged_electrodes as plot_bridged_electrodes_mne
-from numpy.typing import NDArray
 
 from ..utils._checks import check_type
+
+if TYPE_CHECKING:
+    from typing import List, Tuple
+
+    from matplotlib.pyplot import Axes, Figure
+    from numpy.typing import NDArray
 
 
 def plot_bridged_electrodes(
     raw: BaseRaw,
-) -> Tuple[plt.Figure, NDArray[plt.Axes]]:
+) -> Tuple[Figure, NDArray[Axes]]:
     """Compute and plot bridged electrodes.
 
     Parameters
     ----------
     raw : Raw
-        MNE Raw instance before filtering. The raw instance is copied, the EEG
-        channels are picked and filtered between 0.5 and 30 Hz.
+        MNE Raw instance before filtering. The raw instance is copied, the EEG channels
+        are picked and filtered between 0.5 and 30 Hz.
 
     Returns
     -------
     fig : Figure
+        Matplotlib figure.
     ax : Array of Axes
+        Matplotlib subplots.
     """
     check_type(raw, (BaseRaw,), "raw")
     if 0.5 < raw.info["highpass"]:
@@ -51,15 +63,15 @@ def plot_bridged_electrodes_array(
     bridged_idx: List[Tuple[int, int]],
     ed_matrix: NDArray[float],
     info: Info,
-) -> Tuple[plt.Figure, NDArray[plt.Axes]]:
+) -> Tuple[Figure, NDArray[Axes]]:
     """Pot bridged electrodes.
 
     Parameters
     ----------
     bridged_idx : list of tuple
-        The indices of channels marked as bridged with each bridged
-        pair stored as a tuple.
-    ed_matrix : ndarray of float, shape (n_epochs, n_channels, n_channels)
+        The indices of channels marked as bridged with each bridged pair stored as a
+        tuple.
+    ed_matrix : ndarray of shape (n_epochs, n_channels, n_channels)
         The electrical distance matrix for each pair of EEG electrodes.
     info : Info
         MNE Info including the montage (location of each electrodes).
@@ -67,7 +79,9 @@ def plot_bridged_electrodes_array(
     Returns
     -------
     fig : Figure
+        Matplotlib figure.
     ax : Array of Axes
+        Matplotlib subplots.
     """
     check_type(bridged_idx, (list,), "bridged_idx")
     for bridge in bridged_idx:
@@ -100,17 +114,13 @@ def plot_bridged_electrodes_array(
     ax[0, 1].set_ylabel("Channel Index")
 
     # plot distribution
-    ax[1, 0].hist(
-        ed_matrix[~np.isnan(ed_matrix)], bins=np.linspace(0, 500, 51)
-    )
+    ax[1, 0].hist(ed_matrix[~np.isnan(ed_matrix)], bins=np.linspace(0, 500, 51))
     ax[1, 0].set_xlabel(r"Electrical Distance ($\mu$$V^2$)")
     ax[1, 0].set_ylabel("Count (channel pairs for all epochs)")
     ax[1, 0].set_title("Electrical Distance Matrix Distribution")
 
     # plot topographic map
-    args = (
-        dict(vlim=(None, 5)) if check_version("mne", "1.3.0") else dict(vmax=5)
-    )
+    args = dict(vlim=(None, 5)) if check_version("mne", "1.3.0") else dict(vmax=5)
     args["axes"] = ax[1, 1]
     plot_bridged_electrodes_mne(
         info,

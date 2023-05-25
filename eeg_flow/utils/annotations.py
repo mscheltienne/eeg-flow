@@ -2,10 +2,10 @@ import numpy as np
 from mne import Annotations, find_events
 from mne.io import BaseRaw
 
-from eeg_flow.config import load_triggers
+from ..config import load_triggers
 
 
-def annotations_from_events(raw: BaseRaw, duration=0.1) -> Annotations:
+def annotations_from_events(raw: BaseRaw, duration: float = 0.1) -> Annotations:
     """Create annotations from the events on the trigger channel.
 
     Parameters

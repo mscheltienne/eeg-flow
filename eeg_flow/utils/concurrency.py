@@ -34,7 +34,5 @@ def lock_files(*args, timeout: float = 10) -> List[SoftFileLock]:
     if len(failed) != 0:
         for lock in locks:
             lock.release()
-        raise RuntimeError(
-            f"Could not lock all files. {failed} are already in-use."
-        )
+        raise RuntimeError(f"Could not lock all files. {failed} are already in-use.")
     return locks
