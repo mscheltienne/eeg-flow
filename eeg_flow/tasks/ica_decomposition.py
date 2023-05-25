@@ -475,7 +475,12 @@ def compare_labels(
 
         # create figures to review the set of differently labelled ICs
         ica.exclude = []  # reset for render
-        figs = ica.plot_components(inst=raw, show=True, picks=exclude_diff)
+        figs = ica.plot_components(
+            inst=raw,
+            show=True,
+            picks=exclude_diff,
+            title=f"{fname_stem} | ICA{ica_id} mismatch labels",
+        )
         _disconnect_onclick_title(figs)
         plt.pause(0.1)
         ica.plot_sources(
