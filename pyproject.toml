@@ -147,6 +147,7 @@ omit = [
     '**/eeg_flow/commands/*',
     '**/eeg_flow/utils/_fixes.py',
     '**/tests/**',
+    '**/scripts/**'
 ]
 
 [tool.coverage.report]
