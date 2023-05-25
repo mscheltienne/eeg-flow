@@ -290,7 +290,7 @@ def label_components(
         # annotate ICA 2 for EEG
         figs = ica2.plot_components(
             inst=raw2,
-            title=f"{fname_stem} | ICA2 compoments | {username}",
+            title=f"{fname_stem} | ICA2 components | {username}",
             show=True,
         )
         _disconnect_onclick_title(figs)
