@@ -351,10 +351,16 @@ def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) 
 
             # pressed defines onset and description
             if "pressed" in event:
-                onset_lsl.append(timestamps[k])
-                description.append(button)
+                temp_onset_lsl = timestamps[k]
+                temp_description = button
             # released defines durations
             if "released" in event:
+                # values for the onset are only relevant if a released event exists
+                onset_lsl.append(temp_onset_lsl)
+                description.append(temp_description)
+                temp_onset_lsl = -1
+                temp_description = -1
+
                 duration.append(timestamps[k] - onset_lsl[-1])
 
     # convert onset to time relative to raw instance
