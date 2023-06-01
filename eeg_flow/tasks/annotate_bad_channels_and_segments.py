@@ -8,7 +8,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from matplotlib import pyplot as plt
-from mne.io import read_raw_fif, write_info
+from mne.io import read_raw_fif
 from mne.preprocessing import compute_bridged_electrodes, interpolate_bridged_electrodes
 from pyprep import NoisyChannels
 
@@ -64,8 +64,6 @@ def annotate_bad_channels_and_segments(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / f"{fname_stem}_step2_info.fif",
-        derivatives_folder / f"{fname_stem}_step2_oddball_with_bads_annot.fif",
         derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg",
         derivatives_folder / f"{fname_stem}_step2_raw.fif",
     )
@@ -81,17 +79,6 @@ def annotate_bad_channels_and_segments(
         plt.close("all")
         _auto_bad_channels(raw, ransac=ransac)
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
-
-        # save info with bad channels
-        fname = derivatives_folder / f"{fname_stem}_step2_info.fif"
-        if not fname.exists() or overwrite:
-            write_info(fname, raw.info)
-        else:
-            raise RuntimeError(f"Info file {fname.name} does already exist.")
-
-        # save oddball + bad segments annotations
-        fname = derivatives_folder / f"{fname_stem}_step2_oddball_with_bads_annot.fif"
-        raw.annotations.save(fname, overwrite=overwrite)
 
         # save interpolated raw
         fname = derivatives_folder / f"{fname_stem}_step2_raw.fif"
