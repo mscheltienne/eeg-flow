@@ -47,11 +47,11 @@ def view_annotated_raw(
     %(group)s
     %(task)s
     %(run)s
-    %(step_to_load)s
-    %(save)s
-    %(overwrite)s
-    %(timeout)s
+    step_to_load : str
+    save : bool
+    overwrite : bool
         If True, overwrites existing derivatives.
+    %(timeout)s
     """
     # prepare folders
     _, derivatives_folder, _ = load_config()
