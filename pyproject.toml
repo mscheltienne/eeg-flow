@@ -39,7 +39,7 @@ classifiers = [
 dependencies = [
     'autoreject',
     'filelock',
-    'mne>=1.3.0',
+    'mne>=1.4.1',
     'mne-icalabel>=0.4',
     'numpy<1.24',
     'openpyxl',
