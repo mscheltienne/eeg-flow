@@ -78,12 +78,7 @@ def annotate_bad_channels_and_segments(
             raise RuntimeError("Execution aborted by the user.")
         plt.close("all")
         _auto_bad_channels(raw, ransac=ransac)
-        # precompute=False fixes the visualization filter by re-preparing data on every
-        # view. it should be reverted to None or "auto" when
-        # https://github.com/mne-tools/mne-qt-browser/issues/167 is fixed.
-        raw.plot(
-            theme="light", highpass=1.0, lowpass=40.0, precompute=False, block=True
-        )
+        raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
 
         # save interpolated raw
         fname = derivatives_folder / f"{fname_stem}_step2_raw.fif"
