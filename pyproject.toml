@@ -41,6 +41,7 @@ dependencies = [
     'filelock',
     'mne>=1.4.1',
     'mne-icalabel>=0.4',
+	'mne-qt-browser>=0.5.1',
     'numpy<1.24',
     'openpyxl',
     'packaging',
