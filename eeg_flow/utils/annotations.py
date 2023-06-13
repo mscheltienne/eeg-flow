@@ -31,7 +31,9 @@ def annotations_from_events(raw: BaseRaw, duration: float = 0.1) -> Annotations:
     annotations = None
     for name, event in tdef.items():
         stim = np.where(events[:, 2] == event)[0]
-        onsets = [events[start, 0] / raw.info["sfreq"] for start in stim]
+        onsets = [
+            (events[start, 0] - raw.first_samp) / raw.info["sfreq"] for start in stim
+        ]
         if annotations is None:
             annotations = Annotations(onsets, duration, name)
         else:
