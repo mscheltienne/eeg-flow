@@ -161,8 +161,7 @@ def _convert_xdf_to_fiff(
         fname = derivatives_folder / f"{fname_stem}_step1_stream_annot.fif"
         raw.annotations.save(fname, overwrite=overwrite)
         logger.info("Saved: %s", fname.name)
-        # x-ref: https://github.com/mne-tools/mne-qt-browser/issues/161
-        raw.set_annotations(None)
+        raw.set_annotations(None)  # to speed-up browsing
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
