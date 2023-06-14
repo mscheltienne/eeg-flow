@@ -127,6 +127,16 @@ def fit_icas(
             task,
             run,
         )
+    except Exception as error:
+        logger.error(
+            "The file for participant %s, group %s, task %s, run %i could not be "
+            "processed.",
+            participant,
+            group,
+            task,
+            run,
+        )
+        logger.exception(error)
     finally:
         for lock in locks:
             lock.release()
