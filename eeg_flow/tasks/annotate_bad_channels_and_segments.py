@@ -73,8 +73,6 @@ def bridges_and_autobads(
         )
         _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
         _interpolate_gel_bridges(raw)
-        if not query_yes_no("Do you want to continue with this dataset?"):
-            raise RuntimeError("Execution aborted by the user.")
         plt.close("all")
         _auto_bad_channels(raw, ransac=ransac)
 
@@ -186,8 +184,6 @@ def _plot_gel_bridges(
         fig, _ = plot_bridged_electrodes(raw)
         fig.suptitle(fname_stem, fontsize=16, y=1.0)
         fig.savefig(fname, transparent=True)
-        plt.show(block=False)
-        plt.pause(0.1)
 
 
 def _interpolate_gel_bridges(raw: BaseRaw):
