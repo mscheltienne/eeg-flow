@@ -68,17 +68,21 @@ def bridges_and_autobads(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
-        )
-        _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
-        _interpolate_gel_bridges(raw)
-        plt.close("all")
-        _auto_bad_channels(raw, ransac=ransac)
+        if not derivatives[0].exists() and not (derivatives[1].exists() or overwrite):
+            raw = read_raw_fif(
+                derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
+            )
+            if not derivatives[0].exists():
+                _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
+                _interpolate_gel_bridges(raw)
+                plt.close("all")
+            
+            if not derivatives[1].exists() or overwrite:
+                _auto_bad_channels(raw, ransac=ransac)
 
-        # save interpolated raw
-        fname = derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif"
-        raw.save(fname, overwrite=overwrite)
+                # save interpolated raw
+                fname = derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif"
+                raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
