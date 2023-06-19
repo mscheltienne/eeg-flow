@@ -27,6 +27,100 @@ if TYPE_CHECKING:
     from mne.io import BaseRaw
 
 
+def view_annotated_raw(
+    participant: str,
+    group: str,
+    task: str,
+    run: int,
+    step_to_load: str,
+    save: bool,
+    overwrite: bool,
+    *,
+    timeout: float = 10,
+) -> None:
+    """Plot annotated raw.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    step_to_load : str
+    save : bool
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    %(timeout)s
+    """
+    # prepare folders
+    _, derivatives_folder, _ = load_config()
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder, participant, group, task, run
+    )
+    fname_stem = get_fname(participant, group, task, run)
+
+    # lock the output derivative files
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_stepX_raw.fif",
+    )
+    locks = lock_files(*derivatives, timeout=timeout)
+    try:
+        if step_to_load == "step_2":
+            raw = read_raw_fif(
+                derivatives_folder / f"{fname_stem}_step2_raw.fif", preload=True
+            )
+            # annotations = read_annotations(
+            #    derivatives_folder / f"{fname_stem}_step2_oddball_with_bads_annot.fif"
+            #    )
+            # raw.set_annotations(annotations)
+            # infos = read_info(
+            #    derivatives_folder / f"{fname_stem}_step2_info.fif"
+            #    )
+        elif step_to_load == "step_6":
+            raw = read_raw_fif(
+                derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif",
+                preload=True,
+            )
+        elif step_to_load == "step_X":
+            # to do, check if exists, then load
+            # derivatives_folder / f"{fname_stem}_stepX_preprocessed_raw.fif", preload=True
+            pass
+
+        raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
+
+        if save is True:
+            # save info with bad channels
+            fname = derivatives_folder / f"{fname_stem}_stepX_info.fif"
+            if not fname.exists() or overwrite:
+                # save interpolated raw
+                fname = derivatives_folder / f"{fname_stem}_stepX_raw.fif"
+                raw.save(fname, overwrite=overwrite)
+            else:
+                raise RuntimeError(f"Info file {fname.name} does already exist.")
+
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks
+
 @fill_doc
 def annotate_bad_channels_and_segments(
     participant: str,
