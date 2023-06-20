@@ -286,19 +286,32 @@ def add_mouse_buttons(
     description = list()
 
     for button in unique_buttons:
+        temp_onset_lsl = None
+        temp_description = None
+
         for k, event in enumerate(data):
             if button not in event:
                 continue
 
             # pressed defines onset and description
-            if "pressed" in event:
+            if "pressed" in event and "MouseWheel" not in event:
+                temp_onset_lsl = timestamps[k]
+                temp_description = button
+            # released defines durations for right/left click
+            if "released" in event and "MouseWheel" not in event:
+                if temp_onset_lsl is None and temp_description is None:
+                    continue
+                onset_lsl.append(temp_onset_lsl)
+                description.append(temp_description)
+                temp_onset_lsl = None
+                temp_description = None
+                duration.append(timestamps[k] - onset_lsl[-1])
+
+            # durations is set to 0 for wheel motions, which do not have a released
+            # event
+            if "MouseWheel" in event:
                 onset_lsl.append(timestamps[k])
                 description.append(button)
-            # released defines durations for right/left click
-            if "released" in event:
-                duration.append(timestamps[k] - onset_lsl[-1])
-            # durations is set to 0 for wheel motions
-            if "MouseWheel" in event:
                 duration.append(0)
 
     # convert onset to time relative to raw instance
@@ -345,16 +358,26 @@ def add_keyboard_buttons(raw: BaseRaw, eeg_stream: dict, keyboard_stream: dict) 
     description = list()
 
     for button in unique_buttons:
+        temp_onset_lsl = None
+        temp_description = None
+
         for k, event in enumerate(data):
             if button not in event:
                 continue
 
             # pressed defines onset and description
             if "pressed" in event:
-                onset_lsl.append(timestamps[k])
-                description.append(button)
+                temp_onset_lsl = timestamps[k]
+                temp_description = button
             # released defines durations
             if "released" in event:
+                # values for the onset are only relevant if a released event exists
+                if temp_onset_lsl is None and temp_description is None:
+                    continue
+                onset_lsl.append(temp_onset_lsl)
+                description.append(temp_description)
+                temp_onset_lsl = None
+                temp_description = None
                 duration.append(timestamps[k] - onset_lsl[-1])
 
     # convert onset to time relative to raw instance
