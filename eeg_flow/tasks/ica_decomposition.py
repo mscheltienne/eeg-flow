@@ -63,9 +63,9 @@ def fit_icas(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / f"{fname_stem}_step3_1st_ica.fif",
-        derivatives_folder / f"{fname_stem}_step3_2nd_ica.fif",
-        derivatives_folder / f"{fname_stem}_step3_iclabel.xlsx",
+        derivatives_folder / f"{fname_stem}_step4_1st_ica.fif",
+        derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif",
+        derivatives_folder / f"{fname_stem}_step4_iclabel.xlsx",
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -73,7 +73,7 @@ def fit_icas(
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
         raw1, raw2 = _load_and_filter_raws(
-            derivatives_folder / f"{fname_stem}_step2_raw.fif"
+            derivatives_folder / f"{fname_stem}_step3_raw.fif"
         )
 
         # define ICAs argument, simpler to serialize than ICas classes
@@ -103,12 +103,12 @@ def fit_icas(
         # save deriatives
         logger.info("Saving derivatives.")
         ica1.save(
-            derivatives_folder / f"{fname_stem}_step3_1st_ica.fif", overwrite=overwrite
+            derivatives_folder / f"{fname_stem}_step4_1st_ica.fif", overwrite=overwrite
         )
         ica2.save(
-            derivatives_folder / f"{fname_stem}_step3_2nd_ica.fif", overwrite=overwrite
+            derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif", overwrite=overwrite
         )
-        df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step3_iclabel.xlsx")
+        df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step3=4_iclabel.xlsx")
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -259,8 +259,8 @@ def label_components(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / f"{fname_stem}_step4_reviewed_1st_{username}_ica.fif",
-        derivatives_folder / f"{fname_stem}_step4_reviewed_2nd_{username}_ica.fif",
+        derivatives_folder / f"{fname_stem}_step5_reviewed_1st_{username}_ica.fif",
+        derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_{username}_ica.fif",
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -272,8 +272,8 @@ def label_components(
         )
 
         # define ICAs argument, simpler to serialize than ICas classes
-        ica1 = read_ica(derivatives_folder / f"{fname_stem}_step3_1st_ica.fif")
-        ica2 = read_ica(derivatives_folder / f"{fname_stem}_step3_2nd_ica.fif")
+        ica1 = read_ica(derivatives_folder / f"{fname_stem}_step4_1st_ica.fif")
+        ica2 = read_ica(derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif")
         # sanity-checks
         assert ica1.info["lowpass"] == 40.0
         assert ica1.info["custom_ref_applied"] == 0
@@ -317,11 +317,11 @@ def label_components(
         # save deriatives
         logger.info("Saving derivatives.")
         ica1.save(
-            derivatives_folder / f"{fname_stem}_step4_reviewed_1st_{username}_ica.fif",
+            derivatives_folder / f"{fname_stem}_step5_reviewed_1st_{username}_ica.fif",
             overwrite=overwrite,
         )
         ica2.save(
-            derivatives_folder / f"{fname_stem}_step4_reviewed_2nd_{username}_ica.fif",
+            derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_{username}_ica.fif",
             overwrite=overwrite,
         )
 
@@ -423,14 +423,14 @@ def compare_labels(
 
     # lock the output derivative files
     idx = "1st" if ica_id == 1 else "2nd"
-    derivatives = (derivatives_folder / f"{fname_stem}_step5_reviewed_{idx}_ica.fif",)
+    derivatives = (derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
         raw1, raw2 = _load_and_filter_raws(
-            derivatives_folder / f"{fname_stem}_step2_raw.fif"
+            derivatives_folder / f"{fname_stem}_step3_raw.fif"
         )
         # keep only the one we need for this function to free resources
         if ica_id == 1:
@@ -444,7 +444,7 @@ def compare_labels(
         icas = [
             read_ica(
                 derivatives_folder
-                / f"{fname_stem}_step4_reviewed_{idx}_{username}_ica.fif"
+                / f"{fname_stem}_step5_reviewed_{idx}_{username}_ica.fif"
             )
             for username in reviewers
         ]
@@ -474,7 +474,7 @@ def compare_labels(
             # save derivatives
             logger.info("Saving derivatives.")
             icas[0].save(
-                derivatives_folder / f"{fname_stem}_step5_reviewed_{idx}_ica.fif",
+                derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",
                 overwrite=overwrite,
             )
             return None
@@ -512,7 +512,7 @@ def compare_labels(
         # save derivatives
         logger.info("Saving derivatives.")
         ica.save(
-            derivatives_folder / f"{fname_stem}_step5_reviewed_{idx}_ica.fif",
+            derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",
             overwrite=overwrite,
         )
 
@@ -583,13 +583,13 @@ def apply_ica(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif",)
+    derivatives = (derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step2_raw.fif", preload=True
+            derivatives_folder / f"{fname_stem}_step3_raw.fif", preload=True
         )
 
         # apply ICA for mastoids
@@ -604,7 +604,7 @@ def apply_ica(
             fir_design="firwin",
             pad="edge",
         )
-        ica = read_ica(derivatives_folder / f"{fname_stem}_step5_reviewed_1st_ica.fif")
+        ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif")
         ica.apply(raw_mastoids)
         del ica  # free resources
         raw_mastoids.pick(["M1", "M2"])
@@ -628,7 +628,7 @@ def apply_ica(
         raw.set_montage(None)  # just in case we have a montage left
         raw.add_reference_channels(ref_channels="CPz")
         raw.set_eeg_reference("average", projection=False)
-        ica = read_ica(derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_ica.fif")
+        ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_2nd_ica.fif")
         ica.apply(raw)
         del ica  # free resources
 
@@ -642,7 +642,7 @@ def apply_ica(
         raw.plot(theme="light", block=True)
 
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif"
+        fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
         raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(

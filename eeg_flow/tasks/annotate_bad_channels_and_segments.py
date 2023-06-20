@@ -62,8 +62,8 @@ def bridges_and_autobads(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / "plots" / f"{fname_stem}_step1b_bridges.svg",
-        derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif",
+        derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg",
+        derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif",
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -80,7 +80,7 @@ def bridges_and_autobads(
         plt.close("all")
         _auto_bad_channels(raw, ransac=ransac)
         # save interpolated raw
-        fname = derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif"
+        fname = derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif"
         raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(
@@ -147,17 +147,17 @@ def annotate_bad_channels_and_segments(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif",
+        derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif",
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif", preload=True
+            derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif", preload=True
         )
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
 
         # save interpolated raw
-        fname = derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif"
+        fname = derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif"
         raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(
@@ -186,7 +186,7 @@ def annotate_bad_channels_and_segments(
 def _plot_gel_bridges(
     derivatives_folder: Path, fname_stem: str, raw: BaseRaw, overwrite: bool
 ) -> None:
-    fname = derivatives_folder / "plots" / f"{fname_stem}_step1b_bridges.svg"
+    fname = derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg"
     if not fname.exists() or overwrite:
         fig, _ = plot_bridged_electrodes(raw)
         fig.suptitle(fname_stem, fontsize=16, y=1.0)
@@ -247,8 +247,8 @@ def view_annotated_raw(
     %(timeout)s
     """
     check_type(step_to_load, (str,), "step_to_load")
-    check_value(step_to_load, ("step2", "step6"), "step_to_load")
-    step_to_load = step_to_load if step_to_load == "step2" else "step6_preprocessed"
+    check_value(step_to_load, ("step3", "step7"), "step_to_load")
+    step_to_load = step_to_load if step_to_load == "step3" else "step7_preprocessed"
     check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder, _ = load_config()
