@@ -151,9 +151,7 @@ def annotate_bad_channels_and_segments(
     os.makedirs(derivatives_folder / "plots", exist_ok=True)
 
     # lock the output derivative files
-    derivatives = (
-        derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif",
-    )
+    derivatives = (derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         raw = read_raw_fif(
@@ -176,12 +174,16 @@ def annotate_bad_channels_and_segments(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists. Please use 'overwrite=True' to force overwriting. In the "
+            "meantime, annotations have been saved in a duplicate '--temp_raw.fif' "
+            "file at the same location.",
             participant,
             group,
             task,
             run,
         )
+        fname = derivatives_folder / f"{fname_stem}_step3_with-bads--temp_raw.fif"
+        raw.save(fname, overwrite=True)
     finally:
         for lock in locks:
             lock.release()
