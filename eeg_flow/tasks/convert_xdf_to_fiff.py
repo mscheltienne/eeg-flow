@@ -69,6 +69,8 @@ def convert_xdf_to_fiff(
         )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
+        if all(derivative.exists() for derivative in derivatives):
+            raise FileExistsError
         _convert_xdf_to_fiff(participant, group, task, run, overwrite)
     except FileNotFoundError:
         logger.error(
