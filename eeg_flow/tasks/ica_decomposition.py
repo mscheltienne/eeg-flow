@@ -73,7 +73,7 @@ def fit_icas(
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
         raw1, raw2 = _load_and_filter_raws(
-            derivatives_folder / f"{fname_stem}_step3_raw.fif"
+            derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif"
         )
 
         # define ICAs argument, simpler to serialize than ICas classes
@@ -108,7 +108,7 @@ def fit_icas(
         ica2.save(
             derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif", overwrite=overwrite
         )
-        df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step3=4_iclabel.xlsx")
+        df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step4_iclabel.xlsx")
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -430,7 +430,7 @@ def compare_labels(
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
         raw1, raw2 = _load_and_filter_raws(
-            derivatives_folder / f"{fname_stem}_step3_raw.fif"
+            derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif"
         )
         # keep only the one we need for this function to free resources
         if ica_id == 1:
@@ -589,7 +589,7 @@ def apply_ica(
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step3_raw.fif", preload=True
+            derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif", preload=True
         )
 
         # apply ICA for mastoids
