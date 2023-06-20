@@ -67,8 +67,10 @@ def bridges_and_autobads(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if not overwrite or all(derivative.exists() for derivative in derivatives):
+        if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
+        if not overwrite:
+            raise NotOverwriteError
 
         raw = read_raw_fif(
             derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
@@ -98,6 +100,10 @@ def bridges_and_autobads(
             task,
             run,
         )
+    except FileNotFoundError:
+        logger.error(
+            "Overwrite was set on False"
+            )
     finally:
         for lock in locks:
             lock.release()
