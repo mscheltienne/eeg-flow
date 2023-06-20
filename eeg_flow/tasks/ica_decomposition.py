@@ -430,6 +430,8 @@ def compare_labels(
     derivatives = (derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
+        if all(derivative.exists() for derivative in derivatives) and not overwrite:
+            raise FileExistsError
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
