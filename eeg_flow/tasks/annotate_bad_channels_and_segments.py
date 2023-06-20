@@ -14,7 +14,7 @@ from pyprep import NoisyChannels
 
 from .. import logger
 from ..config import load_config
-from ..utils._checks import check_type
+from ..utils._checks import check_type, check_value
 from ..utils._cli import query_yes_no
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
@@ -33,7 +33,6 @@ def view_annotated_raw(
     task: str,
     run: int,
     step_to_load: str,
-    save: bool,
     overwrite: bool,
     *,
     timeout: float = 10,
@@ -47,11 +46,14 @@ def view_annotated_raw(
     %(task)s
     %(run)s
     step_to_load : str
-    save : bool
     overwrite : bool
         If True, overwrites existing derivatives.
     %(timeout)s
     """
+    check_type(step_to_load, (str,), "step_to_load")
+    check_value(step_to_load, ("step2", "step6"), "step_to_load")
+    step_to_load = step_to_load if step_to_load == "step2" else "step6_preprocessed"
+
     # prepare folders
     _, derivatives_folder, _ = load_config()
     derivatives_folder = get_derivative_folder(
@@ -60,44 +62,16 @@ def view_annotated_raw(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (
-        derivatives_folder / f"{fname_stem}_stepX_raw.fif",
-    )
+    derivatives = (derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if step_to_load == "step_2":
-            raw = read_raw_fif(
-                derivatives_folder / f"{fname_stem}_step2_raw.fif", preload=True
-            )
-            # annotations = read_annotations(
-            #    derivatives_folder / f"{fname_stem}_step2_oddball_with_bads_annot.fif"
-            #    )
-            # raw.set_annotations(annotations)
-            # infos = read_info(
-            #    derivatives_folder / f"{fname_stem}_step2_info.fif"
-            #    )
-        elif step_to_load == "step_6":
-            raw = read_raw_fif(
-                derivatives_folder / f"{fname_stem}_step6_preprocessed_raw.fif",
-                preload=True,
-            )
-        elif step_to_load == "step_X":
-            # to do, check if exists, then load
-            # derivatives_folder / f"{fname_stem}_stepX_preprocessed_raw.fif", preload=True
-            pass
-
+        raw = read_raw_fif(
+            derivatives_folder / f"{fname_stem}_{step_to_load}_raw.fif", preload=True
+        )
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
-
-        if save is True:
-            # save info with bad channels
-            fname = derivatives_folder / f"{fname_stem}_stepX_info.fif"
-            if not fname.exists() or overwrite:
-                # save interpolated raw
-                fname = derivatives_folder / f"{fname_stem}_stepX_raw.fif"
-                raw.save(fname, overwrite=overwrite)
-            else:
-                raise RuntimeError(f"Info file {fname.name} does already exist.")
-
+        if query_yes_no("Do you want to save this dataset?"):
+            fname = derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif"
+            raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -120,6 +94,7 @@ def view_annotated_raw(
         for lock in locks:
             lock.release()
         del locks
+
 
 @fill_doc
 def annotate_bad_channels_and_segments(
