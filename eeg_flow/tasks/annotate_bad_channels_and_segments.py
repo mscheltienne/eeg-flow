@@ -67,21 +67,19 @@ def bridges_and_autobads(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if not derivatives[0].exists() and not (derivatives[1].exists() or overwrite):
-            raw = read_raw_fif(
-                derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
-            )
-            if not derivatives[0].exists():
-                _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
-                _interpolate_gel_bridges(raw)
-                plt.close("all")
+        if not overwrite or all(derivative.exists() for derivative in derivatives):
+            raise FileExistsError
 
-            if not derivatives[1].exists() or overwrite:
-                _auto_bad_channels(raw, ransac=ransac)
-
-                # save interpolated raw
-                fname = derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif"
-                raw.save(fname, overwrite=overwrite)
+        raw = read_raw_fif(
+            derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
+        )
+        _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
+        _interpolate_gel_bridges(raw)
+        plt.close("all")
+        _auto_bad_channels(raw, ransac=ransac)
+        # save interpolated raw
+        fname = derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif"
+        raw.save(fname, overwrite=overwrite)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -93,7 +91,7 @@ def bridges_and_autobads(
         )
     except FileExistsError:
         logger.error(
-            "The destination file for participant %s, group %s, task %s, run %i "
+            "All the destination files for participant %s, group %s, task %s, run %i "
             "already exists. Please use 'overwrite=True' to force overwriting.",
             participant,
             group,
@@ -187,6 +185,7 @@ def _plot_gel_bridges(
         fig, _ = plot_bridged_electrodes(raw)
         fig.suptitle(fname_stem, fontsize=16, y=1.0)
         fig.savefig(fname, transparent=True)
+        plt.pause(0.1)
 
 
 def _interpolate_gel_bridges(raw: BaseRaw):
