@@ -257,7 +257,7 @@ def view_annotated_raw(
     """
     check_type(step_to_load, (str,), "step_to_load")
     check_value(step_to_load, ("step3", "step7"), "step_to_load")
-    step_to_load = step_to_load if step_to_load == "step3" else "step7_preprocessed"
+    step_to_load = "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
     check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder, _ = load_config()
@@ -270,6 +270,7 @@ def view_annotated_raw(
     derivatives = (derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
+        print(f"{fname_stem}_{step_to_load}_raw.fif")
         raw = read_raw_fif(
             derivatives_folder / f"{fname_stem}_{step_to_load}_raw.fif", preload=True
         )
