@@ -154,6 +154,8 @@ def annotate_bad_channels_and_segments(
     derivatives = (derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
+        if all(derivative.exists() for derivative in derivatives) and not overwrite:
+            raise FileExistsError
         raw = read_raw_fif(
             derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif", preload=True
         )
@@ -182,8 +184,8 @@ def annotate_bad_channels_and_segments(
             task,
             run,
         )
-        fname = derivatives_folder / f"{fname_stem}_step3_with-bads--temp_raw.fif"
-        raw.save(fname, overwrite=True)
+        #fname = derivatives_folder / f"{fname_stem}_step3_with-bads--temp_raw.fif"
+        #raw.save(fname, overwrite=True)
     finally:
         for lock in locks:
             lock.release()
