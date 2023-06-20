@@ -14,7 +14,7 @@ from pyprep import NoisyChannels
 
 from .. import logger
 from ..config import load_config
-from ..utils._checks import check_type
+from ..utils._checks import check_type, check_value
 from ..utils._cli import query_yes_no
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
@@ -38,7 +38,6 @@ def bridges_and_autobads(
     overwrite: bool = False,
 ) -> None:
     """Find bridges and find auto bads.
-
     Parameters
     ----------
     %(participant)s
@@ -76,7 +75,7 @@ def bridges_and_autobads(
                 _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
                 _interpolate_gel_bridges(raw)
                 plt.close("all")
-            
+
             if not derivatives[1].exists() or overwrite:
                 _auto_bad_channels(raw, ransac=ransac)
 
@@ -217,3 +216,72 @@ def _auto_bad_channels(raw: BaseRaw, *, ransac: bool = False):
     logger.info("Bad channel suggested by PyPREP: %s", ns.get_bads())
     raw.info["bads"].extend([ch for ch in ns.get_bads() if ch not in ("M1", "M2")])
     raw.info["bads"] = list(set(raw.info["bads"]))
+
+
+def view_annotated_raw(
+    participant: str,
+    group: str,
+    task: str,
+    run: int,
+    step_to_load: str,
+    overwrite: bool,
+    *,
+    timeout: float = 10,
+) -> None:
+    """Plot annotated raw.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    step_to_load : str
+    overwrite : bool
+        If True, overwrites existing derivatives.
+    %(timeout)s
+    """
+    check_type(step_to_load, (str,), "step_to_load")
+    check_value(step_to_load, ("step2", "step6"), "step_to_load")
+    step_to_load = step_to_load if step_to_load == "step2" else "step6_preprocessed"
+    check_type(overwrite, (bool,), "overwrite")
+    # prepare folders
+    _, derivatives_folder, _ = load_config()
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder, participant, group, task, run
+    )
+    fname_stem = get_fname(participant, group, task, run)
+
+    # lock the output derivative files
+    derivatives = (derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif",)
+    locks = lock_files(*derivatives, timeout=timeout)
+    try:
+        raw = read_raw_fif(
+            derivatives_folder / f"{fname_stem}_{step_to_load}_raw.fif", preload=True
+        )
+        raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
+        if query_yes_no("Do you want to save this dataset?"):
+            fname = derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif"
+            raw.save(fname, overwrite=overwrite)
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists. Please use 'overwrite=True' to force overwriting.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks
