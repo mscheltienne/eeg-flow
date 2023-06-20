@@ -38,6 +38,7 @@ def bridges_and_autobads(
     overwrite: bool = False,
 ) -> None:
     """Find bridges and find auto bads.
+
     Parameters
     ----------
     %(participant)s
@@ -67,10 +68,8 @@ def bridges_and_autobads(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if all(derivative.exists() for derivative in derivatives):
+        if all(derivative.exists() for derivative in derivatives) and not overwrite:
             raise FileExistsError
-        if not overwrite:
-            print("overwrite set to False")
 
         raw = read_raw_fif(
             derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
@@ -100,10 +99,16 @@ def bridges_and_autobads(
             task,
             run,
         )
-#    except NotOverwriteError:
-#        logger.error(
-#            "Overwrite was set on False"
-#           )
+    except Exception as error:
+        logger.error(
+            "The file for participant %s, group %s, task %s, run %i could not be "
+            "processed.",
+            participant,
+            group,
+            task,
+            run,
+        )
+        logger.exception(error)
     finally:
         for lock in locks:
             lock.release()
