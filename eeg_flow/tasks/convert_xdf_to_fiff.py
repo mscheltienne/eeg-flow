@@ -13,7 +13,6 @@ from ..io import (
     find_streams,
     load_xdf,
 )
-from ..utils._checks import check_type
 from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_derivative_folder, get_fname, get_xdf_folder

@@ -182,9 +182,7 @@ def annotate_bad_channels_and_segments(
         del locks
 
 
-def _plot_gel_bridges(
-    derivatives_folder: Path, fname_stem: str, raw: BaseRaw
-) -> None:
+def _plot_gel_bridges(derivatives_folder: Path, fname_stem: str, raw: BaseRaw) -> None:
     fname = derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg"
     if not fname.exists():
         fig, _ = plot_bridged_electrodes(raw)
@@ -244,7 +242,9 @@ def view_annotated_raw(
     """
     check_type(step_to_load, (str,), "step_to_load")
     check_value(step_to_load, ("step3", "step7"), "step_to_load")
-    step_to_load = "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
+    step_to_load = (
+        "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
+    )
     # prepare folders
     _, derivatives_folder, _ = load_config()
     derivatives_folder = get_derivative_folder(
