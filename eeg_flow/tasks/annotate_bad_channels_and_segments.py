@@ -89,7 +89,7 @@ def bridges_and_autobads(
     except FileExistsError:
         logger.error(
             "All the destination files for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
@@ -168,9 +168,7 @@ def annotate_bad_channels_and_segments(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting. In the "
-            "meantime, annotations have been saved in a duplicate '--temp_raw.fif' "
-            "file at the same location.",
+            "already exists.",
             participant,
             group,
             task,
@@ -275,7 +273,7 @@ def view_annotated_raw(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,

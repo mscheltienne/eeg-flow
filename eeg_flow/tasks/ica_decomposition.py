@@ -119,7 +119,7 @@ def fit_icas(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
@@ -352,7 +352,7 @@ def label_components(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
@@ -535,7 +535,7 @@ def compare_labels(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
@@ -648,7 +648,7 @@ def apply_ica(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
