@@ -630,9 +630,6 @@ def apply_ica(
         raw.set_montage("standard_1020")  # add montage for non-mastoids
         raw.set_eeg_reference(["M1", "M2"])
 
-        # plot for inspection
-        raw.plot(theme="light", block=True)
-
         # save derivative
         fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
         raw.save(fname, overwrite=False)
