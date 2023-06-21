@@ -39,7 +39,6 @@ def fit_icas(
     run: int,
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ) -> None:
     """Fit ICAs decomposition.
 
@@ -50,10 +49,7 @@ def fit_icas(
     %(task)s
     %(run)s
     %(timeout)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
-    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, _ = load_config()
     derivatives_folder = get_derivative_folder(
@@ -69,7 +65,7 @@ def fit_icas(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if all(derivative.exists() for derivative in derivatives) and not overwrite:
+        if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
@@ -105,10 +101,10 @@ def fit_icas(
         # save deriatives
         logger.info("Saving derivatives.")
         ica1.save(
-            derivatives_folder / f"{fname_stem}_step4_1st_ica.fif", overwrite=overwrite
+            derivatives_folder / f"{fname_stem}_step4_1st_ica.fif", overwrite=False
         )
         ica2.save(
-            derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif", overwrite=overwrite
+            derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif", overwrite=False
         )
         df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step4_iclabel.xlsx")
     except FileNotFoundError:
@@ -236,7 +232,6 @@ def label_components(
     run: int,
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ) -> None:
     """Label both ICA decomposition.
 
@@ -247,10 +242,7 @@ def label_components(
     %(task)s
     %(run)s
     %(timeout)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
-    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, username = load_config()
     derivatives_folder = get_derivative_folder(
@@ -266,7 +258,7 @@ def label_components(
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if all(derivative.exists() for derivative in derivatives) and not overwrite:
+        if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
@@ -322,11 +314,11 @@ def label_components(
         logger.info("Saving derivatives.")
         ica1.save(
             derivatives_folder / f"{fname_stem}_step5_reviewed_1st_{username}_ica.fif",
-            overwrite=overwrite,
+            overwrite=False,
         )
         ica2.save(
             derivatives_folder / f"{fname_stem}_step5_reviewed_2nd_{username}_ica.fif",
-            overwrite=overwrite,
+            overwrite=False,
         )
 
         # save figures after ICAs to catch the except FileExistsError first if needed
@@ -392,7 +384,6 @@ def compare_labels(
     reviewers: Tuple[str, str],
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ):
     """Compare labels assigned to ICs by 2 reviewers.
 
@@ -407,8 +398,6 @@ def compare_labels(
     reviewers : tuple of length (2,)
         Username of the reviewers to load.
     %(timeout)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     check_type(ica_id, ("int",), "ica_id")
     check_value(ica_id, (1, 2), "ica_id")
@@ -417,7 +406,6 @@ def compare_labels(
     for reviewer in reviewers:
         check_type(reviewer, (str,), "reviewer")
     assert reviewers[0] != reviewers[1]  # sanity-check
-    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, username = load_config()
     derivatives_folder = get_derivative_folder(
@@ -430,7 +418,7 @@ def compare_labels(
     derivatives = (derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if all(derivative.exists() for derivative in derivatives) and not overwrite:
+        if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
@@ -481,7 +469,7 @@ def compare_labels(
             logger.info("Saving derivatives.")
             icas[0].save(
                 derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",
-                overwrite=overwrite,
+                overwrite=False,
             )
             return None
 
@@ -519,7 +507,7 @@ def compare_labels(
         logger.info("Saving derivatives.")
         ica.save(
             derivatives_folder / f"{fname_stem}_step6_reviewed_{idx}_ica.fif",
-            overwrite=overwrite,
+            overwrite=False,
         )
 
         # save figures after ICAs to catch the except FileExistsError first if needed
@@ -566,7 +554,6 @@ def apply_ica(
     run: int,
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ):
     """Apply the reviewed ICA decomposition.
 
@@ -577,10 +564,7 @@ def apply_ica(
     %(task)s
     %(run)s
     %(timeout)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
-    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, username = load_config()
     derivatives_folder = get_derivative_folder(
@@ -592,7 +576,7 @@ def apply_ica(
     derivatives = (derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if all(derivative.exists() for derivative in derivatives) and not overwrite:
+        if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
@@ -651,7 +635,7 @@ def apply_ica(
 
         # save derivative
         fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
-        raw.save(fname, overwrite=overwrite)
+        raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
