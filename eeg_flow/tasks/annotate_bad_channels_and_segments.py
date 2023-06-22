@@ -35,9 +35,9 @@ def bridges_and_autobads(
     ransac: bool = False,
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ) -> None:
     """Find bridges and find auto bads.
+
     Parameters
     ----------
     %(participant)s
@@ -47,10 +47,7 @@ def bridges_and_autobads(
     ransac : bool
         If True, uses RANSAC to auto-detect bad channels (slow).
     %(timeout)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
-    check_type(overwrite, (bool,), "overwrite")
     check_type(ransac, (bool,), "ransac")
     # prepare folders
     _, derivatives_folder, _ = load_config()
@@ -62,24 +59,24 @@ def bridges_and_autobads(
 
     # lock the output derivative files
     derivatives = (
-        derivatives_folder / "plots" / f"{fname_stem}_step1b_bridges.svg",
-        derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif",
+        derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg",
+        derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif",
     )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        if not overwrite or all(derivative.exists() for derivative in derivatives):
+        if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
 
         raw = read_raw_fif(
             derivatives_folder / f"{fname_stem}_step1_raw.fif", preload=True
         )
-        _plot_gel_bridges(derivatives_folder, fname_stem, raw, overwrite)
+        _plot_gel_bridges(derivatives_folder, fname_stem, raw)
         _interpolate_gel_bridges(raw)
         plt.close("all")
         _auto_bad_channels(raw, ransac=ransac)
         # save interpolated raw
-        fname = derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif"
-        raw.save(fname, overwrite=overwrite)
+        fname = derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif"
+        raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -92,12 +89,22 @@ def bridges_and_autobads(
     except FileExistsError:
         logger.error(
             "All the destination files for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
             run,
         )
+    except Exception as error:
+        logger.error(
+            "The file for participant %s, group %s, task %s, run %i could not be "
+            "processed.",
+            participant,
+            group,
+            task,
+            run,
+        )
+        logger.exception(error)
     finally:
         for lock in locks:
             lock.release()
@@ -113,7 +120,6 @@ def annotate_bad_channels_and_segments(
     ransac: bool = False,
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ) -> None:
     """Annotate bad channels and segments.
 
@@ -126,10 +132,7 @@ def annotate_bad_channels_and_segments(
     ransac : bool
         If True, uses RANSAC to auto-detect bad channels (slow).
     %(timeout)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
-    check_type(overwrite, (bool,), "overwrite")
     check_type(ransac, (bool,), "ransac")
     # prepare folders
     _, derivatives_folder, _ = load_config()
@@ -140,19 +143,19 @@ def annotate_bad_channels_and_segments(
     os.makedirs(derivatives_folder / "plots", exist_ok=True)
 
     # lock the output derivative files
-    derivatives = (
-        derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif",
-    )
+    derivatives = (derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif",)
     locks = lock_files(*derivatives, timeout=timeout)
     try:
+        if all(derivative.exists() for derivative in derivatives):
+            raise FileExistsError
         raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step1b_with-bads_raw.fif", preload=True
+            derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif", preload=True
         )
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
 
         # save interpolated raw
-        fname = derivatives_folder / f"{fname_stem}_step2_with-bads_raw.fif"
-        raw.save(fname, overwrite=overwrite)
+        fname = derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif"
+        raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -165,7 +168,7 @@ def annotate_bad_channels_and_segments(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
@@ -177,11 +180,9 @@ def annotate_bad_channels_and_segments(
         del locks
 
 
-def _plot_gel_bridges(
-    derivatives_folder: Path, fname_stem: str, raw: BaseRaw, overwrite: bool
-) -> None:
-    fname = derivatives_folder / "plots" / f"{fname_stem}_step1b_bridges.svg"
-    if not fname.exists() or overwrite:
+def _plot_gel_bridges(derivatives_folder: Path, fname_stem: str, raw: BaseRaw) -> None:
+    fname = derivatives_folder / "plots" / f"{fname_stem}_step2_bridges.svg"
+    if not fname.exists():
         fig, _ = plot_bridged_electrodes(raw)
         fig.suptitle(fname_stem, fontsize=16, y=1.0)
         fig.savefig(fname, transparent=True)
@@ -223,7 +224,6 @@ def view_annotated_raw(
     task: str,
     run: int,
     step_to_load: str,
-    overwrite: bool,
     *,
     timeout: float = 10,
 ) -> None:
@@ -236,14 +236,13 @@ def view_annotated_raw(
     %(task)s
     %(run)s
     step_to_load : str
-    overwrite : bool
-        If True, overwrites existing derivatives.
     %(timeout)s
     """
     check_type(step_to_load, (str,), "step_to_load")
-    check_value(step_to_load, ("step2", "step6"), "step_to_load")
-    step_to_load = step_to_load if step_to_load == "step2" else "step6_preprocessed"
-    check_type(overwrite, (bool,), "overwrite")
+    check_value(step_to_load, ("step3", "step7"), "step_to_load")
+    step_to_load = (
+        "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
+    )
     # prepare folders
     _, derivatives_folder, _ = load_config()
     derivatives_folder = get_derivative_folder(
@@ -261,7 +260,7 @@ def view_annotated_raw(
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
         if query_yes_no("Do you want to save this dataset?"):
             fname = derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif"
-            raw.save(fname, overwrite=overwrite)
+            raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -274,12 +273,14 @@ def view_annotated_raw(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
             run,
         )
+        fname = derivatives_folder / f"{fname_stem}_{step_to_load}_bis--temp_raw.fif"
+        raw.save(fname, overwrite=True)
     finally:
         for lock in locks:
             lock.release()

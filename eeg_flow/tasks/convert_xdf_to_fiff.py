@@ -13,7 +13,6 @@ from ..io import (
     find_streams,
     load_xdf,
 )
-from ..utils._checks import check_type
 from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_derivative_folder, get_fname, get_xdf_folder
@@ -28,7 +27,6 @@ def convert_xdf_to_fiff(
     run: int,
     *,
     timeout: float = 10,
-    overwrite: bool = False,
 ) -> None:
     """Convert the XDF recording to a raw FIFF file.
 
@@ -38,10 +36,7 @@ def convert_xdf_to_fiff(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
-    check_type(overwrite, (bool,), "overwrite")
     # prepare folders
     _, derivatives_folder_root, _ = load_config()
     derivatives_folder = get_derivative_folder(
@@ -69,7 +64,9 @@ def convert_xdf_to_fiff(
         )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
-        _convert_xdf_to_fiff(participant, group, task, run, overwrite)
+        if all(derivative.exists() for derivative in derivatives):
+            raise FileExistsError
+        _convert_xdf_to_fiff(participant, group, task, run)
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -82,7 +79,7 @@ def convert_xdf_to_fiff(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists. Please use 'overwrite=True' to force overwriting.",
+            "already exists.",
             participant,
             group,
             task,
@@ -110,7 +107,6 @@ def _convert_xdf_to_fiff(
     group: str,
     task: str,
     run: int,
-    overwrite: bool = False,
 ) -> None:
     """Convert the XDF recording to a raw FIFF file.
 
@@ -120,8 +116,6 @@ def _convert_xdf_to_fiff(
     %(group)s
     %(task)s
     %(run)s
-    overwrite : bool
-        If True, overwrites existing derivatives.
     """
     # prepare folders
     xdf_folder_root, derivatives_folder_root, _ = load_config()
@@ -169,19 +163,19 @@ def _convert_xdf_to_fiff(
     # save stream-annotations to the derivatives folder
     if task == "UT":
         fname = derivatives_folder / f"{fname_stem}_step1_stream_annot.fif"
-        raw.annotations.save(fname, overwrite=overwrite)
+        raw.annotations.save(fname, overwrite=False)
         logger.info("Saved: %s", fname.name)
         raw.set_annotations(None)  # to speed-up browsing
 
     # add the annotations of the oddball paradigm
     annotations = annotations_from_events(raw, duration=0.1)
     fname = derivatives_folder / f"{fname_stem}_step1_oddball_annot.fif"
-    annotations.save(fname, overwrite=overwrite)
+    annotations.save(fname, overwrite=False)
     logger.info("Saved: %s", fname.name)
     raw.set_annotations(annotations)
 
     raw.set_montage("standard_1020")
     # save the raw recording
     fname = derivatives_folder / f"{fname_stem}_step1_raw.fif"
-    raw.save(fname, overwrite=overwrite)
+    raw.save(fname, overwrite=False)
     logger.info("Saved: %s", fname.name)
