@@ -282,7 +282,7 @@ def view_annotated_raw(
             task,
             run,
         )
-        fname = derivatives_folder / f"{fname_stem}_{step_to_load}_{target_suffix}--temp_raw.fif"
+        fname = derivatives_folder / f"{fname_stem}_{step_to_load}_temp--{target_suffix}.fif"
         raw.save(fname, overwrite=True)
     finally:
         for lock in locks:
