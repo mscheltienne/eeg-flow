@@ -243,6 +243,9 @@ def view_annotated_raw(
     step_to_load = (
         "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
     )
+    target_suffix = (
+        "bis_raw" if step_to_load == "step3" else "final_preprocessed_raw"
+    )
     # prepare folders
     _, derivatives_folder, _ = load_config()
     derivatives_folder = get_derivative_folder(
@@ -259,7 +262,7 @@ def view_annotated_raw(
         )
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
         if query_yes_no("Do you want to save this dataset?"):
-            fname = derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif"
+            fname = derivatives_folder / f"{fname_stem}_{step_to_load}_{target_suffix}.fif"
             raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -279,7 +282,7 @@ def view_annotated_raw(
             task,
             run,
         )
-        fname = derivatives_folder / f"{fname_stem}_{step_to_load}_bis--temp_raw.fif"
+        fname = derivatives_folder / f"{fname_stem}_{step_to_load}_{target_suffix}--temp_raw.fif"
         raw.save(fname, overwrite=True)
     finally:
         for lock in locks:
