@@ -240,12 +240,12 @@ def view_annotated_raw(
     """
     check_type(step_to_load, (str,), "step_to_load")
     check_value(step_to_load, ("step3", "step7"), "step_to_load")
+
+    target_suffix = "bis_raw" if step_to_load == "step3" else "final_preprocessed_raw"
     step_to_load = (
         "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
     )
-    target_suffix = (
-        "bis_raw" if step_to_load == "step3" else "final_preprocessed_raw"
-    )
+
     # prepare folders
     _, derivatives_folder, _ = load_config()
     derivatives_folder = get_derivative_folder(
@@ -254,7 +254,9 @@ def view_annotated_raw(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_{step_to_load}_bis_raw.fif",)
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_{step_to_load}_{target_suffix}.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         raw = read_raw_fif(
@@ -262,7 +264,9 @@ def view_annotated_raw(
         )
         raw.plot(theme="light", highpass=1.0, lowpass=40.0, block=True)
         if query_yes_no("Do you want to save this dataset?"):
-            fname = derivatives_folder / f"{fname_stem}_{step_to_load}_{target_suffix}.fif"
+            fname = (
+                derivatives_folder / f"{fname_stem}_{step_to_load}_{target_suffix}.fif"
+            )
             raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -276,13 +280,16 @@ def view_annotated_raw(
     except FileExistsError:
         logger.error(
             "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists.",
+            "already exists. Saving into a temp file.",
             participant,
             group,
             task,
             run,
         )
-        fname = derivatives_folder / f"{fname_stem}_{step_to_load}_temp--{target_suffix}.fif"
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_{step_to_load}_temp--{target_suffix}.fif"
+        )
         raw.save(fname, overwrite=True)
     finally:
         for lock in locks:
