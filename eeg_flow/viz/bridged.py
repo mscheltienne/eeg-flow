@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from matplotlib import pyplot as plt
-from mne.io import BaseRaw, Info
+from mne import Info
+from mne.io import BaseRaw
 from mne.preprocessing import (
     compute_bridged_electrodes as compute_bridged_electrodes_mne,
 )
