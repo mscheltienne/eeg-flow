@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from bsl.lsl import StreamInfo, StreamOutlet
 from bsl.triggers import ParallelPortTrigger
+from psychopy.sound.backend_ptb import SoundPTB as Sound
 
 from ..utils._checks import check_type, check_value, ensure_path
 from ..utils.logs import logger
@@ -23,6 +24,7 @@ _TRIAL_LIST_MAPPING = {
     "a": "trialList_4_1000_oddball-game-a.txt",
     "b": "trialList_4_1000_oddball-game-b.txt",
 }
+_DURATION_STIM = 0.2
 
 
 def oddball(condition: str, passive: bool = True) -> None:
@@ -48,6 +50,7 @@ def oddball(condition: str, passive: bool = True) -> None:
     fname = files("eeg_flow.oddball") / "trialList" / fname
     fname = ensure_path(fname, must_exist=True)
     trials = _parse_trial_list(fname)
+    sounds = _load_sounds(trials)
 
 
 def _parse_trial_list(fname: Path) -> List[Tuple[int, str]]:
@@ -90,3 +93,26 @@ def _list_novel_sounds() -> List[str]:
         if file.name.startswith("wav"):
             novel_sounds.append(file.name)
     return novel_sounds
+
+
+def _load_sounds(trials) -> Dict[str, SoundPTB]:
+    """Create psychopy sound objects."""
+    sounds = dict()
+    fname_standard = files("eeg_flow.oddball") / "sounds" / "low_tone-48000.wav"
+    fname_standard = ensure_path(fname_standard, must_exist=True)
+    sounds["standard"] = Sound(
+        fname_standard, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
+    )
+    fname_target = files("eeg_flow.oddball") / "sounds" / "high_tone-48000.wav"
+    fname_target = ensure_path(fname_target, must_exist=True)
+    sounds["target"] = Sound(
+        fname_target, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
+    )
+
+    novels = [trial for trial in trials if trial.startswith("wav")]
+    for novel in novels:
+        fname = files("eeg_flow.oddball") / "sounds" / f"{novel}-48000.wav"
+        sounds[novel] = Sound(
+            fname, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
+        )
+    return sounds
