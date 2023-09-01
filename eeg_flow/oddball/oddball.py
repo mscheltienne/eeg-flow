@@ -43,6 +43,7 @@ def oddball(condition: str, passive: bool = True) -> None:
     check_type(condition, (str,), "condition")
     check_value(condition, _TRIAL_LIST_MAPPING, "condition")
     check_type(passive, (bool,), "passive")
+    # load trials and sounds
     fname = _TRIAL_LIST_MAPPING[condition]
     if condition in ("0a", "0b"):
         type_oddball = "passive" if passive else "active"
@@ -51,6 +52,10 @@ def oddball(condition: str, passive: bool = True) -> None:
     fname = ensure_path(fname, must_exist=True)
     trials = _parse_trial_list(fname)
     sounds = _load_sounds(trials)
+    # prepare triggers
+    trigger = ParallelPortTrigger("/dev/parport0")
+    sinfo = StreamInfo("Oddball_task", "Markers", 1, 0, "string", "myuidw43536")
+    trigger_lsl = StreamOutlet(sinfo)
 
 
 def _parse_trial_list(fname: Path) -> List[Tuple[int, str]]:
