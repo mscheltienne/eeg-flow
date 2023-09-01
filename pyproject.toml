@@ -89,6 +89,7 @@ tracker = 'https://github.com/mscheltienne/eeg-flow/issues'
 
 [project.scripts]
 eeg_flow-sys_info = 'eeg_flow.commands.sys_info:run'
+eeg_flow-oddball = 'eeg_flow.commands.oddball:run'
 
 [tool.setuptools]
 include-package-data = false
@@ -98,8 +99,7 @@ include = ['eeg_flow*']
 exclude = ['eeg_flow*tests']
 
 [tool.setuptools.package-data]
-"eeg_flow.oddball" = ["sounds/*.wav"]
-"eeg_flow.oddball" = ["trialList/*.txt"]
+"eeg_flow.oddball" = ["trialList/*.txt", "sounds/*.wav"]
 
 [tool.black]
 line-length = 88
