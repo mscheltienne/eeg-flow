@@ -3,8 +3,10 @@ from __future__ import annotations  # c.f. PEP 563, PEP 649
 from importlib.resources import files
 from typing import TYPE_CHECKING
 
+import psychtoolbox as ptb
 from bsl.lsl import StreamInfo, StreamOutlet
 from bsl.triggers import ParallelPortTrigger
+from psychopy.core import wait
 from psychopy.sound.backend_ptb import SoundPTB as Sound
 
 from ..utils._checks import check_type, check_value, ensure_path
@@ -25,6 +27,12 @@ _TRIAL_LIST_MAPPING = {
     "b": "trialList_4_1000_oddball-game-b.txt",
 }
 _DURATION_STIM = 0.2
+_DURATION_ITI = 1
+_TRIGGERS = {
+    "standard": 1,
+    "target": 2,
+    "novel": 3,
+}
 
 
 def oddball(condition: str, passive: bool = True) -> None:
@@ -57,9 +65,28 @@ def oddball(condition: str, passive: bool = True) -> None:
     sinfo = StreamInfo("Oddball_task", "Markers", 1, 0, "string", "myuidw43536")
     trigger_lsl = StreamOutlet(sinfo)
 
+    # main loop
+    for k, trial in trials:
+        # retrieve trigger value and sound
+        if trial in _TRIGGERS:
+            assert trial in ("standard", "novel"), f"Error with trial ({k}, {trial}"
+            value = _TRIGGERS[trial]
+        else:
+            assert trial.startswith("wav"), f"Error with trial ({k}, {trial}"
+            value = _TRIGGERS["novel"]:
+        sound = sounds[trial]
+        # schedule sound
+        now = ptb.GetSecs()
+        sound.play(when=now + _DURATION_STIM)
+        wait(_DURATION_STIM, hogCPUperiod=_DURATION_STIM)
+        trigger.signal(value)
+        trigger_lsl.push_sample([str(value)])
+        wait(_DURATION_ITI - _DURATION_STIM)
+
 
 def _parse_trial_list(fname: Path) -> List[Tuple[int, str]]:
     """Parse the trialList file."""
+    logger.info("Loading trial list %s", fname.name)
     with open(fname) as f:
         lines = f.readlines()
     lines = [line.rstrip("\n").split(", ") for line in lines if len(line) != 0]
@@ -114,7 +141,7 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
         fname_target, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
     )
 
-    novels = [trial for trial in trials if trial.startswith("wav")]
+    novels = [trial[1] for trial in trials if trial[1].startswith("wav")]
     for novel in novels:
         fname = files("eeg_flow.oddball") / "sounds" / f"{novel}-48000.wav"
         sounds[novel] = Sound(
