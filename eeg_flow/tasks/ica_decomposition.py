@@ -260,16 +260,16 @@ def label_components(
     try:
         if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
+
+        # define ICAs argument, simpler to serialize than ICas classes
+        ica1 = read_ica(derivatives_folder / f"{fname_stem}_step4_1st_ica.fif")
+        ica2 = read_ica(derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif")
         # The raw saved after interpolation of bridges already contains bad channels and
         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
         # However, it is not filtered.
         raw1, raw2 = _load_and_filter_raws(
             derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif"
         )
-
-        # define ICAs argument, simpler to serialize than ICas classes
-        ica1 = read_ica(derivatives_folder / f"{fname_stem}_step4_1st_ica.fif")
-        ica2 = read_ica(derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif")
         # sanity-checks
         assert ica1.info["lowpass"] == 40.0
         assert ica1.info["custom_ref_applied"] == 0
