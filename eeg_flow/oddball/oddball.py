@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import psychtoolbox as ptb
 from bsl.lsl import StreamInfo, StreamOutlet
-from bsl.triggers import ParallelPortTrigger
+from bsl.triggers import MockTrigger, ParallelPortTrigger
 from psychopy.core import wait
 from psychopy.sound.backend_ptb import SoundPTB as Sound
 
@@ -35,7 +35,7 @@ _TRIGGERS = {
 }
 
 
-def oddball(condition: str, passive: bool = True) -> None:
+def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     """Run the oddball paradigm.
 
     Parameters
@@ -47,10 +47,13 @@ def oddball(condition: str, passive: bool = True) -> None:
         the participant is asked to count the flickering on a fixation cross while if
         False, the participant is asked to respond to stimuli physically with a button
         press.
+    mock : bool
+        If True, uses a MockTrigger instead of a ParallelPortTrigger.
     """
     check_type(condition, (str,), "condition")
     check_value(condition, _TRIAL_LIST_MAPPING, "condition")
     check_type(passive, (bool,), "passive")
+    check_type(mock, (bool,), "mock")
     # load trials and sounds
     fname = _TRIAL_LIST_MAPPING[condition]
     if condition in ("0a", "0b"):
@@ -61,7 +64,7 @@ def oddball(condition: str, passive: bool = True) -> None:
     trials = _parse_trial_list(fname)
     sounds = _load_sounds(trials)
     # prepare triggers
-    trigger = ParallelPortTrigger("/dev/parport0")
+    trigger = MockTrigger() if mock else ParallelPortTrigger("/dev/parport0")
     sinfo = StreamInfo("Oddball_task", "Markers", 1, 0, "string", "myuidw43536")
     trigger_lsl = StreamOutlet(sinfo)
 
@@ -69,11 +72,11 @@ def oddball(condition: str, passive: bool = True) -> None:
     for k, trial in trials:
         # retrieve trigger value and sound
         if trial in _TRIGGERS:
-            assert trial in ("standard", "novel"), f"Error with trial ({k}, {trial}"
+            assert trial in ("standard", "target"), f"Error with trial ({k}, {trial})."
             value = _TRIGGERS[trial]
         else:
-            assert trial.startswith("wav"), f"Error with trial ({k}, {trial}"
-            value = _TRIGGERS["novel"]:
+            assert trial.startswith("wav"), f"Error with trial ({k}, {trial})."
+            value = _TRIGGERS["novel"]
         sound = sounds[trial]
         # schedule sound
         now = ptb.GetSecs()
