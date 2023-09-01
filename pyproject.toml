@@ -38,6 +38,7 @@ classifiers = [
 ]
 dependencies = [
     'autoreject',
+    'bsl==0.6.3',
     'filelock',
     'mne>=1.4.1',
     'mne-icalabel>=0.4',
@@ -95,6 +96,10 @@ include-package-data = false
 [tool.setuptools.packages.find]
 include = ['eeg_flow*']
 exclude = ['eeg_flow*tests']
+
+[tool.setuptools.package-data]
+"eeg_flow.oddball" = ["sounds/*.wav"]
+"eeg_flow.oddball" = ["trialList/*.txt"]
 
 [tool.black]
 line-length = 88
