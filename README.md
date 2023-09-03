@@ -3,7 +3,3 @@
 [![codecov](https://codecov.io/gh/mscheltienne/eeg-flow/branch/main/graph/badge.svg?token=HESRX5BTRN)](https://codecov.io/gh/mscheltienne/eeg-flow)
 [![tests](https://github.com/mscheltienne/eeg-flow/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mscheltienne/eeg-flow/actions/workflows/pytest.yml)
 [![build](https://github.com/mscheltienne/eeg-flow/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mscheltienne/eeg-flow/actions/workflows/build.yml)
-
-# EEG-flow
-
-At the moment, supports python 3.8 to 3.10.
