@@ -39,7 +39,9 @@ jobs:
           architecture: 'x64'
       - name: Install linux dependencies
         if: ${{ matrix.os == 'ubuntu' }}
-        run: sudo apt install libnotify4
+        run: |
+          sudo apt update
+          sudo apt install libnotify4
       - name: Setup headless display
         uses: pyvista/setup-headless-display-action@main
       - name: Install Psychopy
