@@ -7,15 +7,14 @@ import psychtoolbox as ptb
 from bsl.lsl import StreamInfo, StreamOutlet
 from bsl.triggers import MockTrigger, ParallelPortTrigger
 from psychopy.core import wait
-from psychopy.sound.backend_ptb import SoundPTB as Sound
+from psychopy.sound.backend_ptb import SoundPTB
 
 from ..utils._checks import check_type, check_value, ensure_path
 from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from typing import List, Tuple
+    from typing import Dict, List, Tuple
 
 
 _TRIAL_LIST_MAPPING = {
@@ -135,19 +134,19 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
     sounds = dict()
     fname_standard = files("eeg_flow.oddball") / "sounds" / "low_tone-48000.wav"
     fname_standard = ensure_path(fname_standard, must_exist=True)
-    sounds["standard"] = Sound(
+    sounds["standard"] = SoundPTB(
         fname_standard, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
     )
     fname_target = files("eeg_flow.oddball") / "sounds" / "high_tone-48000.wav"
     fname_target = ensure_path(fname_target, must_exist=True)
-    sounds["target"] = Sound(
+    sounds["target"] = SoundPTB(
         fname_target, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
     )
 
     novels = [trial[1] for trial in trials if trial[1].startswith("wav")]
     for novel in novels:
         fname = files("eeg_flow.oddball") / "sounds" / f"{novel}-48000.wav"
-        sounds[novel] = Sound(
+        sounds[novel] = SoundPTB(
             fname, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
         )
     return sounds
