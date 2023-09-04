@@ -16,7 +16,7 @@ from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Dict, List, Optional, Tuple
+    from typing import Dict, List, Tuple, Union
 
 
 _TRIAL_LIST_MAPPING = {
@@ -90,10 +90,11 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
         fullscr=True,
         allowGUI=False,
     )
-    crosses = _load_cross(win)
-    rng = np.random.default_rng()
+    crosses = _load_cross(win, passive)
+    if passive:
+        rng = np.random.default_rng()
     # display fixation cross
-    crosses["full"][0].setAutoDraw(True)
+    crosses["full"].setAutoDraw(True)
     win.flip()
     # main loop
     for i, (k, trial) in enumerate(trials):
@@ -124,18 +125,19 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
             delay = rng.uniform(0.3, _DURATION_ITI - _DURATION_STIM - 0.3)
             arm = rng.choice(("top", "left", "right", "bottom"))
             wait(delay)
-            crosses["full"][0].setAutoDraw(False)
+            crosses["full"].setAutoDraw(False)
             for shape in crosses[arm]:
                 shape.setAutoDraw(True)
             win.flip()
             wait(_DURATION_FLICKERING)
-            crosses["full"][0].setAutoDraw(True)
+            crosses["full"].setAutoDraw(True)
             for shape in crosses[arm]:
                 shape.setAutoDraw(False)
             win.flip()
             wait(_DURATION_ITI - _DURATION_STIM - _DURATION_FLICKERING - delay)
         else:
             wait(_DURATION_ITI - _DURATION_STIM)
+    win.close()
 
 
 def _parse_trial_list(fname: Path) -> List[Tuple[int, str]]:
@@ -204,7 +206,9 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
     return sounds
 
 
-def _load_cross(win: Window) -> Dict[str, Tuple[ShapeStim, Optional[ShapeStim]]]:
+def _load_cross(
+    win: Window, passive: bool
+) -> Dict[str, Union[ShapeStim, Tuple[ShapeStim, ShapeStim]]]:
     """Load the shapes used for fixation cross.
 
     The point position is defined as:
@@ -221,6 +225,7 @@ def _load_cross(win: Window) -> Dict[str, Tuple[ShapeStim, Optional[ShapeStim]]]
 
             5  6
     """
+    check_type(passive, (bool,), "passive")
     crosses = dict()
     # convert the number of pixels into the normalized unit per axis (x, y)
     width = _CROSS_WIDTH * 2 / win.size
@@ -243,16 +248,16 @@ def _load_cross(win: Window) -> Dict[str, Tuple[ShapeStim, Optional[ShapeStim]]]
     )
 
     # full-cross
-    crosses["full"] = (
-        ShapeStim(
-            win,
-            units="norm",
-            lineColor=None,
-            fillColor=_CROSS_COLOR,
-            vertices=points,
-        ),
-        None,
+    crosses["full"] = ShapeStim(
+        win,
+        units="norm",
+        lineColor=None,
+        fillColor=_CROSS_COLOR,
+        vertices=points,
     )
+
+    if not passive:
+        return crosses  # exit early
 
     # left-flickering
     crosses["left"] = (
