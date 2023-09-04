@@ -29,7 +29,7 @@ _TRIAL_LIST_MAPPING = {
 }
 _DURATION_STIM: float = 0.2  # seconds
 _DURATION_ITI: float = 1.0  # seconds
-_DUATION_FLICKERING: float = 0.05  # seconds
+_DURATION_FLICKERING: float = 0.05  # seconds
 assert 0 < _DURATION_ITI - _DURATION_STIM - 0.3
 _TRIGGERS: Dict[str, int] = {
     "standard": 1,
@@ -118,12 +118,12 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
             for shape in crosses[arm]:
                 shape.setAutoDraw(True)
             win.flip()
-            wait(_DUATION_FLICKERING)
+            wait(_DURATION_FLICKERING)
             crosses["full"][0].setAutoDraw(True)
             for shape in crosses[arm]:
                 shape.setAutoDraw(False)
             win.flip()
-            wait(_DURATION_ITI - _DURATION_STIM - _DUATION_FLICKERING - delay)
+            wait(_DURATION_ITI - _DURATION_STIM - _DURATION_FLICKERING - delay)
         else:
             wait(_DURATION_ITI - _DURATION_STIM)
 
