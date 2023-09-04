@@ -56,8 +56,7 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     # load trials and sounds
     fname = _TRIAL_LIST_MAPPING[condition]
     if condition in ("0a", "0b"):
-        type_oddball = "passive" if passive else "active"
-        fname = fname % type_oddball
+        fname = fname % ("passive" if passive else "active")
     fname = files("eeg_flow.oddball") / "trialList" / fname
     fname = ensure_path(fname, must_exist=True)
     trials = _parse_trial_list(fname)
@@ -68,7 +67,7 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     trigger_lsl = StreamOutlet(sinfo)
 
     # main loop
-    for k, trial in trials:
+    for i, (k, trial) in enumerate(trials):
         # retrieve trigger value and sound
         if trial in _TRIGGERS:
             assert trial in ("standard", "target"), f"Error with trial ({k}, {trial})."
@@ -77,13 +76,21 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
             assert trial.startswith("wav"), f"Error with trial ({k}, {trial})."
             value = _TRIGGERS["novel"]
         sound = sounds[trial]
-        # schedule sound
+        # schedule sound, wait, and deliver triggers simultanouesly with the sound
         now = ptb.GetSecs()
         sound.play(when=now + _DURATION_STIM)
         wait(_DURATION_STIM, hogCPUperiod=_DURATION_STIM)
         trigger.signal(value)
         trigger_lsl.push_sample([str(value)])
-        wait(_DURATION_ITI - _DURATION_STIM)
+        # look ahead for the next trial and handle it now if it's a cross for the
+        # passive oddball task
+        if i == len(trials) - 1:  # end of the trial list
+            continue
+        elif trials[i+1][1] == "cross":
+            logger.info("Flickering the fixation cross for trial {}.", k)
+            wait(_DURATION_ITI - _DURATION_STIM)
+        else:
+            wait(_DURATION_ITI - _DURATION_STIM)
 
 
 def _parse_trial_list(fname: Path) -> List[Tuple[int, str]]:
