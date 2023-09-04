@@ -87,6 +87,8 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     win.flip()
     # main loop
     for i, (k, trial) in enumerate(trials):
+        if trial == "cross":  # already handled in the last iteration
+            continue
         # retrieve trigger value and sound
         if trial in _TRIGGERS:
             assert trial in ("standard", "target"), f"Error with trial ({k}, {trial})."
