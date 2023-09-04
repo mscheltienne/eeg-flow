@@ -11,7 +11,7 @@ from psychopy.core import wait
 from psychopy.sound.backend_ptb import SoundPTB
 from psychopy.visual import ShapeStim, Window
 
-from ..utils._checks import check_type, check_value, ensure_path
+from ..utils._checks import check_type, check_value, ensure_int, ensure_path
 from ..utils.logs import logger
 
 if TYPE_CHECKING:
@@ -30,16 +30,25 @@ _TRIAL_LIST_MAPPING = {
 _DURATION_STIM: float = 0.2  # seconds
 _DURATION_ITI: float = 1.0  # seconds
 _DURATION_FLICKERING: float = 0.05  # seconds
-assert 0 < _DURATION_ITI - _DURATION_STIM - 0.3
 _TRIGGERS: Dict[str, int] = {
     "standard": 1,
     "target": 2,
     "novel": 3,
 }
+_BACKGROUND_COLOR = (0, 0, 0)  # (r, g, b) between -1 and 1
 _CROSS_WIDTH: int = 20  # pixels
 _CROSS_LENGTH: int = 100  # pixels
 _CROSS_COLOR: str = "black"
 _CROSS_FLICKERING_COLOR: str = "white"
+
+# check the variables
+check_type(_DURATION_STIM, ("numeric",), "_DURATION_STIM")
+check_type(_DURATION_ITI, ("numeric",), "_DURATION_ITI")
+check_type(_DURATION_FLICKERING, ("numeric",), "_DURATION_FLICKERING")
+assert 0 < _DURATION_ITI - _DURATION_STIM - 0.3
+assert all(elt in _TRIGGERS for elt in ("standard", "target", "novel"))
+_CROSS_WIDTH = ensure_int(_CROSS_WIDTH, "_CROSS_WIDTH")
+_CROSS_LENGTH = ensure_int(_CROSS_LENGTH, "_CROSS_LENGTH")
 
 
 def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
@@ -75,6 +84,7 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     trigger_lsl = StreamOutlet(sinfo)
     # prepare fixation cross window
     win = Window(
+        color=_BACKGROUND_COLOR,
         units="norm",
         winType="pyglet",
         fullscr=True,
