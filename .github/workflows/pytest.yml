@@ -41,7 +41,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu' }}
         run: |
           sudo apt update
-          sudo apt install libnotify4 freeglut3
+          sudo apt install libnotify4 freeglut3-dev
       - name: Setup headless display
         uses: pyvista/setup-headless-display-action@main
       - name: Install Psychopy
