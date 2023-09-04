@@ -48,6 +48,7 @@ dependencies = [
     'packaging',
     'pandas',
     'psutil',
+    'psychopy',
     'pyprep>=0.4.0',
     'python-picard',
     'pyxdf',
