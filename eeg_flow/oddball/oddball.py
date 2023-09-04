@@ -29,6 +29,7 @@ _TRIAL_LIST_MAPPING = {
 }
 _DURATION_STIM: float = 0.2  # seconds
 _DURATION_ITI: float = 1.0  # seconds
+_DUATION_FLICKERING: float = 0.05  # seconds
 assert 0 < _DURATION_ITI - _DURATION_STIM - 0.3
 _TRIGGERS: Dict[str, int] = {
     "standard": 1,
@@ -79,10 +80,11 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
         fullscr=True,
         allowGUI=False,
     )
-    # prepare passive oddball elements
-    if passive:
-        rng = np.random.default_rng()
-
+    crosses = _load_cross(win)
+    rng = np.random.default_rng()
+    # display fixation cross
+    crosses["full"][0].setAutoDraw(True)
+    win.flip()
     # main loop
     for i, (k, trial) in enumerate(trials):
         # retrieve trigger value and sound
@@ -108,9 +110,18 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
             logger.info("Flickering the fixation cross for trial %i.", k)
             # pick a random time at which the flickering will occur
             delay = rng.uniform(0.3, _DURATION_ITI - _DURATION_STIM - 0.3)
+            arm = rng.choice(("top", "left", "right", "bottom"))
             wait(delay)
-            # TODO
-            wait(_DURATION_ITI - _DURATION_STIM - delay)
+            crosses["full"][0].setAutoDraw(False)
+            for shape in crosses[arm]:
+                shape.setAutoDraw(True)
+            win.flip()
+            wait(_DUATION_FLICKERING)
+            crosses["full"][0].setAutoDraw(True)
+            for shape in crosses[arm]:
+                shape.setAutoDraw(False)
+            win.flip()
+            wait(_DURATION_ITI - _DURATION_STIM - _DUATION_FLICKERING - delay)
         else:
             wait(_DURATION_ITI - _DURATION_STIM)
 
@@ -181,9 +192,7 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
     return sounds
 
 
-def _load_cross(
-    win: Window, width: int, length: int
-) -> Dict[str, Tuple[ShapeStim, Optional[ShapeStim]]]:
+def _load_cross(win: Window) -> Dict[str, Tuple[ShapeStim, Optional[ShapeStim]]]:
     """Load the shapes used for fixation cross.
 
     The point position is defined as:
@@ -202,8 +211,8 @@ def _load_cross(
     """
     crosses = dict()
     # convert the number of pixels into the normalized unit per axis (x, y)
-    width = width * 2 / win.size
-    length = length * 2 / win.size
+    width = _CROSS_WIDTH * 2 / win.size
+    length = _CROSS_LENGTH * 2 / win.size
     points = np.array(
         [
             [-width[0] / 2, width[1] / 2 + length[1]],  # top-left
