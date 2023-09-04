@@ -9,9 +9,7 @@ def run():
         prog=f"{__package__.split('.')[0]}-oddball", description="oddball"
     )
     parser.add_argument(
-        "condition",
-        type=str,
-        help="condition to run among 100 | 600 | 0a | 0b | a | b"
+        "condition", type=str, help="condition to run among 100 | 600 | 0a | 0b | a | b"
     )
     parser.add_argument(
         "--passive",

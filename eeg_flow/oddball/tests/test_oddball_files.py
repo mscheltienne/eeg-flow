@@ -1,6 +1,6 @@
 from importlib.resources import files
 
-from eeg_flow.oddball.oddball import _parse_trial_list, _list_novel_sounds
+from eeg_flow.oddball.oddball import _list_novel_sounds, _parse_trial_list
 
 
 def test_oddball_files():
