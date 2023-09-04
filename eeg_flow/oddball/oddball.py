@@ -3,18 +3,20 @@ from __future__ import annotations  # c.f. PEP 563, PEP 649
 from importlib.resources import files
 from typing import TYPE_CHECKING
 
+import numpy as np
 import psychtoolbox as ptb
 from bsl.lsl import StreamInfo, StreamOutlet
 from bsl.triggers import MockTrigger, ParallelPortTrigger
 from psychopy.core import wait
 from psychopy.sound.backend_ptb import SoundPTB
+from psychopy.visual import ShapeStim, Window
 
 from ..utils._checks import check_type, check_value, ensure_path
 from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Dict, List, Tuple
+    from typing import Dict, List, Optional, Tuple
 
 
 _TRIAL_LIST_MAPPING = {
@@ -25,13 +27,18 @@ _TRIAL_LIST_MAPPING = {
     "a": "trialList_4_1000_oddball-game-a.txt",
     "b": "trialList_4_1000_oddball-game-b.txt",
 }
-_DURATION_STIM = 0.2
-_DURATION_ITI = 1
-_TRIGGERS = {
+_DURATION_STIM: float = 0.2  # seconds
+_DURATION_ITI: float = 1.0  # seconds
+assert 0 < _DURATION_ITI - _DURATION_STIM - 0.3
+_TRIGGERS: Dict[str, int] = {
     "standard": 1,
     "target": 2,
     "novel": 3,
 }
+_CROSS_WIDTH: int = 20  # pixels
+_CROSS_LENGTH: int = 100  # pixels
+_CROSS_COLOR: str = "black"
+_CROSS_FLICKERING_COLOR: str = "white"
 
 
 def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
@@ -65,6 +72,16 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     trigger = MockTrigger() if mock else ParallelPortTrigger("/dev/parport0")
     sinfo = StreamInfo("Oddball_task", "Markers", 1, 0, "string", "myuidw43536")
     trigger_lsl = StreamOutlet(sinfo)
+    # prepare fixation cross window
+    win = Window(
+        units="norm",
+        winType="pyglet",
+        fullscr=True,
+        allowGUI=False,
+    )
+    # prepare passive oddball elements
+    if passive:
+        rng = np.random.default_rng()
 
     # main loop
     for i, (k, trial) in enumerate(trials):
@@ -86,9 +103,14 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
         # passive oddball task
         if i == len(trials) - 1:  # end of the trial list
             continue
-        elif trials[i+1][1] == "cross":
-            logger.info("Flickering the fixation cross for trial {}.", k)
-            wait(_DURATION_ITI - _DURATION_STIM)
+        elif trials[i + 1][1] == "cross":
+            assert passive, f"Trial 'cross' ({k}) found in a non-passive trial-list."
+            logger.info("Flickering the fixation cross for trial %i.", k)
+            # pick a random time at which the flickering will occur
+            delay = rng.uniform(0.3, _DURATION_ITI - _DURATION_STIM - 0.3)
+            wait(delay)
+            # TODO
+            wait(_DURATION_ITI - _DURATION_STIM - delay)
         else:
             wait(_DURATION_ITI - _DURATION_STIM)
 
@@ -157,3 +179,130 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
             fname, secs=_DURATION_STIM, hamming=True, name="stim", sampleRate=48000
         )
     return sounds
+
+
+def _load_cross(
+    win: Window, width: int, length: int
+) -> Dict[str, Tuple[ShapeStim, Optional[ShapeStim]]]:
+    """Load the shapes used for fixation cross.
+
+    The point position is defined as:
+
+            0  11
+
+
+
+     2      1  10     9
+
+     3      4  7      8
+
+
+
+            5  6
+    """
+    crosses = dict()
+    # convert the number of pixels into the normalized unit per axis (x, y)
+    width = width * 2 / win.size
+    length = length * 2 / win.size
+    points = np.array(
+        [
+            [-width[0] / 2, width[1] / 2 + length[1]],  # top-left
+            [-width[0] / 2, width[1] / 2],  # center-left-up
+            [-width[0] / 2 - length[0], width[1] / 2],  # left-up
+            [-width[0] / 2 - length[0], -width[1] / 2],  #  left-bottom
+            [-width[0] / 2, -width[1] / 2],  # center-left-bottom
+            [-width[0] / 2, -width[1] / 2 - length[1]],  # bottom-left
+            [width[0] / 2, -width[1] / 2 - length[1]],  # bottom-right
+            [width[0] / 2, -width[1] / 2],  # center-right-bottom
+            [width[0] + length[0], -width[1] / 2],  # right-bottom
+            [width[0] + length[0], width[1] / 2],  # right-up
+            [width[0] / 2, width[1] / 2],  # center-right-up
+            [width[0] / 2, width[1] / 2 + length[1]],  # top-right
+        ]
+    )
+
+    # full-cross
+    crosses["full"] = (
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_COLOR,
+            vertices=points,
+        ),
+        None,
+    )
+
+    # left-flickering
+    crosses["left"] = (
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_COLOR,
+            vertices=points[[0, 5, 6, 7, 8, 9, 10, 11]],
+        ),
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_FLICKERING_COLOR,
+            vertices=points[[1, 2, 3, 4]],
+        ),
+    )
+
+    # bottom-flickering
+    crosses["bottom"] = (
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_COLOR,
+            vertices=points[[0, 1, 2, 3, 8, 9, 10, 11]],
+        ),
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_FLICKERING_COLOR,
+            vertices=points[[4, 5, 6, 7]],
+        ),
+    )
+
+    # right-flickering
+    crosses["right"] = (
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_COLOR,
+            vertices=points[[0, 1, 2, 3, 4, 5, 6, 11]],
+        ),
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_FLICKERING_COLOR,
+            vertices=points[[7, 8, 9, 10]],
+        ),
+    )
+
+    # top-flickering
+    crosses["top"] = (
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_COLOR,
+            vertices=points[[2, 3, 4, 5, 6, 7, 8, 9]],
+        ),
+        ShapeStim(
+            win,
+            units="norm",
+            lineColor=None,
+            fillColor=_CROSS_FLICKERING_COLOR,
+            vertices=points[[0, 1, 10, 11]],
+        ),
+    )
+
+    return crosses
