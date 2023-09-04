@@ -45,7 +45,7 @@ _CROSS_FLICKERING_COLOR: str = "white"
 check_type(_DURATION_STIM, ("numeric",), "_DURATION_STIM")
 check_type(_DURATION_ITI, ("numeric",), "_DURATION_ITI")
 check_type(_DURATION_FLICKERING, ("numeric",), "_DURATION_FLICKERING")
-assert 0 < _DURATION_ITI - _DURATION_STIM - 0.3
+assert 0.3 < _DURATION_ITI - _DURATION_STIM - 0.2
 assert all(elt in _TRIGGERS for elt in ("standard", "target", "novel"))
 _CROSS_WIDTH = ensure_int(_CROSS_WIDTH, "_CROSS_WIDTH")
 _CROSS_LENGTH = ensure_int(_CROSS_LENGTH, "_CROSS_LENGTH")
@@ -122,7 +122,7 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
             assert passive, f"Trial 'cross' ({k}) found in a non-passive trial-list."
             logger.info("Flickering the fixation cross for trial %i.", k)
             # pick a random time at which the flickering will occur
-            delay = rng.uniform(0.3, _DURATION_ITI - _DURATION_STIM - 0.3)
+            delay = rng.uniform(0.3, _DURATION_ITI - _DURATION_STIM - 0.2)
             arm = rng.choice(("top", "left", "right", "bottom"))
             wait(delay)
             crosses["full"].setAutoDraw(False)
