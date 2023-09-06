@@ -12,8 +12,8 @@ def run():
         "condition", type=str, help="condition to run among 100 | 600 | 0a | 0b | a | b"
     )
     parser.add_argument(
-        "--passive",
-        help="run the passive oddball task",
+        "--active",
+        help="run the active oddball task",
         action="store_true",
     )
     parser.add_argument(
@@ -22,4 +22,4 @@ def run():
         action="store_true",
     )
     args = parser.parse_args()
-    oddball(args.condition, args.passive, args.dev)
+    oddball(args.condition, args.active, args.dev)

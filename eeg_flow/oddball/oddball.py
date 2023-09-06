@@ -52,29 +52,29 @@ _CROSS_WIDTH = ensure_int(_CROSS_WIDTH, "_CROSS_WIDTH")
 _CROSS_LENGTH = ensure_int(_CROSS_LENGTH, "_CROSS_LENGTH")
 
 
-def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
+def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     """Run the oddball paradigm.
 
     Parameters
     ----------
     condition : "100" | "600" | "0a" | "0b" | "a" | "b"
         Oddball condition to run.
-    passive : bool
-        Only used for the condition "0a" and "0b". If True, the oddball is passive with
+    active : bool
+        Only used for the condition "0a" and "0b". If False, the oddball is passive and
         the participant is asked to count the flickering on a fixation cross while if
-        False, the participant is asked to respond to stimuli physically with a button
+        True, the participant is asked to respond to stimuli physically with a button
         press.
     mock : bool
         If True, uses a MockTrigger instead of a ParallelPortTrigger.
     """
     check_type(condition, (str,), "condition")
     check_value(condition, _TRIAL_LIST_MAPPING, "condition")
-    check_type(passive, (bool,), "passive")
+    check_type(active, (bool,), "active")
     check_type(mock, (bool,), "mock")
     # load trials and sounds
     fname = _TRIAL_LIST_MAPPING[condition]
     if condition in ("0a", "0b"):
-        fname = fname % ("passive" if passive else "active")
+        fname = fname % ("active" if active else "passive")
     fname = files("eeg_flow.oddball") / "trialList" / fname
     fname = ensure_path(fname, must_exist=True)
     trials = _parse_trial_list(fname)
@@ -92,8 +92,8 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
         fullscr=True,
         allowGUI=False,
     )
-    crosses = _load_cross(win, passive)
-    if passive:
+    crosses = _load_cross(win, active)
+    if not active:
         rng = np.random.default_rng()
     # display fixation cross
     crosses["full"].setAutoDraw(True)
@@ -121,7 +121,7 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
         if i == len(trials) - 1:  # end of the trial list
             continue
         elif trials[i + 1][1] == "cross":
-            assert passive, f"Trial 'cross' ({k}) found in a non-passive trial-list."
+            assert not active, f"Trial 'cross' ({k}) found in an active trial-list."
             logger.info("Flickering the fixation cross for trial %i.", k)
             # pick a random time at which the flickering will occur
             delay = rng.uniform(0.3, _DURATION_ITI - _DURATION_STIM - 0.2)
@@ -209,7 +209,7 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
 
 
 def _load_cross(
-    win: Window, passive: bool
+    win: Window, active: bool
 ) -> Dict[str, Union[ShapeStim, Tuple[ShapeStim, ShapeStim]]]:
     """Load the shapes used for fixation cross.
 
@@ -227,7 +227,7 @@ def _load_cross(
 
             5  6
     """
-    check_type(passive, (bool,), "passive")
+    check_type(active, (bool,), "active")
     crosses = dict()
     # convert the number of pixels into the normalized unit per axis (x, y)
     width = _CROSS_WIDTH * 2 / win.size
@@ -258,7 +258,7 @@ def _load_cross(
         vertices=points,
     )
 
-    if not passive:
+    if active:
         return crosses  # exit early
 
     # left-flickering
