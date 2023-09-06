@@ -38,6 +38,7 @@ classifiers = [
 ]
 dependencies = [
     'autoreject',
+    'bsl==0.6.3',
     'filelock',
     'mne>=1.4.1',
     'mne-icalabel>=0.4',
@@ -47,6 +48,8 @@ dependencies = [
     'packaging',
     'pandas',
     'psutil',
+    'psychopy',
+    'psychtoolbox',
     'pyprep>=0.4.0',
     'python-picard',
     'pyxdf',
@@ -88,6 +91,7 @@ tracker = 'https://github.com/mscheltienne/eeg-flow/issues'
 
 [project.scripts]
 eeg_flow-sys_info = 'eeg_flow.commands.sys_info:run'
+eeg_flow-oddball = 'eeg_flow.commands.oddball:run'
 
 [tool.setuptools]
 include-package-data = false
@@ -95,6 +99,9 @@ include-package-data = false
 [tool.setuptools.packages.find]
 include = ['eeg_flow*']
 exclude = ['eeg_flow*tests']
+
+[tool.setuptools.package-data]
+"eeg_flow.oddball" = ["trialList/*.txt", "sounds/*.wav"]
 
 [tool.black]
 line-length = 88
@@ -155,5 +162,6 @@ omit = [
 exclude_lines = [
     'pragma: no cover',
     'if __name__ == .__main__.:',
+    'if TYPE_CHECKING:',
 ]
 precision = 2
