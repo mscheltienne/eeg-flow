@@ -139,6 +139,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
             wait(_DURATION_ITI - _DURATION_STIM - _DURATION_FLICKERING - delay)
         else:
             wait(_DURATION_ITI - _DURATION_STIM)
+    wait(5)  # wait before closing
     win.close()
 
 
