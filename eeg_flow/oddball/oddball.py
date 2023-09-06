@@ -240,8 +240,8 @@ def _load_cross(
             [-width[0] / 2, -width[1] / 2 - length[1]],  # bottom-left
             [width[0] / 2, -width[1] / 2 - length[1]],  # bottom-right
             [width[0] / 2, -width[1] / 2],  # center-right-bottom
-            [width[0] + length[0], -width[1] / 2],  # right-bottom
-            [width[0] + length[0], width[1] / 2],  # right-up
+            [width[0] / 2 + length[0], -width[1] / 2],  # right-bottom
+            [width[0] / 2 + length[0], width[1] / 2],  # right-up
             [width[0] / 2, width[1] / 2],  # center-right-up
             [width[0] / 2, width[1] / 2 + length[1]],  # top-right
         ]
