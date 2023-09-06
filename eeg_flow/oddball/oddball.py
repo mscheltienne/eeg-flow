@@ -35,6 +35,7 @@ _TRIGGERS: Dict[str, int] = {
     "target": 2,
     "novel": 3,
 }
+_SCREEN_SIZE = (1920, 1200)
 _BACKGROUND_COLOR = (0, 0, 0)  # (r, g, b) between -1 and 1
 _CROSS_WIDTH: int = 20  # pixels
 _CROSS_LENGTH: int = 100  # pixels
@@ -84,6 +85,7 @@ def oddball(condition: str, passive: bool = True, mock: bool = False) -> None:
     trigger_lsl = StreamOutlet(sinfo)
     # prepare fixation cross window
     win = Window(
+        size=_SCREEN_SIZE,
         color=_BACKGROUND_COLOR,
         units="norm",
         winType="pyglet",
