@@ -35,12 +35,12 @@ _TRIGGERS: Dict[str, int] = {
     "target": 2,
     "novel": 3,
 }
-_SCREEN_SIZE = (1920, 1200)
+_SCREEN_SIZE = (1920, 1080)
 _BACKGROUND_COLOR = (0, 0, 0)  # (r, g, b) between -1 and 1
-_CROSS_WIDTH: int = 20  # pixels
-_CROSS_LENGTH: int = 100  # pixels
-_CROSS_COLOR: str = "black"
-_CROSS_FLICKERING_COLOR: str = "white"
+_CROSS_WIDTH: int = 3  # pixels
+_CROSS_LENGTH: int = 8  # pixels
+_CROSS_COLOR: str = "white"
+_CROSS_FLICKERING_COLOR: str = "yellow"
 
 # check the variables
 check_type(_DURATION_STIM, ("numeric",), "_DURATION_STIM")
@@ -91,6 +91,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
         winType="pyglet",
         fullscr=True,
         allowGUI=False,
+        screen=1,
     )
     crosses = _load_cross(win, active)
     if not active:
@@ -98,10 +99,12 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     # display fixation cross
     crosses["full"].setAutoDraw(True)
     win.flip()
+    input(">>> Press ENTER to start.")
     # main loop
     for i, (k, trial) in enumerate(trials):
         if trial == "cross":  # already handled in the last iteration
             continue
+        logger.info("Trial %i / %i: %s", k, trials[-1][0], trial)
         # retrieve trigger value and sound
         if trial in _TRIGGERS:
             assert trial in ("standard", "target"), f"Error with trial ({k}, {trial})."
@@ -139,7 +142,8 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
             wait(_DURATION_ITI - _DURATION_STIM - _DURATION_FLICKERING - delay)
         else:
             wait(_DURATION_ITI - _DURATION_STIM)
-    wait(5)  # wait before closing
+    wait(1)  # wait before closing
+    input(">>> Press ENTER to continue and close the window.")
     win.close()
 
 

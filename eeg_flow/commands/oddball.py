@@ -1,5 +1,6 @@
 import argparse
 
+from .. import set_log_level
 from ..oddball import oddball
 
 
@@ -22,4 +23,5 @@ def run():
         action="store_true",
     )
     args = parser.parse_args()
+    set_log_level("INFO")
     oddball(args.condition, args.active, args.dev)
