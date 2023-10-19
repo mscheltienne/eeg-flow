@@ -189,7 +189,6 @@
 181, standard
 182, wav2475
 183, standard
-184, cross
 184, standard
 185, standard
 186, standard
@@ -207,7 +206,6 @@
 198, target
 199, standard
 200, standard
-201, cross
 201, standard
 202, standard
 203, standard
