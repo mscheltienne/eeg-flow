@@ -40,7 +40,7 @@ _BACKGROUND_COLOR = (0, 0, 0)  # (r, g, b) between -1 and 1
 _CROSS_WIDTH: int = 3  # pixels
 _CROSS_LENGTH: int = 8  # pixels
 _CROSS_COLOR: str = "white"
-_CROSS_FLICKERING_COLOR: str = "yellow"
+_CROSS_FLICKERING_COLOR: str = "orange"
 
 # check the variables
 check_type(_DURATION_STIM, ("numeric",), "_DURATION_STIM")
