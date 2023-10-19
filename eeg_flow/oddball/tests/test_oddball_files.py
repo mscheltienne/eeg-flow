@@ -7,7 +7,8 @@ def test_oddball_files():
     """Test the presence of the oddball files."""
     trials = list()
     for fname in (
-        "trialList_1_100_vol-eval.txt",
+        "trialList_1_100_vol-eval-active.txt",
+        "trialList_1_100_vol-eval-passive.txt",
         "trialList_2_600_game-eval.txt",
         "trialList_3_360_oddball-passive-a.txt",
         "trialList_3_360_oddball-active-a.txt",

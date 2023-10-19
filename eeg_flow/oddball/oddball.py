@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 _TRIAL_LIST_MAPPING = {
-    "100": "trialList_1_100_vol-eval.txt",
+    "100": "trialList_1_100_vol-eval-%s.txt",
     "600": "trialList_2_600_game-eval.txt",
     "0a": "trialList_3_360_oddball-%s-a.txt",
     "0b": "trialList_3_360_oddball-%s-b.txt",
@@ -40,7 +40,7 @@ _BACKGROUND_COLOR = (0, 0, 0)  # (r, g, b) between -1 and 1
 _CROSS_WIDTH: int = 3  # pixels
 _CROSS_LENGTH: int = 8  # pixels
 _CROSS_COLOR: str = "white"
-_CROSS_FLICKERING_COLOR: str = "yellow"
+_CROSS_FLICKERING_COLOR: str = "orange"
 
 # check the variables
 check_type(_DURATION_STIM, ("numeric",), "_DURATION_STIM")
@@ -60,7 +60,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     condition : "100" | "600" | "0a" | "0b" | "a" | "b"
         Oddball condition to run.
     active : bool
-        Only used for the condition "0a" and "0b". If False, the oddball is passive and
+        Only used for the condition "100", "0a" and "0b". If False, the oddball is passive and
         the participant is asked to count the flickering on a fixation cross while if
         True, the participant is asked to respond to stimuli physically with a button
         press.
@@ -73,7 +73,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     check_type(mock, (bool,), "mock")
     # load trials and sounds
     fname = _TRIAL_LIST_MAPPING[condition]
-    if condition in ("0a", "0b"):
+    if condition in ("100", "0a", "0b"):
         fname = fname % ("active" if active else "passive")
     fname = files("eeg_flow.oddball") / "trialList" / fname
     fname = ensure_path(fname, must_exist=True)

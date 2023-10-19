@@ -8,6 +8,7 @@
 8, wav1425
 9, standard
 10, standard
+11, cross
 11, standard
 12, standard
 13, standard
@@ -265,6 +266,7 @@
 253, target
 254, standard
 255, standard
+256, cross
 256, standard
 257, standard
 258, standard
