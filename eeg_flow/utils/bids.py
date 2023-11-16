@@ -92,4 +92,4 @@ def get_xdf_folder(
     root = ensure_path(root, must_exist=True)
     check_type(participant, (str,), "participant")
     check_type(group, (str,), "group")
-    return root / f"sub-{participant}-{group}"
+    return root / f"sub-{participant}-{group}" / "eeg"
