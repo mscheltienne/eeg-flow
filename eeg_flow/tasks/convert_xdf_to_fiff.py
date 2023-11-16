@@ -119,14 +119,14 @@ def _convert_xdf_to_fiff(
     """
     # prepare folders
     xdf_folder_root, derivatives_folder_root, _ = load_config()
-    xdf_foler = get_xdf_folder(xdf_folder_root, participant, group)
+    xdf_folder = get_xdf_folder(xdf_folder_root, participant, group)
     derivatives_folder = get_derivative_folder(
         derivatives_folder_root, participant, group, task, run
     )
     fname_stem = get_fname(participant, group, task, run)
 
     # load XDF file and create raw object
-    streams = load_xdf(xdf_foler / (fname_stem + "_eeg.xdf"))
+    streams = load_xdf(xdf_folder / (fname_stem + "_eeg.xdf"))
     eeg_stream = find_streams(streams, "eego")[0][1]
     raw = create_raw(eeg_stream)
 
