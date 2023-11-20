@@ -166,8 +166,23 @@ def make_metadata(
 
     For each epoch, it shall include events from the range: [0.0, 1.5] s,
     i.e. starting with stimulus onset and expanding beyond the end of the epoch.
-
     Currently it includes [0.0, 0.999]
+
+    Parameters
+    ----------
+    %(events)s
+    %(events_id)s
+    %(raw)s
+    %(row_events)s
+
+    Returns
+    -------
+    metadata : DataFrame
+        Metadata of the events.
+    events : array of shape (n_events, 3)
+        The events.
+    event_id : dict
+        Mapping str to int of the events
     """
     metadata_tmin, metadata_tmax = 0.0, 1.0
 
@@ -215,6 +230,23 @@ def make_metadata(
 
 
 def get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
+    """Compute proportions for SDT.
+
+    Parameters
+    ----------
+    %(metadata)s
+
+    Returns
+    -------
+    num_hits : int
+        Number of hits
+    num_correct_rejections : int
+        Number of correct rejections
+    num_misses : int
+        Number of misses
+    num_false_alarms : int
+        Number of false alarms
+    """
     num_hits = len(metadata[metadata["response_type"] == "Hits"])
     num_correct_rejections = len(
         metadata[metadata["response_type"] == "CorrectRejections"]
@@ -225,7 +257,16 @@ def get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
 
 
 def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std):
-    """Plot histogram of response times."""
+    """Plot histogram of response times.
+    
+    Parameters
+    ----------
+    %(hits)s
+    %(fname_stem)s
+    %(derivatives_subfolder)s
+    %(response_mean)s
+    %(response_std)s
+    """
     ax_rt = hits["response"].plot.hist(
         bins=100,
         title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(response_std)})",
@@ -238,15 +279,29 @@ def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std
 
 def get_indiv_behav(
     metadata,
-    num_Hits,
-    num_CorrectRejections,
-    num_Misses,
-    num_FalseAlarms,
+    num_hits,
+    num_correct_rejections,
+    num_misses,
+    num_false_alarms,
     fname_stem,
     derivatives_subfolder,
     response_mean,
     response_std,
 ):
+    """Write a file with the individual measures.
+    
+    Parameters
+    ----------
+    %(metadata)s
+    %(num_hits)s
+    %(num_correct_rejections)s
+    %(num_misses)s
+    %(num_false_alarms)s
+    %(fname_stem)s
+    %(derivatives_subfolder)s
+    %(response_mean)s
+    %(response_std)s
+    """
     correct_response_count = metadata["response_correct"].sum()
 
     print(
@@ -255,8 +310,8 @@ def get_indiv_behav(
     )
 
     print("Hits, Misses, Correct Rejections, False Alarms")
-    print(num_Hits, num_Misses, num_CorrectRejections, num_FalseAlarms, "\n")
-    SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)
+    print(num_hits, num_misses, num_correct_rejections, num_false_alarms, "\n")
+    SDT(num_hits, num_misses, num_false_alarms, num_correct_rejections)
     metadata.groupby(by="event_name").count()
 
     # write behav file
@@ -266,7 +321,7 @@ def get_indiv_behav(
 
     file_behav.write("Hits, Misses, Correct Rejections, False Alarms\n")
     file_behav.write(
-        f"{str(num_Hits)}\t{str(num_Misses)}\t{str(num_CorrectRejections)}\t{str(num_FalseAlarms)}"
+        f"{str(num_hits)}\t{str(num_misses)}\t{str(num_correct_rejections)}\t{str(num_false_alarms)}"
     )
 
     file_behav.write("\n\nStandard, Novel, Target\n")
@@ -284,7 +339,7 @@ def get_indiv_behav(
 
     file_behav.write("\n\nd'\n")
     file_behav.write(
-        str(SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)["d"])
+        str(SDT(num_hits, num_misses, num_false_alarms, num_correct_rejections)["d"])
     )
 
     file_behav.close()  # to change file access modes
@@ -327,6 +382,17 @@ def epoching(
 
 
 def get_rejection(epochs):
+    """Epoching.
+
+    Parameters
+    ----------
+    %(epochs)s
+
+    Returns
+    -------
+    reject : dict
+        The rejection dictionary with keys as specified by ch_types.
+    """
     starttime = time.time()
     reject = get_rejection_threshold(epochs, decim=1, ch_types="eeg", random_state=888)
     endtime = time.time()
@@ -339,10 +405,27 @@ def get_rejection(epochs):
 
 
 def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolder):
-    # reject = dict(eeg=100e-6,      # unit: V (EEG channels)
-    #                  # unit: V (EOG channels)
-    #               )
+    """Clean epochs from autoreject value.
 
+    Parameters
+    ----------
+    %(epochs)s
+    %(reject)s
+    %(fname_stem)s
+    %(derivatives_subfolder)s
+
+    Returns
+    -------
+    epochs : Epochs
+        Cleaned epochs
+    """
+    
+    """ 
+    to fix the threshold:
+    reject = dict(eeg=100e-6,      # unit: V (EEG channels)
+                                    # unit: V (EOG channels)
+                   )
+    """
     stim_before = [el[2] for el in epochs.events]
     count_stim_before = Counter(stim_before)
 
@@ -376,6 +459,15 @@ def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolde
 
 
 def save_evoked(epochs, event_id, fname_stem, derivatives_subfolder):
+    """Save individual evoked files.
+
+    Parameters
+    ----------
+    %(epochs)s
+    %(event_id)s
+    %(fname_stem)s
+    %(derivatives_subfolder)s
+    """
     epochs.metadata.groupby(
         by=[
             "event_name",
@@ -415,6 +507,11 @@ def SDT2(hits, misses, fas, crs):
     %(misses)s
     %(fas)s
     %(crs)s
+    
+    Returns
+    ----------
+    out: dict
+        d' measures
     """
     Z = norm.ppf
 
@@ -436,6 +533,7 @@ def SDT2(hits, misses, fas, crs):
 
 def SDT(hits, misses, fas, crs):
     """Return a dict with d-prime measures + tweeks to avoid d' infinity.
+    https://lindeloev.net/calculating-d-in-python-and-php/
 
     Parameters
     ----------
@@ -443,6 +541,11 @@ def SDT(hits, misses, fas, crs):
     %(misses)s
     %(fas)s
     %(crs)s
+
+    Returns
+    ----------
+    out: dict
+        d' measures
     """
     Z = norm.ppf
     # Floors an ceilings are replaced by half hits and half FA's
