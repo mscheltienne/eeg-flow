@@ -2,16 +2,19 @@
 # Modified on Mon May 08 01:01:00 2023
 # @anguyen
 
-from collections import Counter
+from __future__ import annotations  # c.f. PEP 563, PEP 649
+
 import math
 import itertools
 import time
+from collections import Counter
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 from autoreject import get_rejection_threshold
 from mne import Epochs, find_events
-from mne.epochs import make_metadata
+from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
 from scipy.stats import norm
 
@@ -19,6 +22,13 @@ from ..config import load_config
 from ..utils._docs import fill_doc
 from ..utils.bids import get_fname, get_derivative_folder
 from ..utils.concurrency import lock_files
+
+if TYPE_CHECKING:
+    from mne.epochs import BaseEpochs
+    from mne.io import BaseRaw
+    from numpy.typing import DTypeLike, NDArray
+
+    ScalarIntType: tuple[DTypeLike, ...] = (np.int8, np.int16, np.int32, np.int64)
 
 
 @fill_doc
@@ -30,7 +40,8 @@ def behav_prep_epoching(
     *,
     timeout: float = 10,
 ) -> None:
-    """Compute behav report and output metadata.
+    """Compute behavioral report and output metadata.
+
     Parameters
     ----------
     %(participant)s
@@ -66,7 +77,6 @@ def behav_prep_epoching(
         for lock in locks:
             lock.release()
         del locks
-    return
 
 
 @fill_doc
@@ -75,14 +85,26 @@ def _behav_prep_epoching(
     group: str,
     task: str,
     run: int,
-) -> None:
-    """Compute behav report and output metadata.
+) -> tuple[BaseRaw, NDArray[+ScalarIntType], dict[str, int], pd.DataFrame]:
+    """Compute behavioral report and output metadata.
+
     Parameters
     ----------
     %(participant)s
     %(group)s
     %(task)s
     %(run)s
+
+    Returns
+    -------
+    raw : Raw
+        Raw data.
+    events : array of shape (n_events, 3)
+        The events.
+    event_id : dict
+        Mapping str to int of the events
+    metadata : DataFrame
+        Metadata of the events.
     """
     # prepare folders
     _, derivatives_folder_root, _ = load_config()
@@ -91,66 +113,65 @@ def _behav_prep_epoching(
         derivatives_folder_root, participant, group, task, run
     )
 
-    # load previous steps
-    # # load raw_fit recording
+    # load previous steps (raw_fit recording)
     raw = read_raw_fif(
         derivatives_folder / (fname_stem + "_step7_preprocessed_raw.fif"),
         preload=True,
     )
 
     events = find_events(raw, stim_channel="TRIGGER")
-
     events_id = dict(standard=1, target=2, novel=3, response=64)
     row_events = ["standard", "target", "novel"]
-
-    metadata, events, event_id = create_metadata(events, events_id, raw, row_events)
-    FNAME_METADATA = derivatives_folder / (fname_stem + "_step9_a-metadata.csv")
-    metadata.to_csv(FNAME_METADATA)
-
-    num_Hits, num_CorrectRejections, num_Misses, num_FalseAlarms = get_SDT_outcomes(metadata)
+    metadata, events, event_id = make_metadata(events, events_id, raw, row_events)
+    fname_metadata = derivatives_folder / (fname_stem + "_step9_a-metadata.csv")
+    metadata.to_csv(fname_metadata)
+    num_hits, num_correct_rejections, num_misses, num_false_alarms = get_SDT_outcomes(
+        metadata
+    )
 
     hits = metadata[metadata["response_type"] == "Hits"]
     response_mean = round(hits["response"].mean(), 5)
     response_std = round(hits["response"].std(), 5)
-
     plot_RT(hits, fname_stem, derivatives_folder, response_mean, response_std)
 
-    get_indiv_behav(metadata, num_Hits, num_CorrectRejections, num_Misses, num_FalseAlarms, 
-                    fname_stem, derivatives_folder, response_mean, response_std)
-
-
-    # %%
-    epochs = epoching(raw, events, event_id, metadata)
-
-    reject = get_rejection(epochs)
-
-    epochs = clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_folder)
-
-    
-    # %%
-    FNAME_CLEANED_EPOCHS = derivatives_folder / (
-        fname_stem + "_step9_c1-cleaned-epo.fif"
+    get_indiv_behav(
+        metadata,
+        num_hits,
+        num_correct_rejections,
+        num_misses,
+        num_false_alarms,
+        fname_stem,
+        derivatives_folder,
+        response_mean,
+        response_std,
     )
-    epochs.save(FNAME_CLEANED_EPOCHS)
 
+    epochs = epoching(raw, events, event_id, metadata)
+    reject = get_rejection(epochs)
+    epochs = clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_folder)
+    fname_clean_epochs = derivatives_folder / fname_stem + "_step9_c1-cleaned-epo.fif"
+    epochs.save(fname_clean_epochs)
     save_evoked(epochs, event_id, fname_stem, derivatives_folder)
 
     return raw, events, event_id, metadata
 
-def create_metadata(events, events_id, raw, row_events):
-    """
-    metadata for each epoch shall include events from the range: [0.0, 1.5] s,
-    i.e. starting with stimulus onset and expanding beyond the end of the epoch
+
+def make_metadata(
+    events: NDArray[+ScalarIntType],
+    events_id: dict[str, int],
+    raw: BaseRaw,
+    row_events: list[str],
+) -> tuple[pd.DataFrame, NDArray[+ScalarIntType], dict[str, int]]:
+    """Create metadata from events for each epoch.
+
+    For each epoch, it shall include events from the range: [0.0, 1.5] s,
+    i.e. starting with stimulus onset and expanding beyond the end of the epoch.
     """
     metadata_tmin, metadata_tmax = 0.0, 0.999
 
-    """
-    auto-create metadata
-    this also returns a new events array and an event_id dictionary.
-    we'll see later why this is important
-    """
-
-    metadata, events, event_id = make_metadata(
+    # MNE auto-generate metadata, which also returns a new events array and an event_id
+    # dictionary.
+    metadata, events, event_id = make_metadata_mne(
         events=events,
         event_id=events_id,
         tmin=metadata_tmin,
@@ -175,38 +196,34 @@ def create_metadata(events, events_id, raw, row_events):
         "FalseAlarms",
         "CorrectRejections",
     ]
-
     metadata["response_type"] = np.select(conditions, choices, default=0)
     metadata["response_type"].value_counts()
-    
-    ########
+
     metadata.response_correct = False
     metadata.loc[
         (metadata["response_type"] == "CorrectRejections"), "response_correct"
     ] = True
     metadata.loc[(metadata["response_type"] == "Hits"), "response_correct"] = True
-
     metadata.loc[
         (metadata["response_type"] == "FalseAlarms"), "response_correct"
     ] = False
     metadata.loc[(metadata["response_type"] == "Misses"), "response_correct"] = False
 
-
     return metadata, events, event_id
 
-def get_SDT_outcomes(metadata):
-    
-    num_Hits = len(metadata[metadata["response_type"] == "Hits"])
-    num_CorrectRejections = len(
+
+def get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
+    num_hits = len(metadata[metadata["response_type"] == "Hits"])
+    num_correct_rejections = len(
         metadata[metadata["response_type"] == "CorrectRejections"]
     )
-    num_Misses = len(metadata[metadata["response_type"] == "Misses"])
-    num_FalseAlarms = len(metadata[metadata["response_type"] == "FalseAlarms"])
+    num_misses = len(metadata[metadata["response_type"] == "Misses"])
+    num_false_alarms = len(metadata[metadata["response_type"] == "FalseAlarms"])
+    return (num_hits, num_correct_rejections, num_misses, num_false_alarms)
 
-    return(num_Hits, num_CorrectRejections, num_Misses, num_FalseAlarms)
 
 def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std):
-    # visualize response times of TP
+    """Plot histogram of response times."""
     ax_rt = hits["response"].plot.hist(
         bins=100,
         title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(response_std)})",
@@ -215,10 +232,19 @@ def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std
     fname_rt_plot = derivatives_subfolder / "plots" / (fname_stem + "_step9_RT.svg")
     ax_rt.figure.suptitle(fname_stem, fontsize=16, y=1)
     ax_rt.figure.savefig(fname_rt_plot, transparent=True)
-    ax_rt
 
-def get_indiv_behav(metadata, num_Hits, num_CorrectRejections, num_Misses, num_FalseAlarms, 
-                    fname_stem, derivatives_subfolder, response_mean, response_std):
+
+def get_indiv_behav(
+    metadata,
+    num_Hits,
+    num_CorrectRejections,
+    num_Misses,
+    num_FalseAlarms,
+    fname_stem,
+    derivatives_subfolder,
+    response_mean,
+    response_std,
+):
     correct_response_count = metadata["response_correct"].sum()
 
     print(
@@ -227,18 +253,19 @@ def get_indiv_behav(metadata, num_Hits, num_CorrectRejections, num_Misses, num_F
     )
 
     print("Hits, Misses, Correct Rejections, False Alarms")
-    print(num_Hits, num_Misses, num_CorrectRejections, num_FalseAlarms,"\n")
+    print(num_Hits, num_Misses, num_CorrectRejections, num_FalseAlarms, "\n")
     SDT(num_Hits, num_Misses, num_FalseAlarms, num_CorrectRejections)
     metadata.groupby(by="event_name").count()
-    
+
     # write behav file
     FNAME_BEHAV = derivatives_subfolder / (fname_stem + "_step9_b-behav.txt")
 
     file_behav = open(FNAME_BEHAV, "w")
 
     file_behav.write("Hits, Misses, Correct Rejections, False Alarms\n")
-    file_behav.write(f"{str(num_Hits)}\t{str(num_Misses)}\t{str(num_CorrectRejections)}\t{str(num_FalseAlarms)}")
-
+    file_behav.write(
+        f"{str(num_Hits)}\t{str(num_Misses)}\t{str(num_CorrectRejections)}\t{str(num_FalseAlarms)}"
+    )
 
     file_behav.write("\n\nStandard, Novel, Target\n")
     metadata_count_correct = metadata.groupby(by="event_name").count()[
@@ -261,14 +288,25 @@ def get_indiv_behav(metadata, num_Hits, num_CorrectRejections, num_Misses, num_F
     file_behav.close()  # to change file access modes
 
 
-def epoching(raw, events, event_id, metadata):
+def epoching(
+    raw: BaseRaw,
+    events: NDarray[+ScalarIntType],
+    event_id: dict[str, int],
+    metadata: pd.DataFrame,
+) -> BaseEpochs:
     """Epoching.
+
     Parameters
     ----------
     %(raw)s
     %(events)s
     %(event_id)s
     %(metadata)s
+
+    Returns
+    -------
+    epochs : Epochs
+        Epoched data, -0.2 to 0.8 seconds around the stimuli, with metadata.
     """
     epochs_tmin, epochs_tmax = -0.2, 0.8
     epochs = Epochs(
@@ -285,6 +323,7 @@ def epoching(raw, events, event_id, metadata):
     )
     return epochs
 
+
 def get_rejection(epochs):
     starttime = time.time()
     reject = get_rejection_threshold(epochs, decim=1, ch_types="eeg", random_state=888)
@@ -296,7 +335,8 @@ def get_rejection(epochs):
     print(f"Elapsed {minutes}:{seconds}\n")
     return reject
 
-def clean_epochs_from_rejection(epochs, reject, FNAME_STEM, DERIVATIVES_SUBFOLDER):
+
+def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolder):
     # reject = dict(eeg=100e-6,      # unit: V (EEG channels)
     #                  # unit: V (EOG channels)
     #               )
@@ -304,39 +344,36 @@ def clean_epochs_from_rejection(epochs, reject, FNAME_STEM, DERIVATIVES_SUBFOLDE
     stim_before = [el[2] for el in epochs.events]
     count_stim_before = Counter(stim_before)
 
-
-
-
     epochs.drop_bad(reject=reject)
 
     stim_after = [el[2] for el in epochs.events]
     count_stim_after = Counter(stim_after)
 
-    data = [['1', count_stim_before[1]-count_stim_after[1]], 
-            ['2', count_stim_before[2]-count_stim_after[2]], 
-            ['3', count_stim_before[3]-count_stim_after[3]]] 
+    data = [
+        ["1", count_stim_before[1] - count_stim_after[1]],
+        ["2", count_stim_before[2] - count_stim_after[2]],
+        ["3", count_stim_before[3] - count_stim_after[3]],
+    ]
 
-    df_count = pd.DataFrame(data, columns=['Stim', 'nb_dropped']) 
-
-    df_count.to_csv(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step9_c2-drop-epochs.csv"))
-
-    fig = epochs.plot_drop_log(subject=FNAME_STEM)
-
-    FNAME_DROP_LOG = (
-        DERIVATIVES_SUBFOLDER / "plots" / (FNAME_STEM + "_step9_epochs-rejected.svg")
+    df_count = pd.DataFrame(data, columns=["Stim", "nb_dropped"])
+    df_count.to_csv(derivatives_subfolder / (fname_stem + "_step9_c2-drop-epochs.csv"))
+    fig = epochs.plot_drop_log(subject=fname_stem)
+    fname_drop_log = (
+        derivatives_subfolder / "plots" / (fname_stem + "_step9_epochs-rejected.svg")
     )
-    fig.savefig(FNAME_DROP_LOG, transparent=True)
-
+    fig.savefig(fname_drop_log, transparent=True)
     totals = Counter(i for i in list(itertools.chain.from_iterable(epochs.drop_log)))
-    df_drops = pd.DataFrame.from_dict(totals, orient = "index")
-    df_drops = df_drops.rename(columns={0: FNAME_STEM})
-    df_drops = df_drops.sort_values(by=[FNAME_STEM], ascending = False)
-    df_drops.to_csv(DERIVATIVES_SUBFOLDER / (FNAME_STEM + "_step9_c3-drop-channel-log.csv"))
+    df_drops = pd.DataFrame.from_dict(totals, orient="index")
+    df_drops = df_drops.rename(columns={0: fname_stem})
+    df_drops = df_drops.sort_values(by=[fname_stem], ascending=False)
+    df_drops.to_csv(
+        derivatives_subfolder / (fname_stem + "_step9_c3-drop-channel-log.csv")
+    )
 
-    return(epochs)
+    return epochs
+
 
 def save_evoked(epochs, event_id, FNAME_STEM, DERIVATIVES_SUBFOLDER):
-
     epochs.metadata.groupby(
         by=[
             "event_name",
@@ -346,7 +383,6 @@ def save_evoked(epochs, event_id, FNAME_STEM, DERIVATIVES_SUBFOLDER):
     # this keeps correct responses only (hits and correct rejection)
     epochs["response_correct"]
 
-    # %%
     all_evokeds = dict(
         (cond, epochs["response_correct"][cond].average()) for cond in event_id
     )
@@ -370,6 +406,7 @@ def save_evoked(epochs, event_id, FNAME_STEM, DERIVATIVES_SUBFOLDER):
 
 def SDT2(hits, misses, fas, crs):
     """Return a dict with d-prime measures.
+
     Parameters
     ----------
     %(hits)s
@@ -395,9 +432,9 @@ def SDT2(hits, misses, fas, crs):
     return out
 
 
-
 def SDT(hits, misses, fas, crs):
     """Return a dict with d-prime measures + tweeks to avoid d' infinity.
+
     Parameters
     ----------
     %(hits)s
