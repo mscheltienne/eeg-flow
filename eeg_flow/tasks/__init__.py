@@ -6,9 +6,7 @@ from .annotate_bad_channels_and_segments import (  # noqa: F401
     view_annotated_raw,
 )
 from .convert_xdf_to_fiff import convert_xdf_to_fiff  # noqa: F401
-from .epochs_evoked import (  # noqa: F401
-    behav_prep_epoching,
-)
+from .epochs_evoked import behav_prep_epoching  # noqa: F401
 from .ica_decomposition import (  # noqa: F401
     apply_ica,
     compare_labels,

@@ -4,8 +4,8 @@
 
 from __future__ import annotations  # c.f. PEP 563, PEP 649
 
-import math
 import itertools
+import math
 import time
 from collections import Counter
 from typing import TYPE_CHECKING
@@ -20,7 +20,7 @@ from scipy.stats import norm
 
 from ..config import load_config
 from ..utils._docs import fill_doc
-from ..utils.bids import get_fname, get_derivative_folder
+from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:
