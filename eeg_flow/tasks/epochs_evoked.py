@@ -290,7 +290,7 @@ def get_indiv_behav(
 
 def epoching(
     raw: BaseRaw,
-    events: NDarray[+ScalarIntType],
+    events: np.NDarray[+ScalarIntType],
     event_id: dict[str, int],
     metadata: pd.DataFrame,
 ) -> BaseEpochs:
