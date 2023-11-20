@@ -166,8 +166,10 @@ def make_metadata(
 
     For each epoch, it shall include events from the range: [0.0, 1.5] s,
     i.e. starting with stimulus onset and expanding beyond the end of the epoch.
+
+    Currently it includes [0.0, 0.999]
     """
-    metadata_tmin, metadata_tmax = 0.0, 0.999
+    metadata_tmin, metadata_tmax = 0.0, 1.0
 
     # MNE auto-generate metadata, which also returns a new events array and an event_id
     # dictionary.
@@ -219,7 +221,7 @@ def get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
     )
     num_misses = len(metadata[metadata["response_type"] == "Misses"])
     num_false_alarms = len(metadata[metadata["response_type"] == "FalseAlarms"])
-    return (num_hits, num_correct_rejections, num_misses, num_false_alarms)
+    return num_hits, num_correct_rejections, num_misses, num_false_alarms
 
 
 def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std):
@@ -290,7 +292,7 @@ def get_indiv_behav(
 
 def epoching(
     raw: BaseRaw,
-    events: np.NDarray[+ScalarIntType],
+    events: np.NDArray[+ScalarIntType],
     event_id: dict[str, int],
     metadata: pd.DataFrame,
 ) -> BaseEpochs:
@@ -373,7 +375,7 @@ def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolde
     return epochs
 
 
-def save_evoked(epochs, event_id, FNAME_STEM, DERIVATIVES_SUBFOLDER):
+def save_evoked(epochs, event_id, fname_stem, derivatives_subfolder):
     epochs.metadata.groupby(
         by=[
             "event_name",
@@ -389,19 +391,19 @@ def save_evoked(epochs, event_id, FNAME_STEM, DERIVATIVES_SUBFOLDER):
     # all_evokeds = {cond: epochs["response_correct"][cond].average() for cond in event_id}
     all_evokeds
 
-    FNAME_EV_STANDARD = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step9_d1-standard_evoked-ave.fif"
+    fname_ev_standard = derivatives_subfolder / (
+        fname_stem + "_step9_d1-standard_evoked-ave.fif"
     )
-    FNAME_EV_TARGET = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step9_d2-target_evoked-ave.fif"
+    fname_ev_target = derivatives_subfolder / (
+        fname_stem + "_step9_d2-target_evoked-ave.fif"
     )
-    FNAME_EV_NOVEL = DERIVATIVES_SUBFOLDER / (
-        FNAME_STEM + "_step9_d3-novel_evoked-ave.fif"
+    fname_ev_novel = derivatives_subfolder / (
+        fname_stem + "_step9_d3-novel_evoked-ave.fif"
     )
 
-    all_evokeds["standard"].save(FNAME_EV_STANDARD)
-    all_evokeds["target"].save(FNAME_EV_TARGET)
-    all_evokeds["novel"].save(FNAME_EV_NOVEL)
+    all_evokeds["standard"].save(fname_ev_standard)
+    all_evokeds["target"].save(fname_ev_target)
+    all_evokeds["novel"].save(fname_ev_novel)
 
 
 def SDT2(hits, misses, fas, crs):
