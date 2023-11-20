@@ -18,6 +18,7 @@ from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
 from scipy.stats import norm
 
+from .. import logger
 from ..config import load_config
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
@@ -59,14 +60,14 @@ def behav_prep_epoching(
     # lock the output derivative files
     # create locks
     derivatives = [
-        derivatives_folder / (fname_stem + "_step9_a-metadata.csv"),
-        derivatives_folder / (fname_stem + "_step9_b-behav.txt"),
-        derivatives_folder / (fname_stem + "_step9_c1-cleaned-epo.fif"),
-        derivatives_folder / (fname_stem + "_step9_c2-drop-epochs.csv"),
-        derivatives_folder / (fname_stem + "_step9_c3-drop-channel-log.csv"),
-        derivatives_folder / (fname_stem + "_step9_d1-standard_evoked-ave.fif"),
-        derivatives_folder / (fname_stem + "_step9_d2-target_evoked-ave.fif"),
-        derivatives_folder / (fname_stem + "_step9_d3-novel_evoked-ave.fif"),
+        derivatives_folder / f"{fname_stem}_step8_a-metadata.csv",
+        derivatives_folder / f"{fname_stem}_step8_b-behav.txt",
+        derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
+        derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs.csv",
+        derivatives_folder / f"{fname_stem}_step8_c3-drop-channel-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_d1-standard_evoked-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_d2-target_evoked-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_d3-novel_evoked-ave.fif",
     ]
 
     locks = lock_files(*derivatives, timeout=timeout)
@@ -115,7 +116,7 @@ def _behav_prep_epoching(
 
     # load previous steps (raw_fit recording)
     raw = read_raw_fif(
-        derivatives_folder / (fname_stem + "_step7_preprocessed_raw.fif"),
+        derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",
         preload=True,
     )
 
@@ -123,7 +124,7 @@ def _behav_prep_epoching(
     events_id = dict(standard=1, target=2, novel=3, response=64)
     row_events = ["standard", "target", "novel"]
     metadata, events, event_id = make_metadata(events, events_id, raw, row_events)
-    fname_metadata = derivatives_folder / (fname_stem + "_step9_a-metadata.csv")
+    fname_metadata = derivatives_folder / f"{fname_stem}_step8_a-metadata.csv"
     metadata.to_csv(fname_metadata)
     num_hits, num_correct_rejections, num_misses, num_false_alarms = get_SDT_outcomes(
         metadata
@@ -149,7 +150,7 @@ def _behav_prep_epoching(
     epochs = epoching(raw, events, event_id, metadata)
     reject = get_rejection(epochs)
     epochs = clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_folder)
-    fname_clean_epochs = derivatives_folder / fname_stem + "_step9_c1-cleaned-epo.fif"
+    fname_clean_epochs = derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif"
     epochs.save(fname_clean_epochs)
     save_evoked(epochs, event_id, fname_stem, derivatives_folder)
 
@@ -272,7 +273,7 @@ def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std
         title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(response_std)})",
     )
 
-    fname_rt_plot = derivatives_subfolder / "plots" / (fname_stem + "_step9_RT.svg")
+    fname_rt_plot = derivatives_subfolder / "plots" / f"{fname_stem}_step8_RT.svg"
     ax_rt.figure.suptitle(fname_stem, fontsize=16, y=1)
     ax_rt.figure.savefig(fname_rt_plot, transparent=True)
 
@@ -304,18 +305,18 @@ def get_indiv_behav(
     """
     correct_response_count = metadata["response_correct"].sum()
 
-    print(
+    logger.info(
         f"\nCorrect responses: {correct_response_count}\n"
         f"Incorrect responses: {len(metadata) - correct_response_count}\n"
     )
 
-    print("Hits, Misses, Correct Rejections, False Alarms")
-    print(num_hits, num_misses, num_correct_rejections, num_false_alarms, "\n")
+    logger.info("Hits, Misses, Correct Rejections, False Alarms")
+    logger.info(num_hits, num_misses, num_correct_rejections, num_false_alarms, "\n")
     SDT(num_hits, num_misses, num_false_alarms, num_correct_rejections)
     metadata.groupby(by="event_name").count()
 
     # write behav file
-    FNAME_BEHAV = derivatives_subfolder / (fname_stem + "_step9_b-behav.txt")
+    FNAME_BEHAV = derivatives_subfolder / f"{fname_stem}_step8_b-behav.txt"
 
     file_behav = open(FNAME_BEHAV, "w")
 
@@ -399,8 +400,8 @@ def get_rejection(epochs):
     diff = endtime - starttime
     minutes = str(int(diff // 60)).zfill(2)
     seconds = str(int(diff % 60)).zfill(2)
-    print("\nPeak-to-peak rejection threshold computed: %s", reject)
-    print(f"Elapsed {minutes}:{seconds}\n")
+    logger.info("\nPeak-to-peak rejection threshold computed: %s", reject)
+    logger.info(f"Elapsed {minutes}:{seconds}\n")
     return reject
 
 
@@ -441,10 +442,10 @@ def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolde
     ]
 
     df_count = pd.DataFrame(data, columns=["Stim", "nb_dropped"])
-    df_count.to_csv(derivatives_subfolder / (fname_stem + "_step9_c2-drop-epochs.csv"))
+    df_count.to_csv(derivatives_subfolder / f"{fname_stem}_step8_c2-drop-epochs.csv")
     fig = epochs.plot_drop_log(subject=fname_stem)
     fname_drop_log = (
-        derivatives_subfolder / "plots" / (fname_stem + "_step9_epochs-rejected.svg")
+        derivatives_subfolder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg"
     )
     fig.savefig(fname_drop_log, transparent=True)
     totals = Counter(i for i in list(itertools.chain.from_iterable(epochs.drop_log)))
@@ -452,7 +453,7 @@ def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolde
     df_drops = df_drops.rename(columns={0: fname_stem})
     df_drops = df_drops.sort_values(by=[fname_stem], ascending=False)
     df_drops.to_csv(
-        derivatives_subfolder / (fname_stem + "_step9_c3-drop-channel-log.csv")
+        derivatives_subfolder / f"{fname_stem}_step8_c3-drop-channel-log.csv"
     )
 
     return epochs
@@ -483,15 +484,12 @@ def save_evoked(epochs, event_id, fname_stem, derivatives_subfolder):
     # all_evokeds = {cond: epochs["response_correct"][cond].average() for cond in event_id}
     all_evokeds
 
-    fname_ev_standard = derivatives_subfolder / (
-        fname_stem + "_step9_d1-standard_evoked-ave.fif"
-    )
-    fname_ev_target = derivatives_subfolder / (
-        fname_stem + "_step9_d2-target_evoked-ave.fif"
-    )
-    fname_ev_novel = derivatives_subfolder / (
-        fname_stem + "_step9_d3-novel_evoked-ave.fif"
-    )
+    fname_ev_standard = derivatives_subfolder / f"{fname_stem}_step8_d1-standard_evoked-ave.fif"
+    
+    fname_ev_target = derivatives_subfolder / f"{fname_stem}_step8_d2-target_evoked-ave.fif"
+
+    fname_ev_novel = derivatives_subfolder / f"{fname_stem}_step8_d3-novel_evoked-ave.fif"
+    
 
     all_evokeds["standard"].save(fname_ev_standard)
     all_evokeds["target"].save(fname_ev_target)
