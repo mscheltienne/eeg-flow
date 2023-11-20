@@ -258,7 +258,7 @@ def get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
 
 def plot_RT(hits, fname_stem, derivatives_subfolder, response_mean, response_std):
     """Plot histogram of response times.
-    
+
     Parameters
     ----------
     %(hits)s
@@ -289,7 +289,7 @@ def get_indiv_behav(
     response_std,
 ):
     """Write a file with the individual measures.
-    
+
     Parameters
     ----------
     %(metadata)s
@@ -419,7 +419,7 @@ def clean_epochs_from_rejection(epochs, reject, fname_stem, derivatives_subfolde
     epochs : Epochs
         Cleaned epochs
     """
-    
+
     """ 
     to fix the threshold:
     reject = dict(eeg=100e-6,      # unit: V (EEG channels)
@@ -507,7 +507,7 @@ def SDT2(hits, misses, fas, crs):
     %(misses)s
     %(fas)s
     %(crs)s
-    
+
     Returns
     ----------
     out: dict
