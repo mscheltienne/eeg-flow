@@ -73,7 +73,37 @@ def behav_prep_epoching(
     locks = lock_files(*derivatives, timeout=timeout)
 
     try:
+        if all(derivative.exists() for derivative in derivatives):
+            raise FileExistsError
         _behav_prep_epoching(participant, group, task, run)
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except Exception as error:
+        logger.error(
+            "The file for participant %s, group %s, task %s, run %i could not be "
+            "processed.",
+            participant,
+            group,
+            task,
+            run,
+        )
+        logger.exception(error)
     finally:
         for lock in locks:
             lock.release()
