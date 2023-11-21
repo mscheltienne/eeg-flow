@@ -228,7 +228,7 @@ def make_metadata(
         row_events=row_events,
     )
 
-conditions = [
+    conditions = [
         (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"]<0.2),
         (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"]>=0.2),
         (metadata["event_name"].eq("target")) & (pd.isna(metadata["response"])),
@@ -237,7 +237,7 @@ conditions = [
         (metadata["event_name"].eq("novel")) & (pd.notna(metadata["response"])),
         (metadata["event_name"].eq("novel")) & (pd.isna(metadata["response"])),
     ]
-choices = [
+    choices = [
         "FalseAlarms_tooquick",
         "Hits",
         "Misses",
