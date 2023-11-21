@@ -345,7 +345,7 @@ def get_indiv_behav(
 
     logger.info("Hits, Misses, Correct Rejections, False Alarms")
     logger.info(num_hits, num_misses, num_correct_rejections, num_false_alarms, "\n")
-    SDT(num_hits, num_misses, num_false_alarms, num_correct_rejections)
+    SDT_loglinear(num_hits, num_misses, num_false_alarms, num_correct_rejections)
     metadata.groupby(by="event_name").count()
 
     # write behav file
@@ -373,7 +373,7 @@ def get_indiv_behav(
 
     file_behav.write("\n\nd'\n")
     file_behav.write(
-        str(SDT(num_hits, num_misses, num_false_alarms, num_correct_rejections)["d"])
+        str(SDT_loglinear(num_hits, num_misses, num_false_alarms, num_correct_rejections)["d"])
     )
 
     file_behav.close()  # to change file access modes
@@ -529,41 +529,9 @@ def save_evoked(epochs, event_id, fname_stem, derivatives_subfolder):
     all_evokeds["novel"].save(fname_ev_novel)
 
 
-def SDT2(hits, misses, fas, crs):
-    """Return a dict with d-prime measures.
-
-    Parameters
-    ----------
-    %(hits)s
-    %(misses)s
-    %(fas)s
-    %(crs)s
-
-    Returns
-    ----------
-    out: dict
-        d' measures
-    """
-    Z = norm.ppf
-
-    # Calculate hit_rate and avoid d' infinity
-    hit_rate = hits / (hits + misses)
-
-    # Calculate false alarm rate and avoid d' infinity
-    fa_rate = fas / (fas + crs)
-
-    # Return d', beta, c and Ad'
-    out = {}
-    out["d"] = Z(hit_rate) - Z(fa_rate)
-    out["beta"] = math.exp((Z(fa_rate) ** 2 - Z(hit_rate) ** 2) / 2)
-    out["c"] = -(Z(hit_rate) + Z(fa_rate)) / 2
-    out["Ad"] = norm.cdf(out["d"] / math.sqrt(2))
-
-    return out
-
-
-def SDT(hits, misses, fas, crs):
-    """Return a dict with d-prime measures + tweeks to avoid d' infinity.
+def SDT_loglinear(hits, misses, fas, crs):
+    """Return a dict with d-prime measures. Corrected with the log-linear rule to avoid extreme cases.
+    See Stanislaw & Todorov 1999 and Hautus 1995,
     https://lindeloev.net/calculating-d-in-python-and-php/
 
     Parameters
@@ -579,23 +547,12 @@ def SDT(hits, misses, fas, crs):
         d' measures
     """
     Z = norm.ppf
-    # Floors an ceilings are replaced by half hits and half FA's
-    half_hit = 0.5 / (hits + misses)
-    half_fa = 0.5 / (fas + crs)
 
     # Calculate hit_rate and avoid d' infinity
-    hit_rate = hits / (hits + misses)
-    if hit_rate == 1:
-        hit_rate = 1 - half_hit
-    if hit_rate == 0:
-        hit_rate = half_hit
+    hit_rate = (hits + 0.5) / (hits + misses + 1)
 
     # Calculate false alarm rate and avoid d' infinity
-    fa_rate = fas / (fas + crs)
-    if fa_rate == 1:
-        fa_rate = 1 - half_fa
-    if fa_rate == 0:
-        fa_rate = half_fa
+    fa_rate = (fas + 0.5) / (fas + crs + 1)
 
     # Return d', beta, c and Ad'
     out = {}
