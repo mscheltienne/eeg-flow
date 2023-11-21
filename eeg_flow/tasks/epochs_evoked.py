@@ -185,7 +185,7 @@ def make_metadata(
     event_id : dict
         Mapping str to int of the events
     """
-    metadata_tmin, metadata_tmax = 0.0, 1.0
+    metadata_tmin, metadata_tmax = 0.0, 0.999
 
     # MNE auto-generate metadata, which also returns a new events array and an event_id
     # dictionary.
@@ -198,15 +198,17 @@ def make_metadata(
         row_events=row_events,
     )
 
-    conditions = [
-        metadata["event_name"].eq("target") & pd.notna(metadata["response"]),
-        metadata["event_name"].eq("target") & pd.isna(metadata["response"]),
-        metadata["event_name"].eq("standard") & pd.notna(metadata["response"]),
-        metadata["event_name"].eq("standard") & pd.isna(metadata["response"]),
-        metadata["event_name"].eq("novel") & pd.notna(metadata["response"]),
-        metadata["event_name"].eq("novel") & pd.isna(metadata["response"]),
+conditions = [
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"]<0.2),
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"]>=0.2),
+        (metadata["event_name"].eq("target")) & (pd.isna(metadata["response"])),
+        (metadata["event_name"].eq("standard")) & (pd.notna(metadata["response"])),
+        (metadata["event_name"].eq("standard")) & (pd.isna(metadata["response"])),
+        (metadata["event_name"].eq("novel")) & (pd.notna(metadata["response"])),
+        (metadata["event_name"].eq("novel")) & (pd.isna(metadata["response"])),
     ]
-    choices = [
+choices = [
+        "FalseAlarms_tooquick",
         "Hits",
         "Misses",
         "FalseAlarms",
@@ -214,6 +216,7 @@ def make_metadata(
         "FalseAlarms",
         "CorrectRejections",
     ]
+
     metadata["response_type"] = np.select(conditions, choices, default=0)
     metadata["response_type"].value_counts()
 
