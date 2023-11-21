@@ -184,8 +184,6 @@ def _behav_prep_epoching(
     epochs.save(fname_clean_epochs)
     save_evoked(epochs, event_id, fname_stem, derivatives_folder)
 
-    return raw, events, event_id, metadata
-
 
 def make_metadata(
     events: NDArray[+ScalarIntType],
