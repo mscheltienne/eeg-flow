@@ -298,15 +298,7 @@ def _make_metadata(
     ]
     metadata["response_type"] = np.select(conditions, choices, default=0)
     metadata["response_type"].value_counts()
-    metadata.response_correct = False
-    metadata.loc[
-        (metadata["response_type"] == "CorrectRejections"), "response_correct"
-    ] = True
-    metadata.loc[(metadata["response_type"] == "Hits"), "response_correct"] = True
-    metadata.loc[
-        (metadata["response_type"] == "FalseAlarms"), "response_correct"
-    ] = False
-    metadata.loc[(metadata["response_type"] == "Misses"), "response_correct"] = False
+    metadata["response_correct"] = (metadata["response_type"] == "CorrectRejections") | (metadata["response_type"] == "Hits")
     return metadata, events, event_id
 
 
