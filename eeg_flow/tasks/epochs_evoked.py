@@ -63,8 +63,8 @@ def create_epochs_evoked_and_behavioral_metadata(
         derivatives_folder / f"{fname_stem}_step8_a-metadata.csv",
         derivatives_folder / f"{fname_stem}_step8_b-behav.txt",
         derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
-        derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs.csv",
-        derivatives_folder / f"{fname_stem}_step8_c3-drop-channel-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv",
+        derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv",
         derivatives_folder / f"{fname_stem}_step8-standard-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-target-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-novel-ave.fif",
@@ -109,13 +109,17 @@ def create_epochs_evoked_and_behavioral_metadata(
 
         # save epochs, drop-log and evoked files
         epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
-        df_counts.to_csv(derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs.csv")
+        df_counts.to_csv(derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv")
         fig_drops.get_axes()[0].set_title(
             f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
         )
+        fig_drops.savefig(
+            derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
+            transparent=True,
+        )
         df_drops = df_drops.rename(columns={0: fname_stem})
         df_drops.to_csv(
-            derivatives_folder / f"{fname_stem}_step8_c3-drop-channel-log.csv"
+            derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv"
         )
         for cond in epochs.event_id:
             evokeds[cond].save(
