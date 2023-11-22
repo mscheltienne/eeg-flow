@@ -1,10 +1,12 @@
-from __future__ import annotations  # c.f. PEP 563, PEP 649
+from __future__ import annotations
+from inspect import stack  # c.f. PEP 563, PEP 649
 
 import math
 import time
 from collections import Counter
 from itertools import chain
 from typing import TYPE_CHECKING
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -15,7 +17,7 @@ from mne.io import read_raw_fif
 from scipy.stats import norm
 
 from .. import logger
-from ..config import load_config
+from ..config import load_config, load_triggers
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
@@ -92,14 +94,19 @@ def create_epochs_evoked_and_behavioral_metadata(
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save metadata, response times and behavioral data
-        metadata.to_csv(derivatives_folder / f"{fname_stem}_step8_a-metadata.csv")
-        fig_rt.suptitle(fname_stem, fontsize=16, y=1)
-        fig_rt.savefig(
-            derivatives_folder / "plots" / f"{fname_stem}_step8_RT.svg",
-            transparent=True,
-        )
-        with open(derivatives_folder / f"{fname_stem}_step8_b-behav.txt", "w") as file:
-            file.write(behavioral_str)
+        if metadata is not None:
+            assert fig_rt is not None
+            assert behavioral_str is not None
+            metadata.to_csv(derivatives_folder / f"{fname_stem}_step8_a-metadata.csv")
+            fig_rt.suptitle(fname_stem, fontsize=16, y=1)
+            fig_rt.savefig(
+                derivatives_folder / "plots" / f"{fname_stem}_step8_RT.svg",
+                transparent=True,
+            )
+            with open(
+                derivatives_folder / f"{fname_stem}_step8_b-behav.txt", "w"
+            ) as file:
+                file.write(behavioral_str)
 
         # save epochs, drop-log and evoked files
         epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
@@ -164,31 +171,45 @@ def _create_epochs_evoked_and_behavioral_metadata(
 ]:
     """Prepare epochs from a raw object."""
     events = find_events(raw, stim_channel="TRIGGER")
-    events_id = dict(standard=1, target=2, novel=3, response=64)
-    metadata, events, event_id = _make_metadata(events, events_id, raw)
-    n_hits, n_correct_rejections, n_misses, n_false_alarms = _get_SDT_outcomes(metadata)
+    events_id = load_triggers()
+    if np.any(events[:, 2]) == 64:
+        events_id["response"] = 64
+    if sorted(np.unique(events[:, 2])) != sorted(events_id.values()):
+        warn(
+            "The events array contains unexpected triggers: "
+            f"{np.unique(events[:, 2])}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    if "response" in events_id:
+        metadata, events, events_id = _make_metadata(events, events_id, raw)
+        n_hits, n_correct_rejections, n_misses, n_false_alarms = _get_SDT_outcomes(
+            metadata
+        )
+        hits = metadata[metadata["response_type"] == "Hits"]
+        response_mean = round(hits["response"].mean(), 5)
+        response_std = round(hits["response"].std(), 5)
+        fig_rt, _ = _plot_reaction_time(hits, response_mean, response_std)
+        behavioral_str = _repr_individual_behavioral(
+            metadata,
+            n_hits,
+            n_correct_rejections,
+            n_misses,
+            n_false_alarms,
+            response_mean,
+            response_std,
+        )
+    else:
+        metadata = None
+        fig_rt = None
+        behavioral_str = None
 
-    hits = metadata[metadata["response_type"] == "Hits"]
-    response_mean = round(hits["response"].mean(), 5)
-    response_std = round(hits["response"].std(), 5)
-    fig_rt, _ = _plot_reaction_time(hits, response_mean, response_std)
-    behavioral_str = _repr_individual_behavioral(
-        metadata,
-        n_hits,
-        n_correct_rejections,
-        n_misses,
-        n_false_alarms,
-        response_mean,
-        response_std,
-    )
-
-    epochs_tmin, epochs_tmax = -0.2, 0.8
     epochs = Epochs(
         raw=raw,
-        tmin=epochs_tmin,
-        tmax=epochs_tmax,
+        tmin=-0.2,
+        tmax=0.8,
         events=events,
-        event_id=event_id,
+        event_id=events_id,
         metadata=metadata,
         reject=None,
         preload=True,
@@ -197,10 +218,13 @@ def _create_epochs_evoked_and_behavioral_metadata(
     )
     reject = _get_rejection(epochs)
     epochs, df_counts, df_drops, fig_drops = _drop_bad_epochs(epochs, reject)
-    evokeds = dict(
-        (cond, epochs["response_correct == True"][cond].average())
-        for cond in epochs.event_id
-    )
+    if metadata is None:
+        evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
+    else:
+        evokeds = dict(
+            (cond, epochs["response_correct == True"][cond].average())
+            for cond in epochs.event_id
+        )
     return (
         metadata,
         fig_rt,
@@ -222,7 +246,7 @@ def _make_metadata(
 
     For each epoch, it shall include events from the range: [0.0, 1.5] s,
     i.e. starting with stimulus onset and expanding beyond the end of the epoch.
-    Currently it includes [0.0, 0.999]
+    Currently it includes [0.0, 0.999].
 
     Parameters
     ----------
@@ -439,9 +463,10 @@ def _drop_bad_epochs(
         ["3", count_stim_before[3] - count_stim_after[3]],
     ]
     df_count = pd.DataFrame(data, columns=["Stim", "n_dropped"])
-    # drop epochs following a response
-    response_arr = pd.notna(epochs.metadata["response"]).to_numpy()
-    epochs.drop(np.where(response_arr)[0] + 1, reason="epoch after response")
+    if epochs.metadata is not None:
+        # drop epochs following a response
+        response_arr = pd.notna(epochs.metadata["response"]).to_numpy()
+        epochs.drop(np.where(response_arr)[0] + 1, reason="epoch after response")
     # log dropped epochs
     totals = Counter(chain(*epochs.drop_log))
     df_drops = pd.DataFrame.from_dict(totals, orient="index")
