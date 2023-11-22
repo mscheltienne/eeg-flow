@@ -1,5 +1,4 @@
-from __future__ import annotations
-from inspect import stack  # c.f. PEP 563, PEP 649
+from __future__ import annotations  # c.f. PEP 563, PEP 649
 
 import math
 import time
