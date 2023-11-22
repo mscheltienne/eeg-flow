@@ -428,7 +428,8 @@ def _drop_bad_epochs(
     Returns
     -------
     epochs : Epochs
-        Cleaned epochs, where epochs with supra-threshold PTP amplitude are dropped.
+        Cleaned epochs, where epochs with supra-threshold PTP amplitude are dropped and
+        where epochs following a response are dropped.
     """
     count_stim_before = Counter(epochs.events[:, 2])
     epochs.drop_bad(reject=reject)
@@ -439,6 +440,10 @@ def _drop_bad_epochs(
         ["3", count_stim_before[3] - count_stim_after[3]],
     ]
     df_count = pd.DataFrame(data, columns=["Stim", "n_dropped"])
+    # drop epochs following a response
+    response_arr = pd.notna(epochs.metadata["response"]).to_numpy()
+    epochs.drop(np.where(response_arr)[0] + 1, reason="epoch after response")
+    # log dropped epochs
     totals = Counter(chain(*epochs.drop_log))
     df_drops = pd.DataFrame.from_dict(totals, orient="index")
     df_drops = df_drops.sort_values(by=[0], ascending=False)
