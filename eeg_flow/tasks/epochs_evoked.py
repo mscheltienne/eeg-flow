@@ -165,8 +165,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
     """Prepare epochs from a raw object."""
     events = find_events(raw, stim_channel="TRIGGER")
     events_id = dict(standard=1, target=2, novel=3, response=64)
-    row_events = ["standard", "target", "novel"]
-    metadata, events, event_id = _make_metadata(events, events_id, raw, row_events)
+    metadata, events, event_id = _make_metadata(events, events_id, raw)
     n_hits, n_correct_rejections, n_misses, n_false_alarms = _get_SDT_outcomes(metadata)
 
     hits = metadata[metadata["response_type"] == "Hits"]
@@ -218,7 +217,6 @@ def _make_metadata(
     events: NDArray[+ScalarIntType],
     events_id: dict[str, int],
     raw: BaseRaw,
-    row_events: list[str],
 ) -> tuple[pd.DataFrame, NDArray[+ScalarIntType], dict[str, int]]:
     """Create metadata from events for each epoch.
 
@@ -228,10 +226,9 @@ def _make_metadata(
 
     Parameters
     ----------
-    %(events)s
-    %(events_id)s
-    %(raw)s
-    %(row_events)s
+    events : array of shape (n_events, 3)
+    events_id : dict
+    raw : Raw
 
     Returns
     -------
@@ -252,7 +249,7 @@ def _make_metadata(
         tmin=0.0,
         tmax=0.999,
         sfreq=raw.info["sfreq"],
-        row_events=row_events,
+        row_events=["standard", "target", "novel"],
     )
     conditions = [
         (metadata["event_name"].eq("target"))
@@ -318,15 +315,15 @@ def _get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
 
 
 def _plot_reaction_time(
-    hits, response_mean, response_std
+    hits: pd.Series, response_mean: float, response_std: float
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plot histogram of response times.
 
     Parameters
     ----------
-    %(hits)s
-    %(response_mean)s
-    %(response_std)s
+    hits : Series
+    response_mean : float
+    response_std : float
 
     Returns
     -------
@@ -341,25 +338,25 @@ def _plot_reaction_time(
 
 
 def _repr_individual_behavioral(
-    metadata,
-    n_hits,
-    n_correct_rejections,
-    n_misses,
-    n_false_alarms,
-    response_mean,
-    response_std,
+    metadata: pd.DataFrame,
+    n_hits: int,
+    n_correct_rejections: int,
+    n_misses: int,
+    n_false_alarms: int,
+    response_mean: float,
+    response_std: float,
 ) -> str:
     """Create a string representation of the individual behavioral information.
 
     Parameters
     ----------
-    %(metadata)s
-    %(num_hits)s
-    %(num_correct_rejections)s
-    %(num_misses)s
-    %(num_false_alarms)s
-    %(response_mean)s
-    %(response_std)s
+    metadata : DataFrame
+    n_hits : int
+    n_correct_rejections : int
+    n_misses : int
+    n_false_alarms : int
+    response_mean : float
+    response_std : float
 
     Returns
     -------
@@ -392,12 +389,12 @@ def _repr_individual_behavioral(
     return behavioral_str
 
 
-def _get_rejection(epochs):
+def _get_rejection(epochs: BaseEpochs) -> dict[str, float]:
     """Epoching.
 
     Parameters
     ----------
-    %(epochs)s
+    epochs : Epochs
 
     Returns
     -------
@@ -416,14 +413,16 @@ def _get_rejection(epochs):
 
 
 def _drop_bad_epochs(
-    epochs, reject
+    epochs: BaseEpochs, reject: dict[str, float]
 ) -> tuple[BaseEpochs, pd.DataFrame, pd.DataFrame, plt.Figure]:
     """Clean epochs from autoreject value.
 
     Parameters
     ----------
-    %(epochs)s
-    %(reject)s
+    epochs : Epochs
+    df_counts : DataFrame
+    df_drops : DataFrame
+    fig_drops : Figure
 
     Returns
     -------
@@ -451,7 +450,7 @@ def _drop_bad_epochs(
     return epochs, df_count, df_drops, fig
 
 
-def _SDT_loglinear(hits, misses, fas, crs):
+def _SDT_loglinear(hits: int, misses: int, fas: int, crs: int) -> dict[str, float]:
     """Return a dict with d-prime measures, corrected with the log-linear rule.
 
     See Stanislaw & Todorov 1999 and Hautus 1995,
@@ -459,10 +458,10 @@ def _SDT_loglinear(hits, misses, fas, crs):
 
     Parameters
     ----------
-    %(hits)s
-    %(misses)s
-    %(fas)s
-    %(crs)s
+    hits : int
+    misses : int
+    fas : int
+    crs : int
 
     Returns
     -------
