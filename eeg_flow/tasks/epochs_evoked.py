@@ -167,7 +167,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
     events_id = dict(standard=1, target=2, novel=3, response=64)
     row_events = ["standard", "target", "novel"]
     metadata, events, event_id = _make_metadata(events, events_id, raw, row_events)
-    n_hits, n_correct_rejections, n_misses, n_false_alarms = get_SDT_outcomes(metadata)
+    n_hits, n_correct_rejections, n_misses, n_false_alarms = _get_SDT_outcomes(metadata)
 
     hits = metadata[metadata["response_type"] == "Hits"]
     response_mean = round(hits["response"].mean(), 5)
@@ -290,7 +290,7 @@ def _make_metadata(
     return metadata, events, event_id
 
 
-def get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
+def _get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
     """Compute proportions for Signal Detection Theory (SDT).
 
     Parameters
@@ -386,7 +386,7 @@ def _repr_individual_behavioral(
         "Response mean, Response std:"
         f"\n\t{response_mean}, {response_std}\n\n"
         "D':\n\t"
-        f"{str(SDT_loglinear(n_hits, n_misses, n_false_alarms, n_correct_rejections))}"
+        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms, n_correct_rejections))}"
     )
     logger.info(behavioral_str)
     return behavioral_str
@@ -451,7 +451,7 @@ def _drop_bad_epochs(
     return epochs, df_count, df_drops, fig
 
 
-def SDT_loglinear(hits, misses, fas, crs):
+def _SDT_loglinear(hits, misses, fas, crs):
     """Return a dict with d-prime measures, corrected with the log-linear rule.
 
     See Stanislaw & Todorov 1999 and Hautus 1995,
