@@ -171,7 +171,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
     """Prepare epochs from a raw object."""
     events = find_events(raw, stim_channel="TRIGGER")
     events_id = load_triggers()
-    if np.any(events[:, 2]) == 64:
+    if np.any(events[:, 2] == 64):
         events_id["response"] = 64
     if sorted(np.unique(events[:, 2])) != sorted(events_id.values()):
         warn(
