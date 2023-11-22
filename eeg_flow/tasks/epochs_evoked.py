@@ -86,7 +86,7 @@ def create_epochs_evoked_and_behavioral_metadata(
             fig_rt,
             behavioral_str,
             epochs,
-            df_counts,
+            count_stim_before,
             df_drops,
             fig_drops,
             evokeds,
@@ -109,6 +109,7 @@ def create_epochs_evoked_and_behavioral_metadata(
 
         # save epochs, drop-log and evoked files
         epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
+        df_counts = _count_stim_dropped(count_stim_before, epochs)
         df_counts.to_csv(derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv")
         fig_drops.get_axes()[0].set_title(
             f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
@@ -220,7 +221,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         picks="eeg",
     )
     reject = _get_rejection(epochs)
-    epochs, df_counts, df_drops, fig_drops = _drop_bad_epochs(epochs, reject)
+    epochs, count_stim_before, df_drops, fig_drops = _drop_bad_epochs(epochs, reject)
     if metadata is None:
         evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
     else:
@@ -233,7 +234,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         fig_rt,
         behavioral_str,
         epochs,
-        df_counts,
+        count_stim_before,
         df_drops,
         fig_drops,
         evokeds,
@@ -451,13 +452,6 @@ def _drop_bad_epochs(
     """
     count_stim_before = Counter(epochs.events[:, 2])
     epochs.drop_bad(reject=reject)
-    count_stim_after = Counter(epochs.events[:, 2])
-    data = [
-        ["1", count_stim_before[1] - count_stim_after[1]],
-        ["2", count_stim_before[2] - count_stim_after[2]],
-        ["3", count_stim_before[3] - count_stim_after[3]],
-    ]
-    df_count = pd.DataFrame(data, columns=["Stim", "n_dropped"])
     if epochs.metadata is not None:
         # drop epochs following a response
         response_arr = pd.notna(epochs.metadata["response"]).to_numpy()
@@ -467,7 +461,7 @@ def _drop_bad_epochs(
     df_drops = pd.DataFrame.from_dict(totals, orient="index")
     df_drops = df_drops.sort_values(by=[0], ascending=False)
     fig = epochs.plot_drop_log()
-    return epochs, df_count, df_drops, fig
+    return epochs, count_stim_before, df_drops, fig
 
 
 def _SDT_loglinear(hits: int, misses: int, fas: int, crs: int) -> dict[str, float]:
@@ -500,3 +494,24 @@ def _SDT_loglinear(hits: int, misses: int, fas: int, crs: int) -> dict[str, floa
     out["c"] = -(Z(hit_rate) + Z(fa_rate)) / 2
     out["Ad"] = norm.cdf(out["d"] / math.sqrt(2))
     return out
+
+def _count_stim_dropped(count_stim_before, epochs):
+    """Return a DataFrame with the number of epochs dropped per stimulus, for any reasons.
+
+    Parameters
+    ----------
+    count_stim_before : list of int
+    epochs : Epochs
+
+    Returns
+    -------
+    out : DataFrame
+        Total count of dropped epochs per stimulus.
+    """
+    count_stim_after = Counter(epochs.events[:, 2])
+    data = [
+        ["1", count_stim_before[1] - count_stim_after[1]],
+        ["2", count_stim_before[2] - count_stim_after[2]],
+        ["3", count_stim_before[3] - count_stim_after[3]],
+    ]
+    return pd.DataFrame(data, columns=["Stim", "n_dropped"])
