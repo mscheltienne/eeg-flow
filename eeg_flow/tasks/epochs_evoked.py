@@ -22,8 +22,8 @@ from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:
     from matplotlib import pyplot as plt
-    from mne.epochs import BaseEpochs
     from mne import Evoked
+    from mne.epochs import BaseEpochs
     from mne.io import BaseRaw
     from numpy.typing import DTypeLike, NDArray
 
