@@ -455,7 +455,11 @@ def _drop_bad_epochs(
     if epochs.metadata is not None:
         # drop epochs following a response
         response_arr = pd.notna(epochs.metadata["response"]).to_numpy()
-        epochs.drop(np.where(response_arr)[0] + 1, reason="epoch after response")
+        idx_to_drop = np.where(response_arr)[0] + 1
+        for item in idx_to_drop:
+            if item >= len(epochs):
+                idx_to_drop = np.delete(idx_to_drop, np.where(idx_to_drop == item))
+        epochs.drop(idx_to_drop, reason="epoch after response")
     # log dropped epochs
     totals = Counter(chain(*epochs.drop_log))
     df_drops = pd.DataFrame.from_dict(totals, orient="index")
