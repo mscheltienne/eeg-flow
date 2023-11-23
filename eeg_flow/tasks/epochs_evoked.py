@@ -93,15 +93,18 @@ def create_epochs_evoked_and_behavioral_metadata(
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save metadata, response times and behavioral data
-        if metadata is not None:
-            assert fig_rt is not None
-            assert behavioral_str is not None
-            metadata.to_csv(derivatives_folder / f"{fname_stem}_step8_a-metadata.csv")
-            fig_rt.suptitle(fname_stem, fontsize=16, y=1)
-            fig_rt.savefig(
-                derivatives_folder / "plots" / f"{fname_stem}_step8_RT.svg",
-                transparent=True,
-            )
+        if "Active" in str(derivatives_folder_root):
+            if metadata is not None:
+                assert fig_rt is not None
+                assert behavioral_str is not None
+                metadata.to_csv(derivatives_folder / f"{fname_stem}_step8_a-metadata.csv")
+                fig_rt.suptitle(fname_stem, fontsize=16, y=1)
+                fig_rt.savefig(
+                    derivatives_folder / "plots" / f"{fname_stem}_step8_RT.svg",
+                    transparent=True,
+                )
+            else:
+                behavioral_str = "No responses!"
             with open(
                 derivatives_folder / f"{fname_stem}_step8_b-behav.txt", "w"
             ) as file:
