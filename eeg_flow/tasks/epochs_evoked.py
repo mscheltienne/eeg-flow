@@ -65,6 +65,7 @@ def create_epochs_evoked_and_behavioral_metadata(
         derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
         derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv",
         derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv",
+        derivatives_folder / f"{fname_stem}_step8_c4-dropped-total.csv",
         derivatives_folder / f"{fname_stem}_step8-standard-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-target-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-novel-ave.fif",
@@ -112,7 +113,7 @@ def create_epochs_evoked_and_behavioral_metadata(
                 file.write(behavioral_str)
 
         # save epochs, drop-log and evoked files
-        epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
+        #epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
         df_counts = _count_stim_dropped(count_stim_before, epochs)
         df_counts.to_csv(derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv")
         fig_drops.get_axes()[0].set_title(
@@ -130,10 +131,10 @@ def create_epochs_evoked_and_behavioral_metadata(
             derivatives_folder / f"{fname_stem}_step8_c4-dropped-total.csv"
         )
 
-        for cond in epochs.event_id:
-            evokeds[cond].save(
-                derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
-            )
+        #for cond in epochs.event_id:
+        #    evokeds[cond].save(
+        #        derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
+        #    )
 
     except FileNotFoundError:
         logger.error(
@@ -144,15 +145,15 @@ def create_epochs_evoked_and_behavioral_metadata(
             task,
             run,
         )
-    except FileExistsError:
-        logger.error(
-            "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists.",
-            participant,
-            group,
-            task,
-            run,
-        )
+    #except FileExistsError:
+    #    logger.error(
+    #        "The destination file for participant %s, group %s, task %s, run %i "
+    #        "already exists.",
+    #        participant,
+    #        group,
+    #        task,
+    #        run,
+    #    )
     except Exception as error:
         logger.error(
             "The file for participant %s, group %s, task %s, run %i could not be "
@@ -480,13 +481,20 @@ def _drop_bad_epochs(
 
 
 def _log_total_drop(drop_info):
-    print(drop_info)
+    """Return a dataframe with the key infos dropped epochs
+    
+    Parameters
+    ----------
+    drop_info : str
+
+    Returns
+    ----------
+    df_total_drops : DataFrame
+        DataFrame with the relevant dropped epochs infos
+    """
     temp = drop_info.split(" ")
-    print(temp)
     df_total_drops = pd.DataFrame(columns=["n_dropped", "n_original", "percent_dropped"])
     df_total_drops.loc[0] = [temp[0],temp[2],temp[5]]
-    print(df_total_drops)
-
     return df_total_drops
 
 
