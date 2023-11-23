@@ -88,6 +88,7 @@ def create_epochs_evoked_and_behavioral_metadata(
             epochs,
             count_stim_before,
             df_drops,
+            df_total_drops,
             fig_drops,
             evokeds,
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
@@ -125,6 +126,10 @@ def create_epochs_evoked_and_behavioral_metadata(
         df_drops.to_csv(
             derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv"
         )
+        df_total_drops.to_csv(
+            derivatives_folder / f"{fname_stem}_step8_c4-dropped-total.csv"
+        )
+
         for cond in epochs.event_id:
             evokeds[cond].save(
                 derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
@@ -171,6 +176,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
     plt.Figure,
     str,
     Epochs,
+    pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
     plt.Figure,
@@ -224,7 +230,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         picks="eeg",
     )
     reject = _get_rejection(epochs)
-    epochs, count_stim_before, df_drops, fig_drops = _drop_bad_epochs(epochs, reject)
+    epochs, count_stim_before, df_drops, df_total_drops, fig_drops = _drop_bad_epochs(epochs, reject)
     if metadata is None:
         evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
     else:
@@ -239,6 +245,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         epochs,
         count_stim_before,
         df_drops,
+        df_total_drops,
         fig_drops,
         evokeds,
     )
@@ -468,7 +475,20 @@ def _drop_bad_epochs(
     df_drops = pd.DataFrame.from_dict(totals, orient="index")
     df_drops = df_drops.sort_values(by=[0], ascending=False)
     fig = epochs.plot_drop_log()
-    return epochs, count_stim_before, df_drops, fig
+    df_total_drops = _log_total_drop(fig.get_axes()[0].get_title())
+    return epochs, count_stim_before, df_drops, df_total_drops, fig
+
+
+def _log_total_drop(drop_info):
+    print(drop_info)
+    temp = drop_info.split(" ")
+    print(temp)
+    df_total_drops = pd.DataFrame(columns=["n_dropped", "n_original", "percent_dropped"])
+    df_total_drops.loc[0] = [temp[0],temp[2],temp[5]]
+    print(df_total_drops)
+
+    return df_total_drops
+
 
 
 def _SDT_loglinear(hits: int, misses: int, fas: int, crs: int) -> dict[str, float]:
