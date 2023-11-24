@@ -114,7 +114,7 @@ def create_epochs_evoked_and_behavioral_metadata(
                 file.write(behavioral_str)
 
         # save epochs, drop-log and evoked files
-        #epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
+        epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
         df_counts = _count_stim_dropped(count_stim_before, epochs)
         df_counts.to_csv(derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv")
         fig_drops.get_axes()[0].set_title(
@@ -136,10 +136,10 @@ def create_epochs_evoked_and_behavioral_metadata(
         )
 
 
-        #for cond in epochs.event_id:
-        #    evokeds[cond].save(
-        #        derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
-        #    )
+        for cond in epochs.event_id:
+            evokeds[cond].save(
+                derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
+            )
 
     except FileNotFoundError:
         logger.error(
