@@ -502,7 +502,7 @@ def _total_per_stim(epochs):
     all_counts = dict(zip(unique, counts))
     all_counts
 
-    all_count_stim = {key: all_counts[key] for key in [0,1,2]}
+    all_count_stim = {key: all_counts[key] for key in [1,2,3]}
     all_count_stim
 
     df_total_stim = pd.DataFrame(all_count_stim, index=[0])
