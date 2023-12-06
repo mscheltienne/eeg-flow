@@ -13,3 +13,4 @@ from .ica_decomposition import (  # noqa: F401
     fit_icas,
     label_components,
 )
+from .create_behavioral_metadata import create_behavioral_metadata # noqa: F401
