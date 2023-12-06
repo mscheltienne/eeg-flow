@@ -153,7 +153,7 @@ def _create_behavioral_metadata(
         )
     if "response" in events_id:
         metadata, events, events_id = _make_metadata(events, events_id, raw)
-        n_hits, n_correct_rejections, n_misses, n_false_alarms = _get_SDT_outcomes(
+        n_hits, n_correct_rejections_standard, n_correct_rejections_novel, n_correct_rejections_all, n_misses, n_false_alarms_standard, n_false_alarms_novel, n_false_alarms_all = _get_SDT_outcomes(
             metadata
         )
         hits = metadata[metadata["response_type"] == "Hits"]
@@ -163,9 +163,13 @@ def _create_behavioral_metadata(
         behavioral_str = _repr_individual_behavioral(
             metadata,
             n_hits,
-            n_correct_rejections,
+            n_correct_rejections_standard,
+            n_correct_rejections_novel,
+            n_correct_rejections_all,
             n_misses,
-            n_false_alarms,
+            n_false_alarms_standard,
+            n_false_alarms_novel,
+            n_false_alarms_all,
             response_mean,
             response_std,
         )
@@ -248,14 +252,14 @@ def _make_metadata(
         "FalseAlarms_tooquick",
         "Hits",
         "Misses",
-        "FalseAlarms",
-        "CorrectRejections",
-        "FalseAlarms",
-        "CorrectRejections",
+        "FalseAlarms_standard",
+        "CorrectRejections_standard",
+        "FalseAlarms_novel",
+        "CorrectRejections_novel",
     ]
     metadata["response_type"] = np.select(conditions, choices, default=0)
     metadata["response_type"].value_counts()
-    metadata["response_correct"] = (metadata["response_type"] == "CorrectRejections") | (metadata["response_type"] == "Hits")
+    metadata["response_correct"] = (metadata["response_type"] == "CorrectRejections_standard") |(metadata["response_type"] == "CorrectRejections_novel") | (metadata["response_type"] == "Hits")
     return metadata, events, event_id
 
 
@@ -270,21 +274,36 @@ def _get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
     -------
     n_hits : int
         Number of hits
-    n_correct_rejections : int
-        Number of correct rejections
+    n_correct_rejections_standard : int
+        Number of correct rejections standard
+    n_correct_rejections_novel : int
+        Number of correct rejections novel
+    n_correct_rejections_all : int
+        Number of correct rejections both standard and novel
     n_misses : int
         Number of misses
-    n_false_alarms : int
-        Number of false alarms
+    n_false_alarms_standard : int
+        Number of false alarms standard
+    n_false_alarms_novel : int
+        Number of false alarms novel
+    n_false_alarms all : int
+        Number of false alarms both standard and novel
     """
     n_hits = len(metadata[metadata["response_type"] == "Hits"])
-    n_correct_rejections = len(
-        metadata[metadata["response_type"] == "CorrectRejections"]
+    n_correct_rejections_standard = len(
+        metadata[metadata["response_type"] == "CorrectRejections_standard"]
     )
+    n_correct_rejections_novel = len(
+        metadata[metadata["response_type"] == "CorrectRejections_novel"]
+    )
+    n_correct_rejections_all = n_correct_rejections_standard + n_correct_rejections_novel
     n_misses = len(metadata[metadata["response_type"] == "Misses"])
-    n_false_alarms = len(metadata[metadata["response_type"] == "FalseAlarms"])
-    return n_hits, n_correct_rejections, n_misses, n_false_alarms
-
+    n_false_alarms_standard = len(metadata[metadata["response_type"] == "FalseAlarms_standard"])
+    n_false_alarms_novel = len(metadata[metadata["response_type"] == "FalseAlarms_novel"])
+    n_false_alarms_all = n_false_alarms_standard + n_false_alarms_novel
+    return(n_hits, n_correct_rejections_standard, n_correct_rejections_novel, n_correct_rejections_all, 
+           n_misses, n_false_alarms_standard, n_false_alarms_novel, n_false_alarms_all
+    )
 
 def _plot_reaction_time(
     hits: pd.Series, response_mean: float, response_std: float
@@ -312,9 +331,13 @@ def _plot_reaction_time(
 def _repr_individual_behavioral(
     metadata: pd.DataFrame,
     n_hits: int,
-    n_correct_rejections: int,
+    n_correct_rejections_standard: int,
+    n_correct_rejections_novel: int,
+    n_correct_rejections_all: int,
     n_misses: int,
-    n_false_alarms: int,
+    n_false_alarms_standard: int,
+    n_false_alarms_novel: int,
+    n_false_alarms_all: int,
     response_mean: float,
     response_std: float,
 ) -> str:
@@ -346,16 +369,22 @@ def _repr_individual_behavioral(
     behavioral_str = (
         "Stats:"
         f"\n\tHits: {n_hits}\n\tMisses: {n_misses}"
-        f"\n\tCorrect Rejections: {n_correct_rejections}"
-        f"\n\tFalse Alarms: {n_false_alarms}\n\n"
+        f"\n\tCorrect Rejections standard: {n_correct_rejections_standard}"
+        f"\n\tCorrect Rejections novel: {n_correct_rejections_novel}"
+        f"\n\tCorrect Rejections both: {n_correct_rejections_all}"
+        f"\n\tFalse Alarms standard: {n_false_alarms_standard}"
+        f"\n\tFalse Alarms novel: {n_false_alarms_novel}"
+        f"\n\tFalse Alarms both: {n_false_alarms_all}\n\n"
         "Stims:"
         f"\n\tStandard: {str(metadata_count_correct['standard'])}"
         f"\n\tTarget: {str(metadata_count_correct['target'])}"
         f"\n\tNovel: {str(metadata_count_correct['novel'])}\n\n"
         "Response mean, Response std:"
         f"\n\t{response_mean}, {response_std}\n\n"
-        "D':\n\t"
-        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms, n_correct_rejections))}"
+        "D' merging both standard and novels:\n\t"
+        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms_all, n_correct_rejections_all))}\n\n"
+        "D' with only targets and standard (ignoring novels):\n\t"
+        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms_standard, n_correct_rejections_standard))}"
     )
     logger.info(behavioral_str)
     return behavioral_str
