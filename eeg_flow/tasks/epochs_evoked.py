@@ -60,8 +60,6 @@ def create_epochs_evoked_and_behavioral_metadata(
     # lock the output derivative files
     # create locks
     derivatives = [
-        derivatives_folder / f"{fname_stem}_step8_a-metadata.csv",
-        derivatives_folder / f"{fname_stem}_step8_b-behav.txt",
         derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
         derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv",
         derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv",
@@ -84,8 +82,6 @@ def create_epochs_evoked_and_behavioral_metadata(
         # prepare epoch and behavioral data
         (
             metadata,
-            fig_rt,
-            behavioral_str,
             epochs,
             count_stim_before,
             df_drops,
@@ -94,24 +90,6 @@ def create_epochs_evoked_and_behavioral_metadata(
             fig_drops,
             evokeds,
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
-
-        # save metadata, response times and behavioral data
-        if "Active" in str(derivatives_folder_root):
-            if metadata is not None:
-                assert fig_rt is not None
-                assert behavioral_str is not None
-                metadata.to_csv(derivatives_folder / f"{fname_stem}_step8_a-metadata.csv")
-                fig_rt.suptitle(fname_stem, fontsize=16, y=1)
-                fig_rt.savefig(
-                    derivatives_folder / "plots" / f"{fname_stem}_step8_RT.svg",
-                    transparent=True,
-                )
-            else:
-                behavioral_str = "No responses!"
-            with open(
-                derivatives_folder / f"{fname_stem}_step8_b-behav.txt", "w"
-            ) as file:
-                file.write(behavioral_str)
 
         # save epochs, drop-log and evoked files
         epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
@@ -150,15 +128,15 @@ def create_epochs_evoked_and_behavioral_metadata(
             task,
             run,
         )
-    #except FileExistsError:
-    #    logger.error(
-    #        "The destination file for participant %s, group %s, task %s, run %i "
-    #        "already exists.",
-    #        participant,
-    #        group,
-    #        task,
-    #        run,
-    #    )
+    except FileExistsError:
+       logger.error(
+           "The destination file for participant %s, group %s, task %s, run %i "
+           "already exists.",
+           participant,
+           group,
+           task,
+           run,
+       )
     except Exception as error:
         logger.error(
             "The file for participant %s, group %s, task %s, run %i could not be "
@@ -179,8 +157,6 @@ def _create_epochs_evoked_and_behavioral_metadata(
     raw: BaseRaw,
 ) -> tuple[
     pd.DataFrame,
-    plt.Figure,
-    str,
     Epochs,
     pd.DataFrame,
     pd.DataFrame,
@@ -202,26 +178,9 @@ def _create_epochs_evoked_and_behavioral_metadata(
         )
     if "response" in events_id:
         metadata, events, events_id = _make_metadata(events, events_id, raw)
-        n_hits, n_correct_rejections, n_misses, n_false_alarms = _get_SDT_outcomes(
-            metadata
-        )
-        hits = metadata[metadata["response_type"] == "Hits"]
-        response_mean = round(hits["response"].mean(), 5)
-        response_std = round(hits["response"].std(), 5)
-        fig_rt, _ = _plot_reaction_time(hits, response_mean, response_std)
-        behavioral_str = _repr_individual_behavioral(
-            metadata,
-            n_hits,
-            n_correct_rejections,
-            n_misses,
-            n_false_alarms,
-            response_mean,
-            response_std,
-        )
+      
     else:
         metadata = None
-        fig_rt = None
-        behavioral_str = None
 
     epochs = Epochs(
         raw=raw,
@@ -246,8 +205,6 @@ def _create_epochs_evoked_and_behavioral_metadata(
         )
     return (
         metadata,
-        fig_rt,
-        behavioral_str,
         epochs,
         count_stim_before,
         df_drops,
@@ -322,109 +279,6 @@ def _make_metadata(
     metadata["response_type"].value_counts()
     metadata["response_correct"] = (metadata["response_type"] == "CorrectRejections") | (metadata["response_type"] == "Hits")
     return metadata, events, event_id
-
-
-def _get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
-    """Compute proportions for Signal Detection Theory (SDT).
-
-    Parameters
-    ----------
-    %(metadata)s
-
-    Returns
-    -------
-    n_hits : int
-        Number of hits
-    n_correct_rejections : int
-        Number of correct rejections
-    n_misses : int
-        Number of misses
-    n_false_alarms : int
-        Number of false alarms
-    """
-    n_hits = len(metadata[metadata["response_type"] == "Hits"])
-    n_correct_rejections = len(
-        metadata[metadata["response_type"] == "CorrectRejections"]
-    )
-    n_misses = len(metadata[metadata["response_type"] == "Misses"])
-    n_false_alarms = len(metadata[metadata["response_type"] == "FalseAlarms"])
-    return n_hits, n_correct_rejections, n_misses, n_false_alarms
-
-
-def _plot_reaction_time(
-    hits: pd.Series, response_mean: float, response_std: float
-) -> tuple[plt.Figure, plt.Axes]:
-    """Plot histogram of response times.
-
-    Parameters
-    ----------
-    hits : Series
-    response_mean : float
-    response_std : float
-
-    Returns
-    -------
-    fig : Figure
-    ax : Axes
-    """
-    ax_rt = hits["response"].plot.hist(
-        bins=100,
-        title=f"Response Times of TPs\nmean:{str(response_mean)} ({str(response_std)})",
-    )
-    return ax_rt.figure, ax_rt
-
-
-def _repr_individual_behavioral(
-    metadata: pd.DataFrame,
-    n_hits: int,
-    n_correct_rejections: int,
-    n_misses: int,
-    n_false_alarms: int,
-    response_mean: float,
-    response_std: float,
-) -> str:
-    """Create a string representation of the individual behavioral information.
-
-    Parameters
-    ----------
-    metadata : DataFrame
-    n_hits : int
-    n_correct_rejections : int
-    n_misses : int
-    n_false_alarms : int
-    response_mean : float
-    response_std : float
-
-    Returns
-    -------
-    behavioral_str : str
-        String representation of the metadata.
-    """
-    correct_response_count = metadata["response_correct"].sum()
-    logger.info(
-        f"\nCorrect responses: {correct_response_count}\n"
-        f"Incorrect responses: {len(metadata) - correct_response_count}\n"
-    )
-    metadata_count_correct = metadata.groupby(by="event_name").count()[
-        "response_correct"
-    ]
-    behavioral_str = (
-        "Stats:"
-        f"\n\tHits: {n_hits}\n\tMisses: {n_misses}"
-        f"\n\tCorrect Rejections: {n_correct_rejections}"
-        f"\n\tFalse Alarms: {n_false_alarms}\n\n"
-        "Stims:"
-        f"\n\tStandard: {str(metadata_count_correct['standard'])}"
-        f"\n\tTarget: {str(metadata_count_correct['target'])}"
-        f"\n\tNovel: {str(metadata_count_correct['novel'])}\n\n"
-        "Response mean, Response std:"
-        f"\n\t{response_mean}, {response_std}\n\n"
-        "D':\n\t"
-        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms, n_correct_rejections))}"
-    )
-    logger.info(behavioral_str)
-    return behavioral_str
-
 
 def _get_rejection(epochs: BaseEpochs) -> dict[str, float]:
     """Epoching.
@@ -525,39 +379,6 @@ def _log_total_drop(drop_info):
     df_total_drops = pd.DataFrame(columns=["n_dropped", "n_original", "percent_dropped"])
     df_total_drops.loc[0] = [temp[0],temp[2],temp[5]]
     return df_total_drops
-
-
-
-def _SDT_loglinear(hits: int, misses: int, fas: int, crs: int) -> dict[str, float]:
-    """Return a dict with d-prime measures, corrected with the log-linear rule.
-
-    See Stanislaw & Todorov 1999 and Hautus 1995,
-    https://lindeloev.net/calculating-d-in-python-and-php/
-
-    Parameters
-    ----------
-    hits : int
-    misses : int
-    fas : int
-    crs : int
-
-    Returns
-    -------
-    out : dict
-        D' measures.
-    """
-    Z = norm.ppf
-    # calculate hit_rate and avoid d' infinity
-    hit_rate = (hits + 0.5) / (hits + misses + 1)
-    # calculate false alarm rate and avoid d' infinity
-    fa_rate = (fas + 0.5) / (fas + crs + 1)
-    # return d', beta, c and Ad'
-    out = {}
-    out["d"] = Z(hit_rate) - Z(fa_rate)
-    out["beta"] = math.exp((Z(fa_rate) ** 2 - Z(hit_rate) ** 2) / 2)
-    out["c"] = -(Z(hit_rate) + Z(fa_rate)) / 2
-    out["Ad"] = norm.cdf(out["d"] / math.sqrt(2))
-    return out
 
 def _count_stim_dropped(count_stim_before, epochs):
     """Return a DataFrame with the number of epochs dropped per stimulus, for any reasons.
