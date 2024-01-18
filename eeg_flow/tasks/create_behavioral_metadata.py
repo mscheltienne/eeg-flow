@@ -1,9 +1,6 @@
 from __future__ import annotations  # c.f. PEP 563, PEP 649
 
 import math
-import time
-from collections import Counter
-from itertools import chain
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -22,8 +19,6 @@ from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:
     from matplotlib import pyplot as plt
-    from mne import Evoked
-    from mne.epochs import BaseEpochs
     from mne.io import BaseRaw
     from numpy.typing import DTypeLike, NDArray
 
@@ -85,7 +80,9 @@ def create_behavioral_metadata(
             if metadata is not None:
                 assert fig_rt is not None
                 assert behavioral_str is not None
-                metadata.to_csv(derivatives_folder / f"{fname_stem}_step1b_a-metadata.csv")
+                metadata.to_csv(
+                    derivatives_folder / f"{fname_stem}_step1b_a-metadata.csv"
+                )
                 fig_rt.suptitle(fname_stem, fontsize=16, y=1)
                 fig_rt.savefig(
                     derivatives_folder / "plots" / f"{fname_stem}_step1b_RT.svg",
@@ -97,7 +94,7 @@ def create_behavioral_metadata(
                 derivatives_folder / f"{fname_stem}_step1b_b-behav.txt", "w"
             ) as file:
                 file.write(behavioral_str)
-   
+
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -108,14 +105,14 @@ def create_behavioral_metadata(
             run,
         )
     except FileExistsError:
-       logger.error(
-           "The destination file for participant %s, group %s, task %s, run %i "
-           "already exists.",
-           participant,
-           group,
-           task,
-           run,
-       )
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists.",
+            participant,
+            group,
+            task,
+            run,
+        )
     except Exception as error:
         logger.error(
             "The file for participant %s, group %s, task %s, run %i could not be "
@@ -153,9 +150,16 @@ def _create_behavioral_metadata(
         )
     if "response" in events_id:
         metadata, events, events_id = _make_metadata(events, events_id, raw)
-        n_hits, n_correct_rejections_standard, n_correct_rejections_novel, n_correct_rejections_all, n_misses, n_false_alarms_standard, n_false_alarms_novel, n_false_alarms_all = _get_SDT_outcomes(
-            metadata
-        )
+        (
+            n_hits,
+            n_correct_rejections_standard,
+            n_correct_rejections_novel,
+            n_correct_rejections_all,
+            n_misses,
+            n_false_alarms_standard,
+            n_false_alarms_novel,
+            n_false_alarms_all,
+        ) = _get_SDT_outcomes(metadata)
         hits = metadata[metadata["response_type"] == "Hits"]
         response_mean = round(hits["response"].mean(), 5)
         response_std = round(hits["response"].std(), 5)
@@ -259,7 +263,11 @@ def _make_metadata(
     ]
     metadata["response_type"] = np.select(conditions, choices, default=0)
     metadata["response_type"].value_counts()
-    metadata["response_correct"] = (metadata["response_type"] == "CorrectRejections_standard") |(metadata["response_type"] == "CorrectRejections_novel") | (metadata["response_type"] == "Hits")
+    metadata["response_correct"] = (
+        (metadata["response_type"] == "CorrectRejections_standard")
+        | (metadata["response_type"] == "CorrectRejections_novel")
+        | (metadata["response_type"] == "Hits")
+    )
     return metadata, events, event_id
 
 
@@ -296,14 +304,28 @@ def _get_SDT_outcomes(metadata: pd.DataFrame) -> tuple[int, int, int, int]:
     n_correct_rejections_novel = len(
         metadata[metadata["response_type"] == "CorrectRejections_novel"]
     )
-    n_correct_rejections_all = n_correct_rejections_standard + n_correct_rejections_novel
-    n_misses = len(metadata[metadata["response_type"] == "Misses"])
-    n_false_alarms_standard = len(metadata[metadata["response_type"] == "FalseAlarms_standard"])
-    n_false_alarms_novel = len(metadata[metadata["response_type"] == "FalseAlarms_novel"])
-    n_false_alarms_all = n_false_alarms_standard + n_false_alarms_novel
-    return(n_hits, n_correct_rejections_standard, n_correct_rejections_novel, n_correct_rejections_all, 
-           n_misses, n_false_alarms_standard, n_false_alarms_novel, n_false_alarms_all
+    n_correct_rejections_all = (
+        n_correct_rejections_standard + n_correct_rejections_novel
     )
+    n_misses = len(metadata[metadata["response_type"] == "Misses"])
+    n_false_alarms_standard = len(
+        metadata[metadata["response_type"] == "FalseAlarms_standard"]
+    )
+    n_false_alarms_novel = len(
+        metadata[metadata["response_type"] == "FalseAlarms_novel"]
+    )
+    n_false_alarms_all = n_false_alarms_standard + n_false_alarms_novel
+    return (
+        n_hits,
+        n_correct_rejections_standard,
+        n_correct_rejections_novel,
+        n_correct_rejections_all,
+        n_misses,
+        n_false_alarms_standard,
+        n_false_alarms_novel,
+        n_false_alarms_all,
+    )
+
 
 def _plot_reaction_time(
     hits: pd.Series, response_mean: float, response_std: float
@@ -388,6 +410,7 @@ def _repr_individual_behavioral(
     )
     logger.info(behavioral_str)
     return behavioral_str
+
 
 def _SDT_loglinear(hits: int, misses: int, fas: int, crs: int) -> dict[str, float]:
     """Return a dict with d-prime measures, corrected with the log-linear rule.
