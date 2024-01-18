@@ -235,12 +235,15 @@ def view_annotated_raw(
     %(group)s
     %(task)s
     %(run)s
-    step_to_load : str
+    step_to_load : ``'step3'`` | ``'step7'``
+        String identifier of the step to load.
     %(timeout)s
     """
     check_type(step_to_load, (str,), "step_to_load")
     check_value(step_to_load, ("step3", "step7"), "step_to_load")
 
+    # the target suffix ensures a unique filename and prevents overwriting the raw from
+    # either step3 or step7.
     target_suffix = "bis_raw" if step_to_load == "step3" else "final_preprocessed_raw"
     step_to_load = (
         "step3_with-bads" if step_to_load == "step3" else "step7_preprocessed"
