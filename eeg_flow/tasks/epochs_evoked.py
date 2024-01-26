@@ -2,7 +2,6 @@ from __future__ import annotations  # c.f. PEP 563, PEP 649
 
 import time
 from collections import Counter
-from itertools import chain
 from typing import TYPE_CHECKING
 from warnings import warn
 
