@@ -6,7 +6,7 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
-from mne import Epochs, find_events
+from mne import find_events
 from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
 from scipy.stats import norm
@@ -150,6 +150,7 @@ def _create_behavioral_metadata(
         )
     if "response" in events_id:
         metadata, events, events_id = _make_metadata(events, events_id, raw)
+        metadata.drop(columns=["standard", "target", "novel"], inplace=True)
         (
             n_hits,
             n_correct_rejections_standard,
@@ -182,18 +183,6 @@ def _create_behavioral_metadata(
         fig_rt = None
         behavioral_str = None
 
-    epochs = Epochs(
-        raw=raw,
-        tmin=-0.2,
-        tmax=0.8,
-        events=events,
-        event_id=events_id,
-        metadata=metadata,
-        reject=None,
-        preload=True,
-        baseline=(None, 0),
-        picks="eeg",
-    )
     return (
         metadata,
         fig_rt,
