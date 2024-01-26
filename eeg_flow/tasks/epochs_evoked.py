@@ -61,14 +61,17 @@ def create_epochs_evoked_and_behavioral_metadata(
     # create locks
     derivatives = [
         derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
-        derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv",
-        derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv",
-        derivatives_folder / f"{fname_stem}_step8_c4-dropped-total.csv",
+        derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
+        derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv",
         derivatives_folder / f"{fname_stem}_step8-standard-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-target-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-novel-ave.fif",
         derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif",
         derivatives_folder / f"{fname_stem}_step8_response-ave.fif",
+        derivatives_folder
+        / "plots"
+        / f"{fname_stem}_step8_epochs-response-rejected.svg",
+        derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv",
     ]
     locks = lock_files(*derivatives, timeout=timeout)
 
@@ -83,24 +86,22 @@ def create_epochs_evoked_and_behavioral_metadata(
         )
         # prepare epoch and behavioral data
         (
-            metadata,
             epochs,
             count_stim_before,
-            df_drops,
-            df_total_drops,
-            df_total_remaining,
+            count_stim_after,
+            drop_reasons,
             fig_drops,
             evokeds,
             epochs_response,
             evoked_response,
+            count_stim_before_response,
+            count_stim_after_response,
+            drop_reasons_response,
+            fig_drops_response,
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save epochs, drop-log and evoked files
         epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
-        df_counts = _count_stim_dropped(count_stim_before, epochs)
-        df_counts.to_csv(
-            derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv"
-        )
         fig_drops.get_axes()[0].set_title(
             f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
         )
@@ -108,20 +109,23 @@ def create_epochs_evoked_and_behavioral_metadata(
             derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
             transparent=True,
         )
-        df_drops = df_drops.rename(columns={0: fname_stem})
-        df_drops.to_csv(
-            derivatives_folder / f"{fname_stem}_step8_c3-drop-epochs-per-reason.csv"
-        )
-        df_total_drops.to_csv(
-            derivatives_folder / f"{fname_stem}_step8_c4-dropped-total.csv"
-        )
-        df_total_remaining.to_csv(
-            derivatives_folder / f"{fname_stem}_step8_c5-total-remaining.csv"
-        )
         for cond in epochs.event_id:
             evokeds[cond].save(
                 derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
             )
+        events_mapping = load_triggers()
+        with open(
+            derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv", "w"
+        ) as file:
+            # fmt: off
+            file.write(
+                ",Total,Rejected,Bad,PTP,After response\n"
+                f"Standard,{count_stim_before[events_mapping['standard']]},{count_stim_before[events_mapping['standard']] - count_stim_after[events_mapping['standard']]},{drop_reasons['standard']['bad_segment']},{drop_reasons['standard']['ptp']},{drop_reasons['standard']['after_response']}\n"
+                f"Target,{count_stim_before[events_mapping['target']]},{count_stim_before[events_mapping['target']] - count_stim_after[events_mapping['target']]},{drop_reasons['target']['bad_segment']},{drop_reasons['target']['ptp']},{drop_reasons['target']['after_response']}\n"
+                f"Novel,{count_stim_before[events_mapping['novel']]},{count_stim_before[events_mapping['novel']] - count_stim_after[events_mapping['novel']]},{drop_reasons['novel']['bad_segment']},{drop_reasons['novel']['ptp']},{drop_reasons['novel']['after_response']}\n"
+            )
+            # fmt: on
+
         if epochs_response is not None and evoked_response is not None:
             epochs_response.save(
                 derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif"
@@ -129,6 +133,26 @@ def create_epochs_evoked_and_behavioral_metadata(
             evoked_response.save(
                 derivatives_folder / f"{fname_stem}_step8_response-ave.fif"
             )
+            fig_drops_response.get_axes()[0].set_title(
+                f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
+            )
+            fig_drops_response.savefig(
+                derivatives_folder
+                / "plots"
+                / f"{fname_stem}_step8_epochs-response-rejected.svg",
+                transparent=True,
+            )
+            with open(
+                derivatives_folder
+                / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv"
+                "w",
+            ) as file:
+                # fmt: off
+                file.write(
+                    ",Total,Rejected,Bad,PTP,After response\n"
+                    f"Response,{count_stim_before_response[64]},{count_stim_before_response[64] - count_stim_after_response[64]},{drop_reasons_response['response']['bad_segment']},{drop_reasons_response['response']['ptp']},{drop_reasons_response['response']['after_response']}\n"
+                )
+                # fmt: on
 
     except FileNotFoundError:
         logger.error(
@@ -167,15 +191,18 @@ def create_epochs_evoked_and_behavioral_metadata(
 def _create_epochs_evoked_and_behavioral_metadata(
     raw: BaseRaw,
 ) -> tuple[
-    pd.DataFrame,
     Epochs,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
+    Counter,
+    Counter,
+    dict[str, dict[str, int]],
     plt.Figure,
     dict[str, Evoked],
     Optional[Epochs],
     Optional[Evoked],
+    Counter,
+    Counter,
+    dict[str, dict[str, int]],
+    plt.Figure,
 ]:
     """Prepare epochs from a raw object."""
     events = find_events(raw, stim_channel="TRIGGER")
@@ -218,7 +245,13 @@ def _create_epochs_evoked_and_behavioral_metadata(
             picks="eeg",
         )
         reject = _get_rejection(epochs_response)
-        epochs_response = epochs_response.drop_bad(reject=reject)
+        (
+            epochs_response,
+            count_stim_before_response,
+            count_stim_after_response,
+            drop_reasons_response,
+            fig_drops_response,
+        ) = _drop_bad_epochs(epochs_response, events_response, reject, response=True)
     else:
         metadata = None
         epochs_response = None
@@ -239,11 +272,10 @@ def _create_epochs_evoked_and_behavioral_metadata(
     (
         epochs,
         count_stim_before,
-        df_drops,
-        df_total_drops,
-        df_total_remaining,
+        count_stim_after,
+        drop_reasons,
         fig_drops,
-    ) = _drop_bad_epochs(epochs, reject)
+    ) = _drop_bad_epochs(epochs, events, reject, response=False)
     if metadata is None:
         evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
     else:
@@ -252,16 +284,18 @@ def _create_epochs_evoked_and_behavioral_metadata(
             for cond in epochs.event_id
         )
     return (
-        metadata,
         epochs,
         count_stim_before,
-        df_drops,
-        df_total_drops,
-        df_total_remaining,
+        count_stim_after,
+        drop_reasons,
         fig_drops,
         evokeds,
         epochs_response,
         None if epochs_response is None else epochs_response.average(),
+        count_stim_before_response,
+        count_stim_after_response,
+        drop_reasons_response,
+        fig_drops_response,
     )
 
 
@@ -357,41 +391,42 @@ def _get_rejection(epochs: BaseEpochs) -> dict[str, float]:
 
 
 def _drop_bad_epochs(
-    epochs: BaseEpochs, reject: dict[str, float]
-) -> tuple[BaseEpochs, pd.DataFrame, pd.DataFrame, plt.Figure]:
-    """Clean epochs from autoreject value.
-
-    Parameters
-    ----------
-    epochs : Epochs
-    df_counts : DataFrame
-    df_drops : DataFrame
-    fig_drops : Figure
-
-    Returns
-    -------
-    epochs : Epochs
-        Cleaned epochs, where epochs with supra-threshold PTP amplitude are dropped and
-        where epochs following a response are dropped.
-    """
+    epochs: BaseEpochs, events: NDArray, reject: dict[str, float], response: bool
+) -> tuple[BaseEpochs, Counter, Counter, dict[str, dict[str, int]], plt.Figure]:
+    """Clean epochs from autoreject value."""
     count_stim_before = Counter(epochs.events[:, 2])
-    epochs.drop_bad(reject=reject)
-    if epochs.metadata is not None:
+    if epochs.metadata is not None and not response:
         # drop epochs following a response
-        response_arr = pd.notna(epochs.metadata["response"]).to_numpy()
-        idx_to_drop = np.where(response_arr)[0] + 1
-        for item in idx_to_drop:
-            if item >= len(epochs):
-                idx_to_drop = np.delete(idx_to_drop, np.where(idx_to_drop == item))
+        idx_to_drop = np.where(~np.isnan(epochs.metadata["response"].values))[0] + 1
+        idx_to_drop = idx_to_drop[np.where(idx_to_drop <= len(epochs))]
         epochs.drop(idx_to_drop, reason="epoch after response")
+    epochs.drop_bad(reject=reject)
+    count_stim_after = Counter(epochs.events[:, 2])
     # log dropped epochs
-    totals = Counter(chain(*epochs.drop_log))
-    df_drops = pd.DataFrame.from_dict(totals, orient="index")
-    df_drops = df_drops.sort_values(by=[0], ascending=False)
+    events_mapping = {value: key for key, value in epochs.event_id.items()}
+    events_mapping["response"] = 64
+    if response:
+        drop_reasons = dict(response=dict(bad_segment=0, ptp=0, after_response=0))
+    else:
+        drop_reasons = dict(
+            standard=dict(bad_segment=0, ptp=0, after_response=0),
+            target=dict(bad_segment=0, ptp=0, after_response=0),
+            novel=dict(bad_segment=0, ptp=0, after_response=0),
+        )
+    for ev, drops in zip(events, epochs.drop_log):
+        if len(drops) == 0:
+            continue
+        event_type = events_mapping[ev[2]]
+        if all(elt in epochs.ch_names for elt in drops):
+            drop_reasons[event_type]["ptp"] += 1
+        elif any(elt.lower().startswith("bad") for elt in drops):
+            drop_reasons[event_type]["bad_segment"] += 1
+        elif any(elt == "epoch after response" for elt in drops):
+            drop_reasons[event_type]["after_response"] += 1
+        else:
+            raise ValueError(f"Unknown drop reason: {drops}")
     fig = epochs.plot_drop_log()
-    df_total_drops = _log_total_drop(fig.get_axes()[0].get_title())
-    df_total_remaining = _total_per_stim(epochs)
-    return epochs, count_stim_before, df_drops, df_total_drops, df_total_remaining, fig
+    return epochs, count_stim_before, count_stim_after, drop_reasons, fig
 
 
 def _total_per_stim(epochs):
@@ -435,25 +470,3 @@ def _log_total_drop(drop_info):
     )
     df_total_drops.loc[0] = [temp[0], temp[2], temp[5]]
     return df_total_drops
-
-
-def _count_stim_dropped(count_stim_before, epochs):
-    """Return a DataFrame with the number of epochs dropped per stimulus, for any reasons.
-
-    Parameters
-    ----------
-    count_stim_before : list of int
-    epochs : Epochs
-
-    Returns
-    -------
-    out : DataFrame
-        Total count of dropped epochs per stimulus.
-    """
-    count_stim_after = Counter(epochs.events[:, 2])
-    data = [
-        ["1", count_stim_before[1] - count_stim_after[1]],
-        ["2", count_stim_before[2] - count_stim_after[2]],
-        ["3", count_stim_before[3] - count_stim_after[3]],
-    ]
-    return pd.DataFrame(data, columns=["Stim", "n_dropped"])
