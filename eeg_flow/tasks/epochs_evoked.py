@@ -1,6 +1,5 @@
 from __future__ import annotations  # c.f. PEP 563, PEP 649
 
-import math
 import time
 from collections import Counter
 from itertools import chain
@@ -13,7 +12,6 @@ from autoreject import get_rejection_threshold
 from mne import Epochs, find_events
 from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
-from scipy.stats import norm
 
 from .. import logger
 from ..config import load_config, load_triggers
@@ -22,6 +20,8 @@ from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:
+    from typing import Optional
+
     from matplotlib import pyplot as plt
     from mne import Evoked
     from mne.epochs import BaseEpochs
@@ -67,6 +67,8 @@ def create_epochs_evoked_and_behavioral_metadata(
         derivatives_folder / f"{fname_stem}_step8-standard-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-target-ave.fif",
         derivatives_folder / f"{fname_stem}_step8-novel-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif",
+        derivatives_folder / f"{fname_stem}_step8_response-ave.fif",
     ]
     locks = lock_files(*derivatives, timeout=timeout)
 
@@ -89,12 +91,16 @@ def create_epochs_evoked_and_behavioral_metadata(
             df_total_remaining,
             fig_drops,
             evokeds,
+            epochs_response,
+            evoked_response,
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save epochs, drop-log and evoked files
         epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
         df_counts = _count_stim_dropped(count_stim_before, epochs)
-        df_counts.to_csv(derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv")
+        df_counts.to_csv(
+            derivatives_folder / f"{fname_stem}_step8_c2-drop-epochs-per-stim.csv"
+        )
         fig_drops.get_axes()[0].set_title(
             f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
         )
@@ -112,11 +118,16 @@ def create_epochs_evoked_and_behavioral_metadata(
         df_total_remaining.to_csv(
             derivatives_folder / f"{fname_stem}_step8_c5-total-remaining.csv"
         )
-
-
         for cond in epochs.event_id:
             evokeds[cond].save(
                 derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
+            )
+        if epochs_response is not None and evoked_response is not None:
+            epochs_response.save(
+                derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif"
+            )
+            evoked_response.save(
+                derivatives_folder / f"{fname_stem}_step8_response-ave.fif"
             )
 
     except FileNotFoundError:
@@ -129,14 +140,14 @@ def create_epochs_evoked_and_behavioral_metadata(
             run,
         )
     except FileExistsError:
-       logger.error(
-           "The destination file for participant %s, group %s, task %s, run %i "
-           "already exists.",
-           participant,
-           group,
-           task,
-           run,
-       )
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists.",
+            participant,
+            group,
+            task,
+            run,
+        )
     except Exception as error:
         logger.error(
             "The file for participant %s, group %s, task %s, run %i could not be "
@@ -163,11 +174,18 @@ def _create_epochs_evoked_and_behavioral_metadata(
     pd.DataFrame,
     plt.Figure,
     dict[str, Evoked],
+    Optional[Epochs],
+    Optional[Evoked],
 ]:
     """Prepare epochs from a raw object."""
     events = find_events(raw, stim_channel="TRIGGER")
     events_id = load_triggers()
     if np.any(events[:, 2] == 64):
+        mask1 = np.where(events[:, 2] == 2)[0]
+        sel = np.array(
+            [elt for elt in np.where(events[:, 2] == 64)[0] if elt - 1 in mask1]
+        )
+        events_response = events[sel]
         events_id["response"] = 64
     if sorted(np.unique(events[:, 2])) != sorted(events_id.values()):
         warn(
@@ -178,9 +196,32 @@ def _create_epochs_evoked_and_behavioral_metadata(
         )
     if "response" in events_id:
         metadata, events, events_id = _make_metadata(events, events_id, raw)
-      
+        metadata.drop(columns=["standard", "target", "novel"], inplace=True)
+        logger.info("Creating response-lock epochs.")
+        metadata_reponse = dict(
+            event_name=["response"] * events_response.shape[0],
+            response_time=metadata["response"].values[
+                metadata["response_type"].values == "Hits"
+            ],
+        )
+        metadata_reponse = pd.DataFrame.from_dict(metadata_reponse)
+        epochs_response = Epochs(
+            raw=raw,
+            tmin=-0.2,
+            tmax=0.8,
+            events=events_response,
+            event_id=dict(response=64),
+            metadata=metadata_reponse,
+            reject=None,
+            preload=True,
+            baseline=(None, 0),
+            picks="eeg",
+        )
+        reject = _get_rejection(epochs_response)
+        epochs_response = epochs_response.drop_bad(reject=reject)
     else:
         metadata = None
+        epochs_response = None
 
     epochs = Epochs(
         raw=raw,
@@ -195,7 +236,14 @@ def _create_epochs_evoked_and_behavioral_metadata(
         picks="eeg",
     )
     reject = _get_rejection(epochs)
-    epochs, count_stim_before, df_drops, df_total_drops, df_total_remaining, fig_drops = _drop_bad_epochs(epochs, reject)
+    (
+        epochs,
+        count_stim_before,
+        df_drops,
+        df_total_drops,
+        df_total_remaining,
+        fig_drops,
+    ) = _drop_bad_epochs(epochs, reject)
     if metadata is None:
         evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
     else:
@@ -212,6 +260,8 @@ def _create_epochs_evoked_and_behavioral_metadata(
         df_total_remaining,
         fig_drops,
         evokeds,
+        epochs_response,
+        None if epochs_response is None else epochs_response.average(),
     )
 
 
@@ -253,13 +303,10 @@ def _make_metadata(
         sfreq=raw.info["sfreq"],
         row_events=["standard", "target", "novel"],
     )
+    # fmt: off
     conditions = [
-        (metadata["event_name"].eq("target"))
-        & (pd.notna(metadata["response"]))
-        & (metadata["response"] < 0.2),
-        (metadata["event_name"].eq("target"))
-        & (pd.notna(metadata["response"]))
-        & (metadata["response"] >= 0.2),
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < 0.2),
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= 0.2),
         (metadata["event_name"].eq("target")) & (pd.isna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.notna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.isna(metadata["response"])),
@@ -270,15 +317,21 @@ def _make_metadata(
         "FalseAlarms_tooquick",
         "Hits",
         "Misses",
-        "FalseAlarms",
-        "CorrectRejections",
-        "FalseAlarms",
-        "CorrectRejections",
+        "FalseAlarms-standard",
+        "CorrectRejections-standard",
+        "FalseAlarms-novel",
+        "CorrectRejections-novel",
     ]
+    assert len(conditions) == len(choices)  # sanity-check
     metadata["response_type"] = np.select(conditions, choices, default=0)
-    metadata["response_type"].value_counts()
-    metadata["response_correct"] = (metadata["response_type"] == "CorrectRejections") | (metadata["response_type"] == "Hits")
+    metadata["response_correct"] = (
+        (metadata["response_type"] == "Hits")
+        | (metadata["response_type"] == "CorrectRejections-standard")
+        | (metadata["response_type"] == "CorrectRejections-novel")
+    )
+    # fmt: on
     return metadata, events, event_id
+
 
 def _get_rejection(epochs: BaseEpochs) -> dict[str, float]:
     """Epoching.
@@ -340,9 +393,10 @@ def _drop_bad_epochs(
     df_total_remaining = _total_per_stim(epochs)
     return epochs, count_stim_before, df_drops, df_total_drops, df_total_remaining, fig
 
+
 def _total_per_stim(epochs):
     """Return a dataframe with the count of remaining stims
-    
+
     Parameters
     ----------
     epochs : BaseEpoch
@@ -356,7 +410,7 @@ def _total_per_stim(epochs):
     all_counts = dict(zip(unique, counts))
     all_counts
 
-    all_count_stim = {key: all_counts[key] for key in [1,2,3]}
+    all_count_stim = {key: all_counts[key] for key in [1, 2, 3]}
     all_count_stim
 
     df_total_stim = pd.DataFrame(all_count_stim, index=[0])
@@ -365,7 +419,7 @@ def _total_per_stim(epochs):
 
 def _log_total_drop(drop_info):
     """Return a dataframe with the key infos dropped epochs
-    
+
     Parameters
     ----------
     drop_info : str
@@ -376,9 +430,12 @@ def _log_total_drop(drop_info):
         DataFrame with the relevant dropped epochs infos
     """
     temp = drop_info.split(" ")
-    df_total_drops = pd.DataFrame(columns=["n_dropped", "n_original", "percent_dropped"])
-    df_total_drops.loc[0] = [temp[0],temp[2],temp[5]]
+    df_total_drops = pd.DataFrame(
+        columns=["n_dropped", "n_original", "percent_dropped"]
+    )
+    df_total_drops.loc[0] = [temp[0], temp[2], temp[5]]
     return df_total_drops
+
 
 def _count_stim_dropped(count_stim_before, epochs):
     """Return a DataFrame with the number of epochs dropped per stimulus, for any reasons.
