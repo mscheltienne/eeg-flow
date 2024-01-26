@@ -427,4 +427,3 @@ def _drop_bad_epochs(
             raise ValueError(f"Unknown drop reason: {drops}")
     fig = epochs.plot_drop_log()
     return epochs, count_stim_before, count_stim_after, drop_reasons, fig
-    ----------
