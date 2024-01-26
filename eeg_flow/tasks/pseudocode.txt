@@ -1,0 +1,8 @@
+metadata already created
+events as well
+
+check that current row ri srespons and previous is target
+only keep first response in the block
+allow only response 
+
+make distinction of response too early and in time (200ms?)
