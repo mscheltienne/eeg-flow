@@ -629,6 +629,7 @@ def apply_ica(
         del raw_mastoids
         raw.set_montage("standard_1020")  # add montage for non-mastoids
         raw.set_eeg_reference(["M1", "M2"])
+        raw.drop_channels(["M1", "M2"])
 
         # save derivative
         fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"

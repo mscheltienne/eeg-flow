@@ -36,6 +36,7 @@ def convert_xdf_to_fiff(
     %(group)s
     %(task)s
     %(run)s
+    %(timeout)s
     """
     # prepare folders
     _, derivatives_folder_root, _ = load_config()
