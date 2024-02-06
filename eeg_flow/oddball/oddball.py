@@ -7,16 +7,17 @@ import numpy as np
 import psychtoolbox as ptb
 from bsl.lsl import StreamInfo, StreamOutlet
 from bsl.triggers import MockTrigger, ParallelPortTrigger
-from psychopy.core import wait
-from psychopy.sound.backend_ptb import SoundPTB
-from psychopy.visual import ShapeStim, Window
 
 from ._utils import parse_trial_list
 from ..utils._checks import check_type, check_value, ensure_int, ensure_path
+from ..utils._imports import import_optional_dependency
 from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from typing import Union
+
+    from psychopy.sound.backend_ptb import SoundPTB
+    from psychopy.visual import ShapeStim, Window
 
 
 _TRIAL_LIST_MAPPING = {
@@ -67,6 +68,11 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     mock : bool
         If True, uses a MockTrigger instead of a ParallelPortTrigger.
     """
+    import_optional_dependency("psychopy")
+
+    from psychopy.core import wait
+    from psychopy.visual import Window
+
     check_type(condition, (str,), "condition")
     check_value(condition, _TRIAL_LIST_MAPPING, "condition")
     check_type(active, (bool,), "active")
@@ -149,6 +155,8 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
 
 def _load_sounds(trials) -> dict[str, SoundPTB]:
     """Create psychopy sound objects."""
+    from psychopy.sound.backend_ptb import SoundPTB
+
     sounds = dict()
     fname_standard = files("eeg_flow.oddball") / "sounds" / "low_tone-48000.wav"
     fname_standard = ensure_path(fname_standard, must_exist=True)
@@ -189,7 +197,8 @@ def _load_cross(
 
             5  6
     """
-    check_type(active, (bool,), "active")
+    from psychopy.visual import ShapeStim
+
     crosses = dict()
     # convert the number of pixels into the normalized unit per axis (x, y)
     width = _CROSS_WIDTH * 2 / win.size
