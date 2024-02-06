@@ -4,13 +4,76 @@ Inspired from mne: https://mne.tools/stable/index.html
 Inspired from mne.utils.docs.py by Eric Larson <larson.eric.d@gmail.com>
 """
 
-import sys
-from typing import Callable
+from __future__ import annotations  # c.f. PEP 563, PEP 649
 
-# ------------------------- Documentation dictionary -------------------------
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, Callable
+
+# -- Documentation dictionary ----------------------------------------------------------
 docdict: dict[str, str] = dict()
 
-# ---------------------------------- verbose ---------------------------------
+# -- A ---------------------------------------------------------------------------------
+# -- B ---------------------------------------------------------------------------------
+# -- C ---------------------------------------------------------------------------------
+# -- D ---------------------------------------------------------------------------------
+# -- E ---------------------------------------------------------------------------------
+docdict["eeg_stream"] = """
+eeg_stream : dict
+    Stream containing the EEG data."""
+
+# -- F ---------------------------------------------------------------------------------
+# -- G ---------------------------------------------------------------------------------
+docdict["group"] = """
+group : str
+    ID of the group, "G1" to "G8"."""
+
+# -- H ---------------------------------------------------------------------------------
+# -- I ---------------------------------------------------------------------------------
+docdict["ica_nb"] = """
+ica_nb : int
+    ID of the ICA, 1 or 2."""
+
+# -- J ---------------------------------------------------------------------------------
+# -- K ---------------------------------------------------------------------------------
+# -- L ---------------------------------------------------------------------------------
+# -- M ---------------------------------------------------------------------------------
+# -- N ---------------------------------------------------------------------------------
+# -- O ---------------------------------------------------------------------------------
+# -- P ---------------------------------------------------------------------------------
+docdict["participant"] = """
+participant : str
+    ID of the participant, for example "P08", "S02"."""
+
+# -- Q ---------------------------------------------------------------------------------
+# -- R ---------------------------------------------------------------------------------
+docdict["raw"] = """
+raw : Raw
+    Raw instance."""
+
+docdict["run"] = """
+run : int
+    ID of the run, 1 or 2."""
+
+# -- S ---------------------------------------------------------------------------------
+docdict["streams"] = """
+streams : list of dict
+    List of streams recorded in the .xdf file."""
+
+# -- T ---------------------------------------------------------------------------------
+docdict["task"] = """
+task : "oddball" | "UT"
+    Task name."""
+
+docdict["timeout"] = """
+timeout : float
+    Maximum duration during which it will attempt to acquire the locks on the derivative
+    files."""
+
+# -- U ---------------------------------------------------------------------------------
+# -- V ---------------------------------------------------------------------------------
 docdict["verbose"] = """
 verbose : int | str | bool | None
     Sets the verbosity level. The verbosity increases gradually between ``"CRITICAL"``,
@@ -18,50 +81,16 @@ verbose : int | str | bool | None
     verbosity is set to ``"WARNING"``. If a bool is provided, the verbosity is set to
     ``"WARNING"`` for False and to ``"INFO"`` for True."""
 
-# ------------------------------------ I/O -----------------------------------
-docdict["streams"] = """
-streams : list of dict
-    List of streams recorded in the .xdf file."""
+# -- W ---------------------------------------------------------------------------------
+# -- X ---------------------------------------------------------------------------------
+# -- Y ---------------------------------------------------------------------------------
+# -- Z ---------------------------------------------------------------------------------
 
-docdict["eeg_stream"] = """
-eeg_stream : dict
-    Stream containing the EEG data."""
-
-docdict["raw"] = """
-raw : Raw
-    Raw instance."""
-
-# ------------------------------ file convention -----------------------------
-docdict["participant"] = """
-participant : str
-    ID of the participant, for example "P08", "S02"."""
-
-docdict["group"] = """
-group : str
-    ID of the group, "G1" to "G8"."""
-
-docdict["task"] = """
-task : "oddball" | "UT"
-    Task name."""
-
-docdict["run"] = """
-run : int
-    ID of the run, 1 or 2."""
-
-docdict["ica_nb"] = """
-ica_nb : int
-    ID of the ICA, 1 or 2."""
-
-docdict["timeout"] = """
-timeout : float
-    Maximum duration during which it will attempt to acquire the locks on the derivative
-    files."""
-
-# ------------------------- Documentation functions --------------------------
+# -- Documentation functions -----------------------------------------------------------
 docdict_indented: dict[int, dict[str, str]] = dict()
 
 
-def fill_doc(f: Callable) -> Callable:
+def fill_doc(f: Callable[..., Any]) -> Callable[..., Any]:
     """Fill a docstring with docdict entries.
 
     Parameters
@@ -129,7 +158,7 @@ def _indentcount_lines(lines: list[str]) -> int:
     return indent
 
 
-def copy_doc(source: Callable) -> Callable:
+def copy_doc(source: Callable[..., Any]) -> Callable[..., Any]:
     """Copy the docstring from another function (decorator).
 
     The docstring of the source function is prepepended to the docstring of the function
@@ -163,7 +192,7 @@ def copy_doc(source: Callable) -> Callable:
     Docstring for m1 this gets appended
     """
 
-    def wrapper(func):
+    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         if source.__doc__ is None or len(source.__doc__) == 0:
             raise RuntimeError(
                 f"The docstring from {source.__name__} could not be copied because it "
