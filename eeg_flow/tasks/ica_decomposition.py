@@ -26,7 +26,7 @@ from ..utils.concurrency import lock_files
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Any, Dict, Tuple
+    from typing import Any
 
     from mne.io import BaseRaw
 
@@ -141,7 +141,7 @@ def fit_icas(
         del locks
 
 
-def _load_and_filter_raws(fname: Path) -> Tuple[BaseRaw, BaseRaw]:
+def _load_and_filter_raws(fname: Path) -> tuple[BaseRaw, BaseRaw]:
     """Load raw recording and filter for ICA fits."""
     raw1 = read_raw_fif(fname, preload=True)
     raw2 = raw1.copy()
@@ -177,7 +177,7 @@ def _load_and_filter_raws(fname: Path) -> Tuple[BaseRaw, BaseRaw]:
     return raw1, raw2
 
 
-def _fit_ica(raw: BaseRaw, ica_kwargs: Dict[str, Any]) -> ICA:
+def _fit_ica(raw: BaseRaw, ica_kwargs: dict[str, Any]) -> ICA:
     """Create and fit an ICA decomposition on the provided raw recoridng."""
     ica = ICA(**ica_kwargs)
     picks = pick_types(raw.info, eeg=True, exclude="bads")
@@ -381,7 +381,7 @@ def compare_labels(
     task: str,
     run: int,
     ica_id: int,
-    reviewers: Tuple[str, str],
+    reviewers: tuple[str, str],
     *,
     timeout: float = 10,
 ):

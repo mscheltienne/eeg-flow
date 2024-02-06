@@ -5,15 +5,13 @@ Inspired from mne.utils.docs.py by Eric Larson <larson.eric.d@gmail.com>
 """
 
 import sys
-from typing import Callable, Dict, List
+from typing import Callable
 
 # ------------------------- Documentation dictionary -------------------------
-docdict: Dict[str, str] = dict()
+docdict: dict[str, str] = dict()
 
 # ---------------------------------- verbose ---------------------------------
-docdict[
-    "verbose"
-] = """
+docdict["verbose"] = """
 verbose : int | str | bool | None
     Sets the verbosity level. The verbosity increases gradually between ``"CRITICAL"``,
     ``"ERROR"``, ``"WARNING"``, ``"INFO"`` and ``"DEBUG"``. If None is provided, the
@@ -21,64 +19,46 @@ verbose : int | str | bool | None
     ``"WARNING"`` for False and to ``"INFO"`` for True."""
 
 # ------------------------------------ I/O -----------------------------------
-docdict[
-    "streams"
-] = """
+docdict["streams"] = """
 streams : list of dict
     List of streams recorded in the .xdf file."""
 
-docdict[
-    "eeg_stream"
-] = """
+docdict["eeg_stream"] = """
 eeg_stream : dict
     Stream containing the EEG data."""
 
-docdict[
-    "raw"
-] = """
+docdict["raw"] = """
 raw : Raw
     Raw instance."""
 
 # ------------------------------ file convention -----------------------------
-docdict[
-    "participant"
-] = """
+docdict["participant"] = """
 participant : str
     ID of the participant, for example "P08", "S02"."""
 
-docdict[
-    "group"
-] = """
+docdict["group"] = """
 group : str
     ID of the group, "G1" to "G8"."""
 
-docdict[
-    "task"
-] = """
+docdict["task"] = """
 task : "oddball" | "UT"
     Task name."""
 
-docdict[
-    "run"
-] = """
+docdict["run"] = """
 run : int
     ID of the run, 1 or 2."""
 
-docdict[
-    "ica_nb"
-] = """
+docdict["ica_nb"] = """
 ica_nb : int
     ID of the ICA, 1 or 2."""
 
-docdict[
-    "timeout"
-] = """
+docdict["timeout"] = """
 timeout : float
     Maximum duration during which it will attempt to acquire the locks on the derivative
     files."""
 
 # ------------------------- Documentation functions --------------------------
-docdict_indented: Dict[int, Dict[str, str]] = dict()
+docdict_indented: dict[int, dict[str, str]] = dict()
 
 
 def fill_doc(f: Callable) -> Callable:
@@ -124,7 +104,7 @@ def fill_doc(f: Callable) -> Callable:
     return f
 
 
-def _indentcount_lines(lines: List[str]) -> int:
+def _indentcount_lines(lines: list[str]) -> int:
     """Minimum indent for all lines in line list.
 
     >>> lines = [' one', '  two', '   three']

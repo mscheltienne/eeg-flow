@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING
 from ..utils._checks import check_type, ensure_path
 
 if TYPE_CHECKING:
-    from typing import Dict, Tuple, Union
+    from typing import Union
 
 
 def load_triggers(
     fname: Union[str, Path] = files("eeg_flow.config") / "triggers.ini",
-) -> Dict[str, int]:
+) -> dict[str, int]:
     """Load triggers from triggers.ini into a TriggerDef instance.
 
     Parameters
@@ -91,7 +91,7 @@ def create_config(
         config.write(file)
 
 
-def load_config() -> Tuple[Path, Path, str]:
+def load_config() -> tuple[Path, Path, str]:
     """Load the package configuration.
 
     Returns

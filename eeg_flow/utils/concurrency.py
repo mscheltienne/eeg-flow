@@ -1,5 +1,3 @@
-from typing import List
-
 from filelock import SoftFileLock
 
 from ._checks import check_type, ensure_path
@@ -7,7 +5,7 @@ from ._docs import fill_doc
 
 
 @fill_doc
-def lock_files(*args, timeout: float = 10) -> List[SoftFileLock]:
+def lock_files(*args, timeout: float = 10) -> list[SoftFileLock]:
     """Lock the files provided as positional arguments.
 
     Parameters
@@ -16,7 +14,7 @@ def lock_files(*args, timeout: float = 10) -> List[SoftFileLock]:
 
     Returns
     -------
-    locks : List of SoftFileLock
+    locks : list of SoftFileLock
         The list of locks. When deleted, a lock is automatically released.
     """
     check_type(timeout, ("numeric",), "timeout")

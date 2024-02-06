@@ -1,5 +1,5 @@
 import multiprocessing as mp
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable
 
 from tqdm import tqdm
 
@@ -7,7 +7,7 @@ from ._checks import check_type
 from .logs import logger
 
 
-def parallel(function: Callable, n_jobs: int, args: List[Any]) -> List[Any]:
+def parallel(function: Callable, n_jobs: int, args: list[Any]) -> list[Any]:
     """Run function in parallel and display a TQDM progressbar.
 
     Parameters
@@ -41,7 +41,7 @@ def parallel(function: Callable, n_jobs: int, args: List[Any]) -> List[Any]:
     return results
 
 
-def _function_for_imap(func_args: Tuple[Any]) -> Any:  # noqa: D401
+def _function_for_imap(func_args: tuple[Any]) -> Any:  # noqa: D401
     """Function passed to Pool.imap."""
     func = func_args[0]
     args = func_args[1:]
