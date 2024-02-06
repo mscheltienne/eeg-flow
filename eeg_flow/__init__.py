@@ -1,4 +1,4 @@
-from . import config  # noqa: F401
+# from . import config  # noqa: F401
 from . import io  # noqa: F401
 from . import oddball  # noqa: F401
 from . import tasks  # noqa: F401

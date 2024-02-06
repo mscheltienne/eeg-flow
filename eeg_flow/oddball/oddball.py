@@ -4,7 +4,6 @@ from importlib.resources import files
 from typing import TYPE_CHECKING
 
 import numpy as np
-import psychtoolbox as ptb
 
 from ..utils._checks import check_type, check_value, ensure_int, ensure_path
 from ..utils._imports import import_optional_dependency
@@ -68,7 +67,9 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     """
     import_optional_dependency("byte_triggers")
     import_optional_dependency("psychopy")
+    import_optional_dependency("psychtoolbox")
 
+    import psychtoolbox as ptb
     from byte_triggers import LSLTrigger, MockTrigger, ParallelPortTrigger
     from psychopy.core import wait
     from psychopy.visual import Window
