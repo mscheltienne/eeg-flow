@@ -119,6 +119,7 @@ branch = true
 cover_pylib = false
 omit = [
   '**/__init__.py',
+  '**/conftest.py',
   '**/eeg_flow/_version.py',
   '**/eeg_flow/commands/*',
   '**/eeg_flow/utils/_fixes.py',
