@@ -16,13 +16,13 @@ from mne.io.constants import FIFF
 from mne.preprocessing import ICA, read_ica
 from mne.viz.ica import _prepare_data_ica_properties
 
-from .. import logger
 from ..config import load_config
 from ..utils._checks import check_type, check_value
 from ..utils._docs import fill_doc
 from ..utils._imports import import_optional_dependency
 from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
+from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from pathlib import Path

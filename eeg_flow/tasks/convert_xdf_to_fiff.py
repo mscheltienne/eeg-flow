@@ -2,7 +2,6 @@ import os
 
 from mne import find_events
 
-from .. import logger
 from ..config import load_config
 from ..io import (
     add_game_events,
@@ -17,6 +16,7 @@ from ..utils._docs import fill_doc
 from ..utils.annotations import annotations_from_events
 from ..utils.bids import get_derivative_folder, get_fname, get_xdf_folder
 from ..utils.concurrency import lock_files
+from ..utils.logs import logger
 
 
 @fill_doc

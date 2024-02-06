@@ -12,11 +12,11 @@ from mne import Epochs, find_events
 from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
 
-from .. import logger
 from ..config import load_config, load_triggers
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
+from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from typing import Optional
