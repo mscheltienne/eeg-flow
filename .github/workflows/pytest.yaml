@@ -33,11 +33,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: 'x64'
-      - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@main
       - name: Install package
         run: |
-          python -m pip install --progress-bar off --upgrade pip setuptools wheel
+          python -m pip install --progress-bar off --upgrade pip setuptools
           python -m pip install --progress-bar off .[test]
       - name: Display system information
         run: eeg_flow-sys_info --developer
