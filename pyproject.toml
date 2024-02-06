@@ -41,15 +41,12 @@ dependencies = [
     'bsl==0.6.3',
     'filelock',
     'mne>=1.4.1',
-    'mne-icalabel>=0.4',
 	'mne-qt-browser>=0.5.1',
     'numpy<1.24',
     'openpyxl',
     'packaging',
     'pandas',
     'psutil',
-    'psychopy',
-    'psychtoolbox',
     'pyprep>=0.4.0',
     'python-picard',
     'pyxdf',
@@ -61,6 +58,13 @@ dependencies = [
 build = [
     'build',
     'twine',
+]
+iclabel = [
+    'mne-icalabel>=0.6',
+]
+psychopy = [
+    'psychopy',
+    'psychtoolbox',
 ]
 style = [
     'black[jupyter]',
@@ -76,6 +80,8 @@ test = [
 ]
 all = [
     'eeg_flow[build]',
+    'eeg_flow[iclabel]',
+    'eeg_flow[psychopy]',
     'eeg_flow[style]',
     'eeg_flow[test]',
 ]
