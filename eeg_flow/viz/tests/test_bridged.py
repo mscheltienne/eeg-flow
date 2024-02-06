@@ -1,5 +1,6 @@
 """Test bridged.py"""
 
+import warnings
 from importlib.resources import files
 
 import pytest
@@ -13,7 +14,14 @@ from eeg_flow.viz import plot_bridged_electrodes
 def raw():
     """Load a raw object."""
     fname = files("eeg_flow.viz.tests") / "data" / "test-bridged.fif"
-    return read_raw_fif(fname, preload=True)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="does not conform to MNE naming conventions",
+            category=RuntimeWarning,
+        )
+        raw = read_raw_fif(fname, preload=True)
+    return raw
 
 
 def test_plot_bridged_electrodes(raw):
