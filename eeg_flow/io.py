@@ -19,12 +19,12 @@ from .utils._docs import fill_doc
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import List, Tuple, Union
+    from typing import Union
 
 
 # ------------------------------------ Load streams ------------------------------------
 @fill_doc
-def load_xdf(fname: Union[str, Path]) -> List[dict]:
+def load_xdf(fname: Union[str, Path]) -> list[dict]:
     """Load XDF file.
 
     Parameters
@@ -42,7 +42,7 @@ def load_xdf(fname: Union[str, Path]) -> List[dict]:
 
 
 @fill_doc
-def find_streams(streams: List[dict], stream_name: str) -> List[Tuple[int, dict]]:
+def find_streams(streams: list[dict], stream_name: str) -> list[tuple[int, dict]]:
     """Find the stream including 'stream_name' in the name attribute.
 
     Parameters
@@ -65,7 +65,7 @@ def find_streams(streams: List[dict], stream_name: str) -> List[Tuple[int, dict]
 
 
 @fill_doc
-def stream_names(streams: List[dict]):
+def stream_names(streams: list[dict]):
     """Return the list of stream names.
 
     Parameters
@@ -135,7 +135,7 @@ def create_raw(eeg_stream: dict) -> BaseRaw:
     return raw
 
 
-def _get_eeg_ch_info(stream: dict) -> Tuple[List[str], List[str]]:
+def _get_eeg_ch_info(stream: dict) -> tuple[list[str], list[str]]:
     """Extract the info for each eeg channels (label, type and unit)."""
     ch_names, ch_types = [], []
 
@@ -179,7 +179,7 @@ def add_mouse_position(
     Operates in-place.
     """
     check_type(raw, (BaseRaw,), item_name="raw")
-    check_type(k, ("int",), item_name="k")
+    check_type(k, ("int-like",), item_name="k")
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
 
@@ -204,7 +204,7 @@ def add_game_events(
     Operates in-place.
     """
     check_type(raw, (BaseRaw,), item_name="raw")
-    check_type(k, ("int",), item_name="k")
+    check_type(k, ("int-like",), item_name="k")
     _add_misc_channel(raw, eeg_stream, game_events_stream, k)
 
 

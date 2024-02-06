@@ -18,15 +18,13 @@ from mne.viz import plot_bridged_electrodes as plot_bridged_electrodes_mne
 from ..utils._checks import check_type
 
 if TYPE_CHECKING:
-    from typing import List, Tuple
-
     from matplotlib.pyplot import Axes, Figure
     from numpy.typing import NDArray
 
 
 def plot_bridged_electrodes(
     raw: BaseRaw,
-) -> Tuple[Figure, NDArray[Axes]]:
+) -> tuple[Figure, NDArray[Axes]]:
     """Compute and plot bridged electrodes.
 
     Parameters
@@ -61,10 +59,10 @@ def plot_bridged_electrodes(
 
 
 def plot_bridged_electrodes_array(
-    bridged_idx: List[Tuple[int, int]],
+    bridged_idx: list[tuple[int, int]],
     ed_matrix: NDArray[float],
     info: Info,
-) -> Tuple[Figure, NDArray[Axes]]:
+) -> tuple[Figure, NDArray[Axes]]:
     """Pot bridged electrodes.
 
     Parameters

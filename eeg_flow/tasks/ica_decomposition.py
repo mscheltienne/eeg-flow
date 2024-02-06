@@ -15,18 +15,18 @@ from mne.io import read_raw_fif
 from mne.io.constants import FIFF
 from mne.preprocessing import ICA, read_ica
 from mne.viz.ica import _prepare_data_ica_properties
-from mne_icalabel import label_components as label_components_iclabel
 
-from .. import logger
 from ..config import load_config
 from ..utils._checks import check_type, check_value
 from ..utils._docs import fill_doc
+from ..utils._imports import import_optional_dependency
 from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
+from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Any, Dict, Tuple
+    from typing import Any
 
     from mne.io import BaseRaw
 
@@ -95,8 +95,12 @@ def fit_icas(
         assert ica2.info["custom_ref_applied"] == 1
 
         # label components
-        logger.info("Running ICLabel.")
-        df_iclabel = _auto_label_components(raw2, ica2)
+        if import_optional_dependency("mne_icalabel", raise_error=False) is not None:
+            logger.info("Running ICLabel.")
+            df_iclabel = _auto_label_components(raw2, ica2)
+        else:
+            logger.info("MNE-ICAlabel is not installed. Skipping.")
+            df_iclabel = None
 
         # save deriatives
         logger.info("Saving derivatives.")
@@ -106,7 +110,8 @@ def fit_icas(
         ica2.save(
             derivatives_folder / f"{fname_stem}_step4_2nd_ica.fif", overwrite=False
         )
-        df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step4_iclabel.xlsx")
+        if df_iclabel is not None:
+            df_iclabel.to_excel(derivatives_folder / f"{fname_stem}_step4_iclabel.xlsx")
     except FileNotFoundError:
         logger.error(
             "The requested file for participant %s, group %s, task %s, run %i does "
@@ -141,7 +146,7 @@ def fit_icas(
         del locks
 
 
-def _load_and_filter_raws(fname: Path) -> Tuple[BaseRaw, BaseRaw]:
+def _load_and_filter_raws(fname: Path) -> tuple[BaseRaw, BaseRaw]:
     """Load raw recording and filter for ICA fits."""
     raw1 = read_raw_fif(fname, preload=True)
     raw2 = raw1.copy()
@@ -177,7 +182,7 @@ def _load_and_filter_raws(fname: Path) -> Tuple[BaseRaw, BaseRaw]:
     return raw1, raw2
 
 
-def _fit_ica(raw: BaseRaw, ica_kwargs: Dict[str, Any]) -> ICA:
+def _fit_ica(raw: BaseRaw, ica_kwargs: dict[str, Any]) -> ICA:
     """Create and fit an ICA decomposition on the provided raw recoridng."""
     ica = ICA(**ica_kwargs)
     picks = pick_types(raw.info, eeg=True, exclude="bads")
@@ -187,6 +192,8 @@ def _fit_ica(raw: BaseRaw, ica_kwargs: Dict[str, Any]) -> ICA:
 
 def _auto_label_components(raw: BaseRaw, ica: ICA) -> pd.DataFrame:
     """Label components with ICLabel."""
+    from mne_icalabel import label_components as label_components_iclabel
+
     component_dict = label_components_iclabel(raw, ica, method="iclabel")
     data_icalabel = {
         "y_pred": component_dict["y_pred_proba"],
@@ -381,7 +388,7 @@ def compare_labels(
     task: str,
     run: int,
     ica_id: int,
-    reviewers: Tuple[str, str],
+    reviewers: tuple[str, str],
     *,
     timeout: float = 10,
 ):
@@ -399,7 +406,7 @@ def compare_labels(
         Username of the reviewers to load.
     %(timeout)s
     """
-    check_type(ica_id, ("int",), "ica_id")
+    check_type(ica_id, ("int-like",), "ica_id")
     check_value(ica_id, (1, 2), "ica_id")
     check_type(reviewers, (tuple,), "reviewers")
     assert len(reviewers) == 2

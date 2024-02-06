@@ -12,11 +12,11 @@ from mne import Epochs, find_events
 from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
 
-from .. import logger
 from ..config import load_config, load_triggers
 from ..utils._docs import fill_doc
 from ..utils.bids import get_derivative_folder, get_fname
 from ..utils.concurrency import lock_files
+from ..utils.logs import logger
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -116,14 +116,12 @@ def create_epochs_evoked_and_behavioral_metadata(
         with open(
             derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv", "w"
         ) as file:
-            # fmt: off
             file.write(
                 ",Total,Rejected,Bad,PTP,After response\n"
-                f"Standard,{count_stim_before[events_mapping['standard']]},{count_stim_before[events_mapping['standard']] - count_stim_after[events_mapping['standard']]},{drop_reasons['standard']['bad_segment']},{drop_reasons['standard']['ptp']},{drop_reasons['standard']['after_response']}\n"
-                f"Target,{count_stim_before[events_mapping['target']]},{count_stim_before[events_mapping['target']] - count_stim_after[events_mapping['target']]},{drop_reasons['target']['bad_segment']},{drop_reasons['target']['ptp']},{drop_reasons['target']['after_response']}\n"
-                f"Novel,{count_stim_before[events_mapping['novel']]},{count_stim_before[events_mapping['novel']] - count_stim_after[events_mapping['novel']]},{drop_reasons['novel']['bad_segment']},{drop_reasons['novel']['ptp']},{drop_reasons['novel']['after_response']}\n"
+                f"Standard,{count_stim_before[events_mapping['standard']]},{count_stim_before[events_mapping['standard']] - count_stim_after[events_mapping['standard']]},{drop_reasons['standard']['bad_segment']},{drop_reasons['standard']['ptp']},{drop_reasons['standard']['after_response']}\n"  # noqa: E501
+                f"Target,{count_stim_before[events_mapping['target']]},{count_stim_before[events_mapping['target']] - count_stim_after[events_mapping['target']]},{drop_reasons['target']['bad_segment']},{drop_reasons['target']['ptp']},{drop_reasons['target']['after_response']}\n"  # noqa: E501
+                f"Novel,{count_stim_before[events_mapping['novel']]},{count_stim_before[events_mapping['novel']] - count_stim_after[events_mapping['novel']]},{drop_reasons['novel']['bad_segment']},{drop_reasons['novel']['ptp']},{drop_reasons['novel']['after_response']}\n"  # noqa: E501
             )
-            # fmt: on
 
         if epochs_response is not None and evoked_response is not None:
             epochs_response.save(
@@ -146,12 +144,10 @@ def create_epochs_evoked_and_behavioral_metadata(
                 / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv"
                 "w",
             ) as file:
-                # fmt: off
                 file.write(
                     ",Total,Rejected,Bad,PTP,After response\n"
-                    f"Response,{count_stim_before_response[64]},{count_stim_before_response[64] - count_stim_after_response[64]},{drop_reasons_response['response']['bad_segment']},{drop_reasons_response['response']['ptp']},{drop_reasons_response['response']['after_response']}\n"
+                    f"Response,{count_stim_before_response[64]},{count_stim_before_response[64] - count_stim_after_response[64]},{drop_reasons_response['response']['bad_segment']},{drop_reasons_response['response']['ptp']},{drop_reasons_response['response']['after_response']}\n"  # noqa: E501
                 )
-                # fmt: on
 
     except FileNotFoundError:
         logger.error(
@@ -338,8 +334,8 @@ def _make_metadata(
     )
     # fmt: off
     conditions = [
-        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < 0.2),
-        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= 0.2),
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < 0.2),  # noqa: E501
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= 0.2),  # noqa: E501
         (metadata["event_name"].eq("target")) & (pd.isna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.notna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.isna(metadata["response"])),

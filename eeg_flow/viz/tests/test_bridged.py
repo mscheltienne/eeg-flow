@@ -8,12 +8,15 @@ from mne.io import read_raw_fif
 
 from eeg_flow.viz import plot_bridged_electrodes
 
-raw = read_raw_fif(
-    files("eeg_flow.viz.tests") / "data" / "test-bridged.fif", preload=True
-)
+
+@pytest.fixture(scope="module")
+def raw():
+    """Load a raw object."""
+    fname = files("eeg_flow.viz.tests") / "data" / "test-bridged-raw.fif"
+    return read_raw_fif(fname, preload=True)
 
 
-def test_plot_bridged_electrodes():
+def test_plot_bridged_electrodes(raw):
     """Test plotting from a raw object."""
     f, ax = plot_bridged_electrodes(raw)
 
