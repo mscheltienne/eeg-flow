@@ -11,12 +11,12 @@ from psychopy.core import wait
 from psychopy.sound.backend_ptb import SoundPTB
 from psychopy.visual import ShapeStim, Window
 
+from ._utils import parse_trial_list
 from ..utils._checks import check_type, check_value, ensure_int, ensure_path
 from ..utils.logs import logger
 
 if TYPE_CHECKING:
-    from pathlib import Path
-    from typing import Dict, List, Tuple, Union
+    from typing import Union
 
 
 _TRIAL_LIST_MAPPING = {
@@ -30,7 +30,7 @@ _TRIAL_LIST_MAPPING = {
 _DURATION_STIM: float = 0.2  # seconds
 _DURATION_ITI: float = 1.0  # seconds
 _DURATION_FLICKERING: float = 0.05  # seconds
-_TRIGGERS: Dict[str, int] = {
+_TRIGGERS: dict[str, int] = {
     "standard": 1,
     "target": 2,
     "novel": 3,
@@ -77,7 +77,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
         fname = fname % ("active" if active else "passive")
     fname = files("eeg_flow.oddball") / "trialList" / fname
     fname = ensure_path(fname, must_exist=True)
-    trials = _parse_trial_list(fname)
+    trials = parse_trial_list(fname)
     sounds = _load_sounds(trials)
     # prepare triggers
     trigger = MockTrigger() if mock else ParallelPortTrigger("/dev/parport0")
@@ -147,50 +147,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     win.close()
 
 
-def _parse_trial_list(fname: Path) -> List[Tuple[int, str]]:
-    """Parse the trialList file."""
-    logger.info("Loading trial list %s", fname.name)
-    with open(fname) as f:
-        lines = f.readlines()
-    lines = [line.rstrip("\n").split(", ") for line in lines if len(line) != 0]
-    novel_sounds = [sound.split("-")[0] for sound in _list_novel_sounds()]
-    lines_checked = list()
-    expected_idx = 1
-    for line in lines:
-        try:
-            idx = int(line[0])
-        except ValueError:
-            raise ValueError(
-                f"The trial idx {line[0]} could not be interpreted as an integer."
-            )
-        if expected_idx != idx:
-            raise ValueError(
-                f"The trial idx {idx} does not match the expected idx {expected_idx}."
-            )
-        trial = line[1]
-        if not trial.startswith("wav"):
-            check_value(trial, ("standard", "target", "cross"), "trial")
-        else:
-            check_value(trial, novel_sounds, "trial")
-        if trial != "cross":
-            expected_idx += 1
-        lines_checked.append((idx, trial))
-    return lines_checked
-
-
-def _list_novel_sounds() -> List[str]:
-    """List the available sounds."""
-    novel_sounds = list()
-    for file in (files("eeg_flow.oddball") / "sounds").iterdir():
-        if file.suffix != ".wav":
-            logger.warning("Non-wav file %s found in the sounds directory.", file)
-            continue
-        if file.name.startswith("wav"):
-            novel_sounds.append(file.name)
-    return novel_sounds
-
-
-def _load_sounds(trials) -> Dict[str, SoundPTB]:
+def _load_sounds(trials) -> dict[str, SoundPTB]:
     """Create psychopy sound objects."""
     sounds = dict()
     fname_standard = files("eeg_flow.oddball") / "sounds" / "low_tone-48000.wav"
@@ -215,7 +172,7 @@ def _load_sounds(trials) -> Dict[str, SoundPTB]:
 
 def _load_cross(
     win: Window, active: bool
-) -> Dict[str, Union[ShapeStim, Tuple[ShapeStim, ShapeStim]]]:
+) -> dict[str, Union[ShapeStim, tuple[ShapeStim, ShapeStim]]]:
     """Load the shapes used for fixation cross.
 
     The point position is defined as:

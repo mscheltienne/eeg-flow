@@ -1,6 +1,6 @@
 from importlib.resources import files
 
-from eeg_flow.oddball.oddball import _list_novel_sounds, _parse_trial_list
+from eeg_flow.oddball._utils import list_novel_sounds, parse_trial_list
 
 
 def test_oddball_files():
@@ -17,11 +17,9 @@ def test_oddball_files():
         "trialList_4_1000_oddball-game-a.txt",
         "trialList_4_1000_oddball-game-b.txt",
     ):
-        trials.extend(
-            _parse_trial_list(files("eeg_flow.oddball") / "trialList" / fname)
-        )
+        trials.extend(parse_trial_list(files("eeg_flow.oddball") / "trialList" / fname))
     trials = list(set([trial[1] for trial in trials if trial[1].startswith("wav")]))
-    novel_sounds = [sound.split("-")[0] for sound in _list_novel_sounds()]
+    novel_sounds = [sound.split("-")[0] for sound in list_novel_sounds()]
     trials = sorted(trials)
     novel_sounds = sorted(novel_sounds)
     assert sorted(trials) == sorted(novel_sounds)
