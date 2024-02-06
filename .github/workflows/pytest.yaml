@@ -2,17 +2,13 @@ name: pytest
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
   cancel-in-progress: true
-on:
+on:  # yamllint disable-line rule:truthy
   pull_request:
-    paths:
-      - '**.py'
   push:
     branches: [main]
-    paths:
-      - '**.py'
   workflow_dispatch:
   schedule:
-  - cron: '0 8 * * 1'
+    - cron: '0 8 * * 1'
 
 jobs:
   pytest:
@@ -54,7 +50,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          fail_ci_if_error: true # optional (default = false)
-          verbose: true # optional (default = false)
+          flags: unittests  # optional
+          name: codecov-umbrella  # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true  # optional (default = false)
