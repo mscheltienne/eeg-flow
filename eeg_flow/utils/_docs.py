@@ -11,7 +11,9 @@ from typing import Callable, Dict, List
 docdict: Dict[str, str] = dict()
 
 # ---------------------------------- verbose ---------------------------------
-docdict["verbose"] = """
+docdict[
+    "verbose"
+] = """
 verbose : int | str | bool | None
     Sets the verbosity level. The verbosity increases gradually between ``"CRITICAL"``,
     ``"ERROR"``, ``"WARNING"``, ``"INFO"`` and ``"DEBUG"``. If None is provided, the
@@ -19,40 +21,58 @@ verbose : int | str | bool | None
     ``"WARNING"`` for False and to ``"INFO"`` for True."""
 
 # ------------------------------------ I/O -----------------------------------
-docdict["streams"] = """
+docdict[
+    "streams"
+] = """
 streams : list of dict
     List of streams recorded in the .xdf file."""
 
-docdict["eeg_stream"] = """
+docdict[
+    "eeg_stream"
+] = """
 eeg_stream : dict
     Stream containing the EEG data."""
 
-docdict["raw"] = """
+docdict[
+    "raw"
+] = """
 raw : Raw
     Raw instance."""
 
 # ------------------------------ file convention -----------------------------
-docdict["participant"] = """
+docdict[
+    "participant"
+] = """
 participant : str
     ID of the participant, for example "P08", "S02"."""
 
-docdict["group"] = """
+docdict[
+    "group"
+] = """
 group : str
     ID of the group, "G1" to "G8"."""
 
-docdict["task"] = """
+docdict[
+    "task"
+] = """
 task : "oddball" | "UT"
     Task name."""
 
-docdict["run"] = """
+docdict[
+    "run"
+] = """
 run : int
     ID of the run, 1 or 2."""
 
-docdict["ica_nb"] = """
+docdict[
+    "ica_nb"
+] = """
 ica_nb : int
     ID of the ICA, 1 or 2."""
 
-docdict["timeout"] = """
+docdict[
+    "timeout"
+] = """
 timeout : float
     Maximum duration during which it will attempt to acquire the locks on the derivative
     files."""
