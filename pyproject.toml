@@ -38,7 +38,6 @@ classifiers = [
 ]
 dependencies = [
     'autoreject',
-    'bsl==0.6.3',
     'filelock',
     'mne>=1.4.1',
 	'mne-qt-browser>=0.5.1',
@@ -62,7 +61,8 @@ build = [
 iclabel = [
     'mne-icalabel>=0.6',
 ]
-psychopy = [
+oddball = [
+    'byte_triggers',
     'psychopy',
     'psychtoolbox',
 ]
@@ -81,7 +81,7 @@ test = [
 all = [
     'eeg_flow[build]',
     'eeg_flow[iclabel]',
-    'eeg_flow[psychopy]',
+    'eeg_flow[oddball]',
     'eeg_flow[style]',
     'eeg_flow[test]',
 ]

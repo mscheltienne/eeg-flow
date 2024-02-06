@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import psychtoolbox as ptb
-from bsl.lsl import StreamInfo, StreamOutlet
-from bsl.triggers import MockTrigger, ParallelPortTrigger
 
 from ._utils import parse_trial_list
 from ..utils._checks import check_type, check_value, ensure_int, ensure_path
@@ -68,8 +66,10 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     mock : bool
         If True, uses a MockTrigger instead of a ParallelPortTrigger.
     """
+    import_optional_dependency("byte_triggers")
     import_optional_dependency("psychopy")
 
+    from byte_triggers import LSLTrigger, MockTrigger, ParallelPortTrigger
     from psychopy.core import wait
     from psychopy.visual import Window
 
@@ -87,8 +87,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     sounds = _load_sounds(trials)
     # prepare triggers
     trigger = MockTrigger() if mock else ParallelPortTrigger("/dev/parport0")
-    sinfo = StreamInfo("Oddball_task", "Markers", 1, 0, "string", "myuidw43536")
-    trigger_lsl = StreamOutlet(sinfo)
+    trigger_lsl = LSLTrigger("Oddball_task")
     # prepare fixation cross window
     win = Window(
         size=_SCREEN_SIZE,
@@ -124,7 +123,7 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
         sound.play(when=now + _DURATION_STIM)
         wait(_DURATION_STIM, hogCPUperiod=_DURATION_STIM)
         trigger.signal(value)
-        trigger_lsl.push_sample([str(value)])
+        trigger_lsl.signal(value)
         # look ahead for the next trial and handle it now if it's a cross for the
         # passive oddball task
         if i == len(trials) - 1:  # end of the trial list
