@@ -179,7 +179,7 @@ def add_mouse_position(
     Operates in-place.
     """
     check_type(raw, (BaseRaw,), item_name="raw")
-    check_type(k, ("int",), item_name="k")
+    check_type(k, ("int-like",), item_name="k")
     _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
 
 
@@ -204,7 +204,7 @@ def add_game_events(
     Operates in-place.
     """
     check_type(raw, (BaseRaw,), item_name="raw")
-    check_type(k, ("int",), item_name="k")
+    check_type(k, ("int-like",), item_name="k")
     _add_misc_channel(raw, eeg_stream, game_events_stream, k)
 
 

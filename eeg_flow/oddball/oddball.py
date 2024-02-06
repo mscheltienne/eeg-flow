@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 import psychtoolbox as ptb
 
-from ._utils import parse_trial_list
 from ..utils._checks import check_type, check_value, ensure_int, ensure_path
 from ..utils._imports import import_optional_dependency
 from ..utils.logs import logger
+from ._utils import parse_trial_list
 
 if TYPE_CHECKING:
     from typing import Union
@@ -59,10 +59,10 @@ def oddball(condition: str, active: bool = True, mock: bool = False) -> None:
     condition : "100" | "600" | "0a" | "0b" | "a" | "b"
         Oddball condition to run.
     active : bool
-        Only used for the condition "100", "0a" and "0b". If False, the oddball is passive and
-        the participant is asked to count the flickering on a fixation cross while if
-        True, the participant is asked to respond to stimuli physically with a button
-        press.
+        Only used for the condition "100", "0a" and "0b". If False, the oddball is
+        passive and the participant is asked to count the flickering on a fixation cross
+        while if True, the participant is asked to respond to stimuli physically with a
+        button press.
     mock : bool
         If True, uses a MockTrigger instead of a ParallelPortTrigger.
     """

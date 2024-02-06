@@ -14,9 +14,10 @@ if TYPE_CHECKING:
     from typing import Union
 
 
-def load_triggers(
-    fname: Union[str, Path] = files("eeg_flow.config") / "triggers.ini",
-) -> dict[str, int]:
+_TRIGGER_FNAME = files("eeg_flow.config") / "triggers.ini"
+
+
+def load_triggers(fname: Union[str, Path] = _TRIGGER_FNAME) -> dict[str, int]:
     """Load triggers from triggers.ini into a TriggerDef instance.
 
     Parameters

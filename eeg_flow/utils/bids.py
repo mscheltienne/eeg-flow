@@ -34,7 +34,7 @@ def get_fname(
     check_type(group, (str,), "group")
     check_type(task, (str,), "task")
     check_value(task, ("UT", "oddball"), "task")
-    check_type(run, ("int",), "run")
+    check_type(run, ("int-like",), "run")
     return f"sub-{participant}-{group}_task-{task}_run-{run}"
 
 

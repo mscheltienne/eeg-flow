@@ -406,7 +406,7 @@ def compare_labels(
         Username of the reviewers to load.
     %(timeout)s
     """
-    check_type(ica_id, ("int",), "ica_id")
+    check_type(ica_id, ("int-like",), "ica_id")
     check_value(ica_id, (1, 2), "ica_id")
     check_type(reviewers, (tuple,), "reviewers")
     assert len(reviewers) == 2

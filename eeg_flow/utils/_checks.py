@@ -1,14 +1,19 @@
 """Utility functions for checking types and values. Inspired from MNE."""
 
+from __future__ import annotations  # c.f. PEP 563, PEP 649
+
 import logging
 import operator
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from ._docs import fill_doc
+
+if TYPE_CHECKING:
+    from typing import Any, Optional, Union
 
 
 def ensure_int(item: Any, item_name: Optional[str] = None) -> int:
@@ -61,8 +66,9 @@ class _Callable:
 _types = {
     "numeric": (np.floating, float, _IntLike()),
     "path-like": (str, Path, os.PathLike),
-    "int": (_IntLike(),),
+    "int-like": (_IntLike(),),
     "callable": (_Callable(),),
+    "array-like": (list, tuple, set, np.ndarray),
 }
 
 
@@ -75,7 +81,8 @@ def check_type(item: Any, types: tuple, item_name: Optional[str] = None) -> None
         Item to check.
     types : tuple of types | tuple of str
         Types to be checked against.
-        If str, must be one of ('int', 'numeric', 'path-like', 'callable').
+        If str, must be one of ('int-like', 'numeric', 'path-like', 'callable',
+        'array-like').
     item_name : str | None
         Name of the item to show inside the error message.
 
@@ -86,11 +93,11 @@ def check_type(item: Any, types: tuple, item_name: Optional[str] = None) -> None
     """
     check_types = sum(
         (
-            (
-                (type(None),)
-                if type_ is None
-                else (type_,) if not isinstance(type_, str) else _types[type_]
-            )
+            (type(None),)
+            if type_ is None
+            else (type_,)
+            if not isinstance(type_, str)
+            else _types[type_]
             for type_ in types
         ),
         (),
@@ -98,11 +105,11 @@ def check_type(item: Any, types: tuple, item_name: Optional[str] = None) -> None
 
     if not isinstance(item, check_types):
         type_name = [
-            (
-                "None"
-                if cls_ is None
-                else cls_.__name__ if not isinstance(cls_, str) else cls_
-            )
+            "None"
+            if cls_ is None
+            else cls_.__name__
+            if not isinstance(cls_, str)
+            else cls_
             for cls_ in types
         ]
         if len(type_name) == 1:
@@ -120,7 +127,7 @@ def check_type(item: Any, types: tuple, item_name: Optional[str] = None) -> None
 
 def check_value(
     item: Any,
-    allowed_values: tuple,
+    allowed_values: Union[tuple, dict[Any, Any]],
     item_name: Optional[str] = None,
     extra: Optional[str] = None,
 ) -> None:
@@ -130,8 +137,8 @@ def check_value(
     ----------
     item : object
         Item to check.
-    allowed_values : tuple of objects
-        Allowed values to be checked against.
+    allowed_values : tuple of objects | dict of objects
+        Allowed values to be checked against. If a dictionary, checks against the keys.
     item_name : str | None
         Name of the item to show inside the error message.
     extra : str | None
@@ -153,9 +160,9 @@ def check_value(
         if len(allowed_values) == 1:
             options = "The only allowed value is %s" % repr(allowed_values[0])
         elif len(allowed_values) == 2:
-            options = "Allowed values are %s and %s" % (
-                repr(allowed_values[0]),
-                repr(allowed_values[1]),
+            options = (
+                f"Allowed values are {repr(allowed_values[0])} "
+                f"and {repr(allowed_values[1])}"
             )
         else:
             options = "Allowed values are "
@@ -187,7 +194,7 @@ def check_verbose(verbose: Any) -> int:
         CRITICAL=logging.CRITICAL,
     )
 
-    check_type(verbose, (bool, str, "int", None), item_name="verbose")
+    check_type(verbose, (bool, str, "int-like", None), item_name="verbose")
 
     if verbose is None:
         verbose = logging.WARNING

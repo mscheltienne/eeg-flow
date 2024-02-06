@@ -393,9 +393,9 @@ def _repr_individual_behavioral(
         "Response mean, Response std:"
         f"\n\t{response_mean}, {response_std}\n\n"
         "D' merging both standard and novels:\n\t"
-        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms_all, n_correct_rejections_all))}\n\n"
+        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms_all, n_correct_rejections_all))}\n\n"  # noqa: E501
         "D' with only targets and standard (ignoring novels):\n\t"
-        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms_standard, n_correct_rejections_standard))}"
+        f"{str(_SDT_loglinear(n_hits, n_misses, n_false_alarms_standard, n_correct_rejections_standard))}"  # noqa: E501
     )
     logger.info(behavioral_str)
     return behavioral_str
