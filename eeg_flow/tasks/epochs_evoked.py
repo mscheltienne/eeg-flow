@@ -62,18 +62,16 @@ def create_epochs_evoked_and_behavioral_metadata(
     # lock the output derivative files
     # create locks
     derivatives = [
-        derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
-        derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
-        derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv",
-        derivatives_folder / f"{fname_stem}_step8-standard-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8-target-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8-novel-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif",
-        derivatives_folder / f"{fname_stem}_step8_response-ave.fif",
-        derivatives_folder
-        / "plots"
-        / f"{fname_stem}_step8_epochs-response-rejected.svg",
-        derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif",
+        derivatives_folder / "plots" / f"{fname_stem}_step8_stimlocked-epochs-rejected.svg",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo-drop-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif",
+        derivatives_folder / "plots" / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
+        derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
     ]
     locks = lock_files(*derivatives, timeout=timeout)
 
@@ -103,21 +101,21 @@ def create_epochs_evoked_and_behavioral_metadata(
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save epochs, drop-log and evoked files
-        epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
+        epochs.save(derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif")
         fig_drops.get_axes()[0].set_title(
             f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
         )
         fig_drops.savefig(
-            derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
+            derivatives_folder / "plots" / f"{fname_stem}_step8_stimlocked-epochs-rejected.svg",
             transparent=True,
         )
         for cond in epochs.event_id:
             evokeds[cond].save(
-                derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
+                derivatives_folder / f"{fname_stem}_step8_stimlocked-{cond}-ave.fif"
             )
         events_mapping = load_triggers()
         with open(
-            derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv", "w"
+            derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo-drop-log.csv", "w"
         ) as file:
             file.write(
                 ",Total,Rejected,Bad,PTP,After response\n"
@@ -128,10 +126,10 @@ def create_epochs_evoked_and_behavioral_metadata(
 
         if epochs_response is not None and evoked_response is not None:
             epochs_response.save(
-                derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif"
+                derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif"
             )
             evoked_response.save(
-                derivatives_folder / f"{fname_stem}_step8_response-ave.fif"
+                derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif"
             )
             fig_drops_response.get_axes()[0].set_title(
                 f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
@@ -139,12 +137,12 @@ def create_epochs_evoked_and_behavioral_metadata(
             fig_drops_response.savefig(
                 derivatives_folder
                 / "plots"
-                / f"{fname_stem}_step8_epochs-response-rejected.svg",
+                / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
                 transparent=True,
             )
             with open(
                 derivatives_folder
-                / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv"
+                / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv"
                 "w",
             ) as file:
                 file.write(
