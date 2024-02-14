@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     ScalarIntType: tuple[DTypeLike, ...] = (np.int8, np.int16, np.int32, np.int64)
 
 
+_TOO_QUICK_THRESHOLD: float = 0.2
+
+
 @fill_doc
 def create_epochs_evoked_and_behavioral_metadata(
     participant: str,
@@ -205,8 +208,13 @@ def _create_epochs_evoked_and_behavioral_metadata(
     if np.any(events[:, 2] == 64):
         mask1 = np.where(events[:, 2] == 2)[0]
         sel = np.array(
-            [elt for elt in np.where(events[:, 2] == 64)[0] if elt - 1 in mask1]
-        )
+            [
+                elt
+                for elt in np.where(events[:, 2] == 64)[0]
+                if elt - 1 in mask1
+                and events[elt, 0] - events[elt - 1, 0] >= _TOO_QUICK_THRESHOLD * raw.info["sfreq"]  # noqa: E501
+            ]
+        )  # fmt: skip
         events_response = events[sel]
         events_id["response"] = 64
     if sorted(np.unique(events[:, 2])) != sorted(events_id.values()):
@@ -220,11 +228,13 @@ def _create_epochs_evoked_and_behavioral_metadata(
         metadata, events, events_id = _make_metadata(events, events_id, raw)
         metadata.drop(columns=["standard", "target", "novel"], inplace=True)
         logger.info("Creating response-lock epochs.")
+        response_time = metadata["response"].values[
+            metadata["response_type"].values == "Hits"
+        ]
+        assert response_time.size == events_response.shape[0]  # sanity-check
         metadata_reponse = dict(
             event_name=["response"] * events_response.shape[0],
-            response_time=metadata["response"].values[
-                metadata["response_type"].values == "Hits"
-            ],
+            response_time=response_time,
         )
         metadata_reponse = pd.DataFrame.from_dict(metadata_reponse)
         epochs_response = Epochs(
@@ -334,8 +344,8 @@ def _make_metadata(
     )
     # fmt: off
     conditions = [
-        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < 0.2),  # noqa: E501
-        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= 0.2),  # noqa: E501
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < _TOO_QUICK_THRESHOLD),  # noqa: E501
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= _TOO_QUICK_THRESHOLD),  # noqa: E501
         (metadata["event_name"].eq("target")) & (pd.isna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.notna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.isna(metadata["response"])),
