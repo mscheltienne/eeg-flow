@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     ScalarIntType: tuple[DTypeLike, ...] = (np.int8, np.int16, np.int32, np.int64)
 
 
+_TOO_QUICK_THRESHOLD: float = 0.2
+
+
 @fill_doc
 def create_epochs_evoked_and_behavioral_metadata(
     participant: str,
@@ -59,18 +62,21 @@ def create_epochs_evoked_and_behavioral_metadata(
     # lock the output derivative files
     # create locks
     derivatives = [
-        derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif",
-        derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
-        derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv",
-        derivatives_folder / f"{fname_stem}_step8-standard-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8-target-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8-novel-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif",
-        derivatives_folder / f"{fname_stem}_step8_response-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif",
         derivatives_folder
         / "plots"
-        / f"{fname_stem}_step8_epochs-response-rejected.svg",
-        derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv",
+        / f"{fname_stem}_step8_stimlocked-epochs-rejected.svg",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo-drop-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif",
+        derivatives_folder
+        / "plots"
+        / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
+        derivatives_folder
+        / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
+        derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
     ]
     locks = lock_files(*derivatives, timeout=timeout)
 
@@ -100,21 +106,27 @@ def create_epochs_evoked_and_behavioral_metadata(
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save epochs, drop-log and evoked files
-        epochs.save(derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo.fif")
+        epochs.save(
+            derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif"
+        )
         fig_drops.get_axes()[0].set_title(
             f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
         )
         fig_drops.savefig(
-            derivatives_folder / "plots" / f"{fname_stem}_step8_epochs-rejected.svg",
+            derivatives_folder
+            / "plots"
+            / f"{fname_stem}_step8_stimlocked-epochs-rejected.svg",
             transparent=True,
         )
         for cond in epochs.event_id:
             evokeds[cond].save(
-                derivatives_folder / f"{fname_stem}_step8_{cond}-ave.fif"
+                derivatives_folder / f"{fname_stem}_step8_stimlocked-{cond}-ave.fif"
             )
         events_mapping = load_triggers()
         with open(
-            derivatives_folder / f"{fname_stem}_step8_c1-cleaned-epo-drop-log.csv", "w"
+            derivatives_folder
+            / f"{fname_stem}_step8_stimlocked-cleaned-epo-drop-log.csv",
+            "w",
         ) as file:
             file.write(
                 ",Total,Rejected,Bad,PTP,After response\n"
@@ -125,10 +137,11 @@ def create_epochs_evoked_and_behavioral_metadata(
 
         if epochs_response is not None and evoked_response is not None:
             epochs_response.save(
-                derivatives_folder / f"{fname_stem}_step8_response-cleaned-epo.fif"
+                derivatives_folder
+                / f"{fname_stem}_step8_responselocked-cleaned-epo.fif"
             )
             evoked_response.save(
-                derivatives_folder / f"{fname_stem}_step8_response-ave.fif"
+                derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif"
             )
             fig_drops_response.get_axes()[0].set_title(
                 f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
@@ -136,12 +149,12 @@ def create_epochs_evoked_and_behavioral_metadata(
             fig_drops_response.savefig(
                 derivatives_folder
                 / "plots"
-                / f"{fname_stem}_step8_epochs-response-rejected.svg",
+                / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
                 transparent=True,
             )
             with open(
                 derivatives_folder
-                / f"{fname_stem}_step8_response-cleaned-epo-drop-log.csv"
+                / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv"
                 "w",
             ) as file:
                 file.write(
@@ -205,8 +218,13 @@ def _create_epochs_evoked_and_behavioral_metadata(
     if np.any(events[:, 2] == 64):
         mask1 = np.where(events[:, 2] == 2)[0]
         sel = np.array(
-            [elt for elt in np.where(events[:, 2] == 64)[0] if elt - 1 in mask1]
-        )
+            [
+                elt
+                for elt in np.where(events[:, 2] == 64)[0]
+                if elt - 1 in mask1
+                and events[elt, 0] - events[elt - 1, 0] >= _TOO_QUICK_THRESHOLD * raw.info["sfreq"]  # noqa: E501
+            ]
+        )  # fmt: skip
         events_response = events[sel]
         events_id["response"] = 64
     if sorted(np.unique(events[:, 2])) != sorted(events_id.values()):
@@ -220,11 +238,13 @@ def _create_epochs_evoked_and_behavioral_metadata(
         metadata, events, events_id = _make_metadata(events, events_id, raw)
         metadata.drop(columns=["standard", "target", "novel"], inplace=True)
         logger.info("Creating response-lock epochs.")
+        response_time = metadata["response"].values[
+            metadata["response_type"].values == "Hits"
+        ]
+        assert response_time.size == events_response.shape[0]  # sanity-check
         metadata_reponse = dict(
             event_name=["response"] * events_response.shape[0],
-            response_time=metadata["response"].values[
-                metadata["response_type"].values == "Hits"
-            ],
+            response_time=response_time,
         )
         metadata_reponse = pd.DataFrame.from_dict(metadata_reponse)
         epochs_response = Epochs(
@@ -334,8 +354,8 @@ def _make_metadata(
     )
     # fmt: off
     conditions = [
-        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < 0.2),  # noqa: E501
-        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= 0.2),  # noqa: E501
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] < _TOO_QUICK_THRESHOLD),  # noqa: E501
+        (metadata["event_name"].eq("target")) & (pd.notna(metadata["response"])) & (metadata["response"] >= _TOO_QUICK_THRESHOLD),  # noqa: E501
         (metadata["event_name"].eq("target")) & (pd.isna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.notna(metadata["response"])),
         (metadata["event_name"].eq("standard")) & (pd.isna(metadata["response"])),
