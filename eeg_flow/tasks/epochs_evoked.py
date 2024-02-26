@@ -11,6 +11,12 @@ from autoreject import get_rejection_threshold
 from mne import Epochs, find_events
 from mne.epochs import make_metadata as make_metadata_mne
 from mne.io import read_raw_fif
+from mne.utils import check_version
+
+if check_version("mne", "1.6"):
+    from mne._fiff.pick import _picks_to_idx
+else:
+    from mne.io.pick import _picks_to_idx
 
 from ..config import load_config, load_triggers
 from ..utils._docs import fill_doc
@@ -256,9 +262,32 @@ def _create_epochs_evoked_and_behavioral_metadata(
             metadata=metadata_reponse,
             reject=None,
             preload=True,
-            baseline=(None, 0),
+            baseline=None,  # manual baseline
             picks="eeg",
         )
+        # at this point, the only epochs dropped are due to bad segments, let's now
+        # apply the mean baseline correction using the stimulus-locked baseline period.
+        distance = np.full(
+            (events[:, 0].size, epochs_response.events[:, 0].size),
+            epochs_response.events[:, 0],
+            dtype=float,
+        )
+        distance = distance.T - events[:, 0]  # (360, 22)
+        distance[np.where(distance <= 0)] = np.nan
+        idx = np.nanargmin(distance, axis=1)
+        tf = events[idx, 0]  # stimuli onset of the preceding stimulus
+        delta = int(np.round(raw.info["sfreq"] * 0.2))  # 200 ms before stimulus onset
+        t0 = tf - delta
+        baseline = np.zeros(
+            (epochs_response._data.shape[0], epochs_response._data.shape[1], delta)
+        )
+        eegs = _picks_to_idx(raw.info, "eeg", exclude=())
+        assert eegs.size == epochs_response._data.shape[1]  # sanity-check
+        for k, (t1, t2) in enumerate(zip(t0, tf, strict=True)):
+            baseline[k, :] = raw[eegs, t1:t2][0]
+        baseline = np.mean(baseline, axis=-1, keepdims=True)  # average in time
+        epochs_response._data -= baseline
+        # and now that the baseline correction is applied, we can reject bad epochs
         reject = _get_rejection(epochs_response)
         (
             epochs_response,
