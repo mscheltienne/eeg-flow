@@ -272,7 +272,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
             epochs_response.events[:, 0],
             dtype=float,
         )
-        distance = distance.T - events[:, 0]  # (360, 22)
+        distance = distance.T - events[:, 0]  # (n_stimuli, n_response)
         distance[np.where(distance <= 0)] = np.nan
         idx = np.nanargmin(distance, axis=1)
         tf = events[idx, 0]  # stimuli onset of the preceding stimulus
