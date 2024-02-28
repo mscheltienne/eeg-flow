@@ -275,7 +275,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         distance = distance.T - events[:, 0]  # (n_stimuli, n_response)
         distance[np.where(distance <= 0)] = np.nan
         idx = np.nanargmin(distance, axis=1)
-        tf = events[idx, 0]  # stimuli onset of the preceding stimulus
+        tf = events[idx, 0] - raw.first_samp  # stimuli onset of the preceding stimulus
         delta = int(np.round(raw.info["sfreq"] * 0.2))  # 200 ms before stimulus onset
         t0 = tf - delta
         baseline = np.zeros(
