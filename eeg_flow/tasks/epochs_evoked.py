@@ -146,7 +146,7 @@ def create_epochs_evoked_and_behavioral_metadata(
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save epochs, drop-log and evoked files
-        """epochs.save(
+        epochs.save(
             derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif"
         )
         fig_drops.get_axes()[0].set_title(
@@ -254,7 +254,7 @@ def create_epochs_evoked_and_behavioral_metadata(
                 file.write(
                     ",Total,Rejected,Bad,PTP\n"
                     f"Response,{count_stim_before_response_400200resp[64]},{count_stim_before_response_400200resp[64] - count_stim_after_response_400200resp[64]},{drop_reasons_response_400200resp['response']['bad_segment']},{drop_reasons_response_400200resp['response']['ptp']}\n"  # noqa: E501
-                )"""
+                )
         if epochs_response_2000resp is not None and evoked_response_2000resp is not None:
             epochs_response_2000resp.save(
                 derivatives_folder
