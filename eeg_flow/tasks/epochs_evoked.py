@@ -297,8 +297,8 @@ def create_epochs_evoked_and_behavioral_metadata(
                     f"Response,{count_stim_before_response_2000resp[64]},{count_stim_before_response_2000resp[64] - count_stim_after_response_2000resp[64]},{drop_reasons_response_2000resp['response']['bad_segment']},{drop_reasons_response_2000resp['response']['ptp']}\n"  # noqa: E501
                 )
 
-            if epochs_response_400200resp_CSD is not None and evoked_response_400200resp_CSD is not None:
-                epochs_response_400200resp_CSD.save(
+        if epochs_response_400200resp_CSD is not None and evoked_response_400200resp_CSD is not None:
+            epochs_response_400200resp_CSD.save(
                 derivatives_folder
                 / f"{fname_stem}_step8_responselocked-400200resp_CSD-cleaned-epo.fif"
             )
@@ -580,7 +580,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
             fig_drops_response_2000resp,
         ) = _drop_bad_epochs(epochs_response_2000resp, events_response, reject, response=True)
 
-        raw_csd = compute_current_source_density(raw, stiffness=3, n_legendre_terms=15, copy=True)
+        raw_csd = compute_current_source_density(raw.copy().interpolate_bads(), stiffness=3, n_legendre_terms=15, copy=True)
 
         #redo for other baseline correction woth CSD
         epochs_response_400200resp_CSD = Epochs(
@@ -593,7 +593,6 @@ def _create_epochs_evoked_and_behavioral_metadata(
             reject=None,
             preload=True,
             baseline=(-0.4, -0.2),  # manual baseline
-            picks="eeg",
         )
         reject = _get_rejection(epochs_response_400200resp_CSD)
         (
@@ -615,7 +614,6 @@ def _create_epochs_evoked_and_behavioral_metadata(
             reject=None,
             preload=True,
             baseline=(-0.2, 0),  # manual baseline
-            picks="eeg",
         )
         reject = _get_rejection(epochs_response_2000resp_CSD)
         (
