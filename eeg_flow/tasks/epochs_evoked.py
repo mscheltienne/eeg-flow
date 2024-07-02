@@ -104,7 +104,7 @@ def response_to_CSD(
         if epochs_CSD is not None and evoked_CSD is not None:
             epochs_CSD.save(
                 derivatives_folder
-                / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif"
+                / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif"  # noqa: E501
             )
             evoked_CSD.save(
                 derivatives_folder
@@ -201,7 +201,7 @@ def create_epochs_evoked_and_behavioral_metadata(
                 / "plots"
                 / f"{fname_stem}_step8_responselocked-{window}-epochs-rejected.svg",
                 derivatives_folder
-                / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo-drop-log.csv",
+                / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo-drop-log.csv",  # noqa: E501
                 derivatives_folder
                 / f"{fname_stem}_step8_responselocked-{window}-ave.fif",
             ]
@@ -326,7 +326,7 @@ def create_epochs_evoked_and_behavioral_metadata(
             )
             with open(
                 derivatives_folder
-                / f"{fname_stem}_step8_responselocked-400200resp-cleaned-epo-drop-log.csv",
+                / f"{fname_stem}_step8_responselocked-400200resp-cleaned-epo-drop-log.csv",  # noqa: E501
                 "w",
             ) as file:
                 file.write(
@@ -356,7 +356,7 @@ def create_epochs_evoked_and_behavioral_metadata(
             )
             with open(
                 derivatives_folder
-                / f"{fname_stem}_step8_responselocked-2000resp-cleaned-epo-drop-log.csv",
+                / f"{fname_stem}_step8_responselocked-2000resp-cleaned-epo-drop-log.csv",  # noqa: E501
                 "w",
             ) as file:
                 file.write(
