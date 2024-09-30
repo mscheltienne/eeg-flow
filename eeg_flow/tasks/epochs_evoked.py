@@ -39,6 +39,111 @@ if TYPE_CHECKING:
 
 _TOO_QUICK_THRESHOLD: float = 0.2
 
+def stimlocked_to_CSD(
+    participant: str,
+    group: str,
+    task: str,  
+    run: int,
+    *,
+    timeout: float = 10,
+) -> None:
+    """Transform the final epochs with a CSD when needed.
+
+    Parameters
+    ----------
+    %(participant)s
+    %(group)s
+    %(task)s
+    %(run)s
+    %(timeout)s
+    """
+    # prepare folders
+    _, derivatives_folder_root, _ = load_config()
+    fname_stem = get_fname(participant, group, task, run)
+    derivatives_folder = get_derivative_folder(
+        derivatives_folder_root, participant, group, task, run
+    )
+
+    # lock the output derivative files
+    # create locks
+    
+    derivatives = [
+        derivatives_folder / f"{fname_stem}_step8b_stimlocked-novel_CSD-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8b_stimlocked-standard_CSD-ave.fif",
+        derivatives_folder / f"{fname_stem}_step8b_stimlocked-target_CSD-ave.fif",
+
+    ]
+
+    locks = lock_files(*derivatives, timeout=timeout)
+
+    try:
+        if all(derivative.exists() for derivative in derivatives):
+            raise FileExistsError
+
+        # load previous steps (normal epoching)
+        evoked_novel = read_evokeds(
+            derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
+        )[0]
+
+        evoked_standard = read_evokeds(
+            derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
+        )[0]
+
+        evoked_target = read_evokeds(
+            derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
+        )[0]
+
+        evoked_novel_CSD = compute_current_source_density(evoked_novel.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100)
+        evoked_standard_CSD = compute_current_source_density(evoked_novel.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100)
+        evoked_target_CSD = compute_current_source_density(evoked_novel.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100)
+
+        # save epochs, drop-log and evoked files
+        if evoked_novel_CSD is not None:
+            evoked_novel_CSD.save(
+                derivatives_folder / f"{fname_stem}_step8b_stimlocked-novel_CSD-ave.fif"
+            )
+        if evoked_standard_CSD is not None:
+            evoked_standard_CSD.save(
+                derivatives_folder / f"{fname_stem}_step8b_stimlocked-standard_CSD-ave.fif"
+            )
+        if evoked_target_CSD is not None:
+            evoked_target_CSD.save(
+                derivatives_folder / f"{fname_stem}_step8b_stimlocked-target_CSD-ave.fif"
+            )
+
+    except FileNotFoundError:
+        logger.error(
+            "The requested file for participant %s, group %s, task %s, run %i does "
+            "not exist and will be skipped.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except FileExistsError:
+        logger.error(
+            "The destination file for participant %s, group %s, task %s, run %i "
+            "already exists.",
+            participant,
+            group,
+            task,
+            run,
+        )
+    except Exception as error:
+        logger.error(
+            "The file for participant %s, group %s, task %s, run %i could not be "
+            "processed.",
+            participant,
+            group,
+            task,
+            run,
+        )
+        logger.exception(error)
+    finally:
+        for lock in locks:
+            lock.release()
+        del locks
+
 def response_to_CSD(
     participant: str,
     group: str,
@@ -69,6 +174,7 @@ def response_to_CSD(
      # lock the output derivative files
     # create locks
     #"400200resp","2000resp","400200resp_CSD","2000resp_CSD"
+    
     derivatives = [
         derivatives_folder / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif",
         derivatives_folder / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-ave.fif",
@@ -81,14 +187,25 @@ def response_to_CSD(
             raise FileExistsError
 
         # load previous steps (normal epoching)
-        epochs = read_epochs(
-            derivatives_folder / f"{fname_stem}_step8_responselocked-{BC_response}-cleaned-epo.fif",
-        )
-        epochs_CSD = compute_current_source_density(epochs.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100)
 
-        evoked = read_evokeds(
-            derivatives_folder / f"{fname_stem}_step8_responselocked-{BC_response}-ave.fif",
-        )[0]
+        if BC_response == "2000stim":
+            epochs = read_epochs(
+                derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif",
+            )
+        
+            evoked = read_evokeds(
+                derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
+            )[0]
+        else:
+            epochs = read_epochs(
+                derivatives_folder / f"{fname_stem}_step8_responselocked-{BC_response}-cleaned-epo.fif",
+            )
+        
+            evoked = read_evokeds(
+                derivatives_folder / f"{fname_stem}_step8_responselocked-{BC_response}-ave.fif",
+            )[0]
+
+        epochs_CSD = compute_current_source_density(epochs.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100)
         evoked_CSD = compute_current_source_density(evoked.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100)
         
         # save epochs, drop-log and evoked files
@@ -172,25 +289,25 @@ def create_epochs_evoked_and_behavioral_metadata(
         derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
         derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
         derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
-        derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif",
-        derivatives_folder
-        / "plots"
-        / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
-        derivatives_folder
-        / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
-        derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif",
+        # derivatives_folder
+        # / "plots"
+        # / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
+        # derivatives_folder
+        # / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
+        # derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
     ]
 
-    window_response_bc = ["400200resp","2000resp"]
-    for window in window_response_bc:
-        derivatives.extend([derivatives_folder / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo.fif",
-        derivatives_folder
-        / "plots"
-        / f"{fname_stem}_step8_responselocked-{window}-epochs-rejected.svg",
-        derivatives_folder
-        / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo-drop-log.csv",
-        derivatives_folder / f"{fname_stem}_step8_responselocked-{window}-ave.fif",
-    ])
+    # window_response_bc = ["2000resp_freq","400200resp","2000resp",]
+    # for window in window_response_bc:
+    #     derivatives.extend([derivatives_folder / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo.fif",
+    #     derivatives_folder
+    #     / "plots"
+    #     / f"{fname_stem}_step8_responselocked-{window}-epochs-rejected.svg",
+    #     derivatives_folder
+    #     / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo-drop-log.csv",
+    #     derivatives_folder / f"{fname_stem}_step8_responselocked-{window}-ave.fif",
+    # ])
 
     locks = lock_files(*derivatives, timeout=timeout)
 
@@ -211,26 +328,33 @@ def create_epochs_evoked_and_behavioral_metadata(
             drop_reasons,
             fig_drops,
             evokeds,
-            epochs_response,
-            evoked_response,
-            drop_reasons_response,
-            fig_drops_response,
-            count_stim_before_response,
-            count_stim_after_response,
+            # epochs_response,
+            # evoked_response,
+            # drop_reasons_response,
+            # fig_drops_response,
+            # count_stim_before_response,
+            # count_stim_after_response,
 
-            epochs_response_400200resp,
-            evoked_response_400200resp,
-            drop_reasons_response_400200resp,
-            fig_drops_response_400200resp,
-            count_stim_before_response_400200resp,
-            count_stim_after_response_400200resp,
+            # epochs_response_400200resp,
+            # evoked_response_400200resp,
+            # drop_reasons_response_400200resp,
+            # fig_drops_response_400200resp,
+            # count_stim_before_response_400200resp,
+            # count_stim_after_response_400200resp,
 
-            epochs_response_2000resp,
-            evoked_response_2000resp,
-            drop_reasons_response_2000resp,
-            fig_drops_response_2000resp,
-            count_stim_before_response_2000resp,
-            count_stim_after_response_2000resp,
+            # epochs_response_2000resp,
+            # evoked_response_2000resp,
+            # drop_reasons_response_2000resp,
+            # fig_drops_response_2000resp,
+            # count_stim_before_response_2000resp,
+            # count_stim_after_response_2000resp,
+
+            # epochs_response_2000resp_freq,
+            # evoked_response_2000resp_freq,
+            # drop_reasons_response_2000resp_freq,
+            # fig_drops_response_2000resp_freq,
+            # count_stim_before_response_2000resp_freq,
+            # count_stim_after_response_2000resp_freq,
             
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
@@ -264,85 +388,111 @@ def create_epochs_evoked_and_behavioral_metadata(
                 f"Novel,{count_stim_before[events_mapping['novel']]},{count_stim_before[events_mapping['novel']] - count_stim_after[events_mapping['novel']]},{drop_reasons['novel']['bad_segment']},{drop_reasons['novel']['ptp']},{drop_reasons['novel']['after_response']}\n"  # noqa: E501
             )
 
-        if epochs_response is not None and evoked_response is not None:
-            epochs_response.save(
-                derivatives_folder
-                / f"{fname_stem}_step8_responselocked-cleaned-epo.fif"
-            )
-            evoked_response.save(
-                derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif"
-            )
-            fig_drops_response.get_axes()[0].set_title(
-                f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
-            )
-            fig_drops_response.savefig(
-                derivatives_folder
-                / "plots"
-                / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
-                transparent=True,
-            )
-            with open(
-                derivatives_folder
-                / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
-                "w",
-            ) as file:
-                file.write(
-                    ",Total,Rejected,Bad,PTP\n"
-                    f"Response,{count_stim_before_response[64]},{count_stim_before_response[64] - count_stim_after_response[64]},{drop_reasons_response['response']['bad_segment']},{drop_reasons_response['response']['ptp']}\n"  # noqa: E501
-                )
+        # if epochs_response is not None and evoked_response is not None:
+        #     epochs_response.save(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-cleaned-epo.fif"
+        #     )
+        #     evoked_response.save(
+        #         derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif"
+        #     )
+        #     fig_drops_response.get_axes()[0].set_title(
+        #         f"{fname_stem}: {fig_drops_response.get_axes()[0].get_title()}"
+        #     )
+        #     fig_drops_response.savefig(
+        #         derivatives_folder
+        #         / "plots"
+        #         / f"{fname_stem}_step8_responselocked-epochs-rejected.svg",
+        #         transparent=True,
+        #     )
+        #     with open(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
+        #         "w",
+        #     ) as file:
+        #         file.write(
+        #             ",Total,Rejected,Bad,PTP\n"
+        #             f"Response,{count_stim_before_response[64]},{count_stim_before_response[64] - count_stim_after_response[64]},{drop_reasons_response['response']['bad_segment']},{drop_reasons_response['response']['ptp']}\n"  # noqa: E501
+        #         )
             
-        if epochs_response_400200resp is not None and evoked_response_400200resp is not None:
-            epochs_response_400200resp.save(
-                derivatives_folder
-                / f"{fname_stem}_step8_responselocked-400200resp-cleaned-epo.fif"
-            )
-            evoked_response_400200resp.save(
-                derivatives_folder / f"{fname_stem}_step8_responselocked-400200resp-ave.fif"
-            )
-            fig_drops_response_400200resp.get_axes()[0].set_title(
-                f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
-            )
-            fig_drops_response_400200resp.savefig(
-                derivatives_folder
-                / "plots"
-                / f"{fname_stem}_step8_responselocked-400200resp-epochs-rejected.svg",
-                transparent=True,
-            )
-            with open(
-                derivatives_folder
-                / f"{fname_stem}_step8_responselocked-400200resp-cleaned-epo-drop-log.csv",
-                "w",
-            ) as file:
-                file.write(
-                    ",Total,Rejected,Bad,PTP\n"
-                    f"Response,{count_stim_before_response_400200resp[64]},{count_stim_before_response_400200resp[64] - count_stim_after_response_400200resp[64]},{drop_reasons_response_400200resp['response']['bad_segment']},{drop_reasons_response_400200resp['response']['ptp']}\n"  # noqa: E501
-                )
-        if epochs_response_2000resp is not None and evoked_response_2000resp is not None:
-            epochs_response_2000resp.save(
-                derivatives_folder
-                / f"{fname_stem}_step8_responselocked-2000resp-cleaned-epo.fif"
-            )
-            evoked_response_2000resp.save(
-                derivatives_folder / f"{fname_stem}_step8_responselocked-2000resp-ave.fif"
-            )
-            fig_drops_response_2000resp.get_axes()[0].set_title(
-                f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}"
-            )
-            fig_drops_response_2000resp.savefig(
-                derivatives_folder
-                / "plots"
-                / f"{fname_stem}_step8_responselocked-2000resp-epochs-rejected.svg",
-                transparent=True,
-            )
-            with open(
-                derivatives_folder
-                / f"{fname_stem}_step8_responselocked-2000resp-cleaned-epo-drop-log.csv",
-                "w",
-            ) as file:
-                file.write(
-                    ",Total,Rejected,Bad,PTP\n"
-                    f"Response,{count_stim_before_response_2000resp[64]},{count_stim_before_response_2000resp[64] - count_stim_after_response_2000resp[64]},{drop_reasons_response_2000resp['response']['bad_segment']},{drop_reasons_response_2000resp['response']['ptp']}\n"  # noqa: E501
-                )  
+        # if epochs_response_400200resp is not None and evoked_response_400200resp is not None:
+        #     epochs_response_400200resp.save(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-400200resp-cleaned-epo.fif"
+        #     )
+        #     evoked_response_400200resp.save(
+        #         derivatives_folder / f"{fname_stem}_step8_responselocked-400200resp-ave.fif"
+        #     )
+        #     fig_drops_response_400200resp.get_axes()[0].set_title(
+        #         f"{fname_stem}: {fig_drops_response_400200resp.get_axes()[0].get_title()}"
+        #     )
+        #     fig_drops_response_400200resp.savefig(
+        #         derivatives_folder
+        #         / "plots"
+        #         / f"{fname_stem}_step8_responselocked-400200resp-epochs-rejected.svg",
+        #         transparent=True,
+        #     )
+        #     with open(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-400200resp-cleaned-epo-drop-log.csv",
+        #         "w",
+        #     ) as file:
+        #         file.write(
+        #             ",Total,Rejected,Bad,PTP\n"
+        #             f"Response,{count_stim_before_response_400200resp[64]},{count_stim_before_response_400200resp[64] - count_stim_after_response_400200resp[64]},{drop_reasons_response_400200resp['response']['bad_segment']},{drop_reasons_response_400200resp['response']['ptp']}\n"  # noqa: E501
+        #          )
+        # if epochs_response_2000resp is not None and evoked_response_2000resp is not None:
+        #     epochs_response_2000resp.save(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-2000resp-cleaned-epo.fif"
+        #     )
+        #     evoked_response_2000resp.save(
+        #         derivatives_folder / f"{fname_stem}_step8_responselocked-2000resp-ave.fif"
+        #     )
+        #     fig_drops_response_2000resp.get_axes()[0].set_title(
+        #         f"{fname_stem}: {fig_drops_response_2000resp.get_axes()[0].get_title()}"
+        #     )
+        #     fig_drops_response_2000resp.savefig(
+        #         derivatives_folder
+        #         / "plots"
+        #         / f"{fname_stem}_step8_responselocked-2000resp-epochs-rejected.svg",
+        #         transparent=True,
+        #     )
+        #     with open(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-2000resp-cleaned-epo-drop-log.csv",
+        #         "w",
+        #     ) as file:
+        #         file.write(
+        #             ",Total,Rejected,Bad,PTP\n"
+        #             f"Response,{count_stim_before_response_2000resp[64]},{count_stim_before_response_2000resp[64] - count_stim_after_response_2000resp[64]},{drop_reasons_response_2000resp['response']['bad_segment']},{drop_reasons_response_2000resp['response']['ptp']}\n"  # noqa: E501
+        #         )  
+        # if epochs_response_2000resp_freq is not None and evoked_response_2000resp_freq is not None:
+        #     epochs_response_2000resp_freq.save(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-2000resp_freq-cleaned-epo.fif"
+        #     )
+        #     evoked_response_2000resp_freq.save(
+        #         derivatives_folder / f"{fname_stem}_step8_responselocked-2000resp_freq-ave.fif"
+        #     )
+        #     fig_drops_response_2000resp_freq.get_axes()[0].set_title(
+        #         f"{fname_stem}: {fig_drops_response_2000resp_freq.get_axes()[0].get_title()}"
+        #     )
+        #     fig_drops_response_2000resp_freq.savefig(
+        #         derivatives_folder
+        #         / "plots"
+        #         / f"{fname_stem}_step8_responselocked-2000resp_freq-epochs-rejected.svg",
+        #         transparent=True,
+        #     )
+        #     with open(
+        #         derivatives_folder
+        #         / f"{fname_stem}_step8_responselocked-2000resp_freq-cleaned-epo-drop-log.csv",
+        #         "w",
+        #     ) as file:
+        #         file.write(
+        #             ",Total,Rejected,Bad,PTP\n"
+        #             f"Response,{count_stim_before_response_2000resp_freq[64]},{count_stim_before_response_2000resp_freq[64] - count_stim_after_response_2000resp_freq[64]},{drop_reasons_response_2000resp_freq['response']['bad_segment']},{drop_reasons_response_2000resp_freq['response']['ptp']}\n"  # noqa: E501
+        #         )  
 
     except FileNotFoundError:
         logger.error(
@@ -388,25 +538,25 @@ def _create_epochs_evoked_and_behavioral_metadata(
     plt.Figure,
     dict[str, Evoked],
     Optional[Epochs],
-    Optional[Evoked],
-    dict[str, dict[str, int]],
-    plt.Figure,
-    Counter,
-    Counter,
+    # Optional[Evoked],
+    # dict[str, dict[str, int]],
+    # plt.Figure,
+    # Counter,
+    # Counter,
 
-    Optional[Epochs],
-    Optional[Evoked],
-    dict[str, dict[str, int]],
-    plt.Figure,
-    Counter,
-    Counter,
+    # Optional[Epochs],
+    # Optional[Evoked],
+    # dict[str, dict[str, int]],
+    # plt.Figure,
+    # Counter,
+    # Counter,
 
-    Optional[Epochs],
-    Optional[Evoked],
-    dict[str, dict[str, int]],
-    plt.Figure,
-    Counter,
-    Counter,
+    # Optional[Epochs],
+    # Optional[Evoked],
+    # dict[str, dict[str, int]],
+    # plt.Figure,
+    # Counter,
+    # Counter,
 ]:
     """Prepare epochs from a raw object."""
     events = find_events(raw, stim_channel="TRIGGER")
@@ -531,6 +681,28 @@ def _create_epochs_evoked_and_behavioral_metadata(
             fig_drops_response_2000resp,
         ) = _drop_bad_epochs(epochs_response_2000resp, events_response, reject, response=True)
 
+        #redo for other baseline correction
+        epochs_response_2000resp_freq = Epochs(
+            raw=raw,
+            tmin=-0.2,
+            tmax=0.250,
+            events=events_response,
+            event_id=dict(response=64),
+            metadata=metadata_reponse,
+            reject=None,
+            preload=True,
+            baseline=(-0.2, 0),  # manual baseline
+            picks="eeg",
+        )
+        reject = _get_rejection(epochs_response_2000resp_freq)
+        (
+            epochs_response_2000resp_freq,
+            count_stim_before_response_2000resp_freq,
+            count_stim_after_response_2000resp_freq,
+            drop_reasons_response_2000resp_freq,
+            fig_drops_response_2000resp_freq,
+        ) = _drop_bad_epochs(epochs_response_2000resp_freq, events_response, reject, response=True)
+
     else:
         metadata = None
         epochs_response = None
@@ -555,13 +727,21 @@ def _create_epochs_evoked_and_behavioral_metadata(
         drop_reasons,
         fig_drops,
     ) = _drop_bad_epochs(epochs, events, reject, response=False)
+
+
+
     if metadata is None:
-        evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
+       evokeds = dict((cond, epochs[cond].average()) for cond in epochs.event_id)
     else:
-        evokeds = dict(
-            (cond, epochs["response_correct == True"][cond].average())
-            for cond in epochs.event_id
-        )
+       evokeds = dict(
+           (cond, epochs["response_correct == True"][cond].average())
+           for cond in epochs.event_id
+       )
+    # Assuming `metadata`, `epochs`, and `event_id` are defined as in your original code
+
+   
+
+
     return (
         epochs,
         count_stim_before,
@@ -569,26 +749,33 @@ def _create_epochs_evoked_and_behavioral_metadata(
         drop_reasons,
         fig_drops,
         evokeds,
-        epochs_response,
-        None if epochs_response is None else epochs_response.average(),
-        drop_reasons_response,
-        fig_drops_response,
-        count_stim_before_response,
-        count_stim_after_response,
+        # epochs_response,
+        # None if epochs_response is None else epochs_response.average(),
+        # drop_reasons_response,
+        # fig_drops_response,
+        # count_stim_before_response,
+        # count_stim_after_response,
 
-        epochs_response_400200resp,
-        None if epochs_response_400200resp is None else epochs_response_400200resp.average(),
-        drop_reasons_response_400200resp,
-        fig_drops_response_400200resp,
-        count_stim_before_response_400200resp,
-        count_stim_after_response_400200resp,
+        # epochs_response_400200resp,
+        # None if epochs_response_400200resp is None else epochs_response_400200resp.average(),
+        # drop_reasons_response_400200resp,
+        # fig_drops_response_400200resp,
+        # count_stim_before_response_400200resp,
+        # count_stim_after_response_400200resp,
 
-        epochs_response_2000resp,
-        None if epochs_response_2000resp is None else epochs_response_2000resp.average(),
-        drop_reasons_response_2000resp,
-        fig_drops_response_2000resp,
-        count_stim_before_response_2000resp,
-        count_stim_after_response_2000resp,       
+        # epochs_response_2000resp,
+        # None if epochs_response_2000resp is None else epochs_response_2000resp.average(),
+        # drop_reasons_response_2000resp,
+        # fig_drops_response_2000resp,
+        # count_stim_before_response_2000resp,
+        # count_stim_after_response_2000resp,       
+        
+        # epochs_response_2000resp_freq,
+        # None if epochs_response_2000resp_freq is None else epochs_response_2000resp_freq.average(),
+        # drop_reasons_response_2000resp_freq,
+        # fig_drops_response_2000resp_freq,
+        # count_stim_before_response_2000resp_freq,
+        # count_stim_after_response_2000resp_freq,     
     )
 
 def _make_metadata(
