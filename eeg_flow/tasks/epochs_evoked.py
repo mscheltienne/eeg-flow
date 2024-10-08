@@ -85,13 +85,13 @@ def stimlocked_to_CSD(
             derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
         )[0]
 
-        evoked_standard = read_evokeds(
-            derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
-        )[0]
+        # evoked_standard = read_evokeds(
+        #     derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
+        # )[0]
 
-        evoked_target = read_evokeds(
-            derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
-        )[0]
+        # evoked_target = read_evokeds(
+        #     derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
+        # )[0]
 
         evoked_novel_CSD = compute_current_source_density(
             evoked_novel.interpolate_bads(),
@@ -239,7 +239,7 @@ def response_to_CSD(
         if epochs_CSD is not None and evoked_CSD is not None:
             epochs_CSD.save(
                 derivatives_folder
-                / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif"
+                / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif"  # noqa: E501
             )
             evoked_CSD.save(
                 derivatives_folder
@@ -328,7 +328,7 @@ def create_epochs_evoked_and_behavioral_metadata(
 
     # window_response_bc = ["2000resp_freq","400200resp","2000resp",]
     # for window in window_response_bc:
-    #     derivatives.extend([derivatives_folder / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo.fif",
+    #     derivatives.extend([derivatives_folder / f"{fname_stem}_step8_responselocked-{window}-cleaned-epo.fif",  # noqa: E501
     #     derivatives_folder
     #     / "plots"
     #     / f"{fname_stem}_step8_responselocked-{window}-epochs-rejected.svg",
