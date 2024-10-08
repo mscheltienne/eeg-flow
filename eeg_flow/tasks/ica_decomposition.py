@@ -673,8 +673,9 @@ def apply_ica_interpolate(
     *,
     timeout: float = 10,
 ):
-    """Apply the reviewed ICA decomposition. then interpolate bads. this is a dirty copy to not break
-    the previous steps for now.
+    """Apply the reviewed ICA decomposition, then interpolate bads.
+
+    This is a dirty copy to not break the previous steps for now.
 
     Parameters
     ----------
@@ -752,7 +753,9 @@ def apply_ica_interpolate(
 
         # interpolate bads
         raw.interpolate_bads()
-        raw.crop(tmin=30.) # warning, tmin will be t=0 for all subsequent functions. New first_samp and last_samp are set accordingly
+        # warning, tmin will be t=0 for all subsequent functions. New first_samp and
+        # last_samp are set accordingly.
+        raw.crop(tmin=30.0)
 
         # save derivative
         fname = derivatives_folder / f"{fname_stem}_step10_preprocessed_raw.fif"
