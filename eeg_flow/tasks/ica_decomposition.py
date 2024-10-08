@@ -673,8 +673,9 @@ def apply_ica_interpolate(
     *,
     timeout: float = 10,
 ):
-    """Apply the reviewed ICA decomposition. then interpolate bads. this is a dirty copy to not break
-    the previous steps for now.
+    """Apply the reviewed ICA decomposition, then interpolate bads.
+
+    This is a dirty copy to not break the previous steps for now.
 
     Parameters
     ----------
