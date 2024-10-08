@@ -779,19 +779,19 @@ def _create_epochs_evoked_and_behavioral_metadata(
         # count_stim_before_response,
         # count_stim_after_response,
         # epochs_response_400200resp,
-        # None if epochs_response_400200resp is None else epochs_response_400200resp.average(),
+        # None if epochs_response_400200resp is None else epochs_response_400200resp.average(),  # noqa: E501
         # drop_reasons_response_400200resp,
         # fig_drops_response_400200resp,
         # count_stim_before_response_400200resp,
         # count_stim_after_response_400200resp,
         # epochs_response_2000resp,
-        # None if epochs_response_2000resp is None else epochs_response_2000resp.average(),
+        # None if epochs_response_2000resp is None else epochs_response_2000resp.average(),  # noqa: E501
         # drop_reasons_response_2000resp,
         # fig_drops_response_2000resp,
         # count_stim_before_response_2000resp,
         # count_stim_after_response_2000resp,
         # epochs_response_2000resp_freq,
-        # None if epochs_response_2000resp_freq is None else epochs_response_2000resp_freq.average(),
+        # None if epochs_response_2000resp_freq is None else epochs_response_2000resp_freq.average(),  # noqa: E501
         # drop_reasons_response_2000resp_freq,
         # fig_drops_response_2000resp_freq,
         # count_stim_before_response_2000resp_freq,

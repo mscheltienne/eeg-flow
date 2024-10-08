@@ -753,9 +753,9 @@ def apply_ica_interpolate(
 
         # interpolate bads
         raw.interpolate_bads()
-        raw.crop(
-            tmin=30.0
-        )  # warning, tmin will be t=0 for all subsequent functions. New first_samp and last_samp are set accordingly
+        # warning, tmin will be t=0 for all subsequent functions. New first_samp and
+        # last_samp are set accordingly.
+        raw.crop(tmin=30.0)
 
         # save derivative
         fname = derivatives_folder / f"{fname_stem}_step10_preprocessed_raw.fif"
