@@ -12,6 +12,10 @@ from .epochs_evoked import (  # noqa: F401
     response_to_CSD,
     stimlocked_to_CSD,
 )
+
+from .epochs_evoked_for_response import (  # noqa: F401
+    create_epochs_evoked_and_behavioral_metadata_response,
+)
 from .ica_decomposition import (  # noqa: F401
     apply_ica,
     apply_ica_interpolate,
