@@ -3,13 +3,13 @@ ci:
 
 repos:
     - repo: https://github.com/pycqa/isort
-      rev: 5.13.2
+      rev: 6.0.1
       hooks:
           - id: isort
             files: eeg_flow
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.8.6
+      rev: v0.11.4
       hooks:
           - id: ruff
             name: ruff linter
@@ -20,7 +20,7 @@ repos:
             files: eeg_flow
 
     - repo: https://github.com/codespell-project/codespell
-      rev: v2.3.0
+      rev: v2.4.1
       hooks:
           - id: codespell
             args: [--write-changes]
@@ -40,7 +40,7 @@ repos:
             files: pyproject.toml
 
     - repo: https://github.com/adrienverge/yamllint
-      rev: v1.35.1
+      rev: v1.37.0
       hooks:
           - id: yamllint
             args: [--strict, -c, .yamllint.yaml]
