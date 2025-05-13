@@ -597,8 +597,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         events_id["response"] = 64
     if sorted(np.unique(events[:, 2])) != sorted(events_id.values()):
         warn(
-            "The events array contains unexpected triggers: "
-            f"{np.unique(events[:, 2])}",
+            f"The events array contains unexpected triggers: {np.unique(events[:, 2])}",
             RuntimeWarning,
             stacklevel=2,
         )
