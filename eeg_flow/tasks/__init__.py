@@ -19,6 +19,7 @@ from .epochs_evoked_for_freqresponse import (  # noqa: F401
 from .ica_decomposition import (  # noqa: F401
     apply_ica,
     apply_ica_interpolate,
+    apply_ica_reref_EOG,
     compare_labels,
     fit_icas,
     label_components,
