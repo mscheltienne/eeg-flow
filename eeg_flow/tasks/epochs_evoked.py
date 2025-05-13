@@ -100,13 +100,13 @@ def stimlocked_to_CSD(
             verbose=100,
         )
         evoked_standard_CSD = compute_current_source_density(
-            evoked_novel.interpolate_bads(),
+            evoked_standard.interpolate_bads(),
             stiffness=3,
             n_legendre_terms=15,
             verbose=100,
         )
         evoked_target_CSD = compute_current_source_density(
-            evoked_novel.interpolate_bads(),
+            evoked_target.interpolate_bads(),
             stiffness=3,
             n_legendre_terms=15,
             verbose=100,
