@@ -810,7 +810,9 @@ def apply_ica_reref_EOG(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step12_preprocessed_EOG_raw.fif",)
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step12_preprocessed_EOG_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -841,7 +843,7 @@ def apply_ica_reref_EOG(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         # apply ICA for EEG channels
         raw.drop_channels(["M1", "M2"])
 
@@ -865,18 +867,15 @@ def apply_ica_reref_EOG(
         raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
         raw.add_channels([raw_mastoids])
 
-
         # resume the final rereference specifically to the EEG channels
         raw.set_montage("standard_1020")  # add montage for non-mastoids
         raw.set_eeg_reference(["M1", "M2"])
 
-
-
         # Let's assume you want to subtract M1 and M2 from the vEOG
         # First, get the data for the vEOG and M1/M2
-        vEOG_data  = raw.get_data(picks='vEOG')
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        vEOG_data = raw.get_data(picks="vEOG")
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
 
         # Combine M1 and M2 as a reference (e.g., average or difference)
         average_mastoids = (M1_data + M2_data) / 2
@@ -885,46 +884,22 @@ def apply_ica_reref_EOG(
         vEOG_data_ref = vEOG_data - average_mastoids
 
         # Put the re-referenced vEOG data back into the raw object
-        raw._data[raw.info['ch_names'].index('vEOG')] = vEOG_data_ref
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        raw._data[raw.info["ch_names"].index("vEOG")] = vEOG_data_ref
 
         del raw_mastoids
 
-        
-       
-        
-        
-        
-
-
-        
-        
         # Filter both EOG
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks='eog',
-            method='fir',
-            phase='zero-double',
-            fir_window='hamming',
-            fir_design='firwin',
-            pad='edge',
+            picks="eog",
+            method="fir",
+            phase="zero-double",
+            fir_window="hamming",
+            fir_design="firwin",
+            pad="edge",
         )
-        
-        
+
         raw.drop_channels(["M1", "M2"])
 
         # save derivative
