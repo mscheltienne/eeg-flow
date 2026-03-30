@@ -18,7 +18,6 @@ from .utils._checks import check_type, ensure_path
 from .utils._docs import fill_doc
 from .utils.logs import logger
 
-
 if TYPE_CHECKING:
     from pathlib import Path
     from typing import Union
@@ -232,7 +231,9 @@ def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) 
         elt["label"][0] for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
     ]
     if data.shape[0] == 0 or data.shape[1] == 0:
-        logger.warning("Stream %s contains empty data array, skipping.", stream["info"]["name"][0])
+        logger.warning(
+            "Stream %s contains empty data array, skipping.", stream["info"]["name"][0]
+        )
         return
 
     # interpolate spline on mouse position
