@@ -186,6 +186,10 @@ def add_mouse_position(
 
 
 # ------------------------------------- GameEvents -------------------------------------
+# note: All 8 game channels are preserved in the raw output.
+# Only Health and Ammo are reliable for analysis — see analysis
+# code for full exclusion rationale per channel.
+
 @fill_doc
 def add_game_events(
     raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *, k: int = 1
@@ -213,7 +217,6 @@ def add_game_events(
         game_events_stream,
         k,
         discrete=True,
-        pulse_channels=["Death", "Pick_Health_Pack", "Pick_Assault_Ammo"],
     )
 
 # ----------------------------- Misc channel interpolated ------------------------------
@@ -225,7 +228,6 @@ def _add_misc_channel(
     k: int = 1,
     *,
     discrete: bool = False,
-    pulse_channels: list | None = None,
 ) -> None:
     """Add data from stream to the raw as a misc channel.
 
@@ -260,34 +262,28 @@ def _add_misc_channel(
         for i, ch in enumerate(ch_names):
             ch_data = data.T[i, :]
 
-            if ch in pulse_channels:
-                # Pulse channel: 1 only at the exact EEG sample of the event,
-                # 0 everywhere else. Used for momentary trigger events (Death,
-                # Pick_Health_Pack, Pick_Assault_Ammo). No forward-fill, no
-                # pre-crop initialization needed.
-                in_window = event_indices[
-                    (event_indices >= tmin_idx) & (event_indices < tmax_idx)
-                ]
-                raw_array[i, in_window] = 1.0
-            else:
-                # State channel: forward-fill, initialize from last pre-crop
-                # event. This matters because the game starts ~1 min before
-                # the EEG recording is cropped to the oddball task — without
-                # this, all channels would incorrectly start at 0 until the
-                # first in-window event fires.
-                prior = np.where(event_indices < tmin_idx)[0]
-                current_val = float(ch_data[prior[-1]]) if len(prior) > 0 else 0.0
-                # Start event pointer at first event at or after tmin_idx
-                # so we don't redundantly iterate through pre-window events.
-                event_ptr = int(np.searchsorted(event_indices, tmin_idx))
-                for samp in range(tmin_idx, tmax_idx):
-                    while (
-                        event_ptr < len(event_indices)
-                        and event_indices[event_ptr] <= samp
-                    ):
-                        current_val = ch_data[event_ptr]
-                        event_ptr += 1
-                    raw_array[i, samp] = current_val
+            if discrete:
+                event_indices = np.searchsorted(eeg_timestamps, timestamps)
+                for i, ch in enumerate(ch_names):
+                    ch_data = data.T[i, :]
+                    # State channel: forward-fill, initialize from last pre-crop
+                    # event. This matters because the game starts ~1 min before
+                    # the EEG recording is cropped to the oddball task — without
+                    # this, all channels would incorrectly start at 0 until the
+                    # first in-window event fires.
+                    prior = np.where(event_indices < tmin_idx)[0]
+                    current_val = float(ch_data[prior[-1]]) if len(prior) > 0 else 0.0
+                    # Start event pointer at first event at or after tmin_idx
+                    # so we don't redundantly iterate through pre-window events.
+                    event_ptr = int(np.searchsorted(event_indices, tmin_idx))
+                    for samp in range(tmin_idx, tmax_idx):
+                        while (
+                            event_ptr < len(event_indices)
+                            and event_indices[event_ptr] <= samp
+                        ):
+                            current_val = ch_data[event_ptr]
+                            event_ptr += 1
+                        raw_array[i, samp] = current_val
     else:
         xs = np.linspace(timestamps[0], timestamps[-1], tmax_idx - tmin_idx)
         splines = {
