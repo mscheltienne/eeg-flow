@@ -182,7 +182,7 @@ def add_mouse_position(
     """
     check_type(raw, (BaseRaw,), item_name="raw")
     check_type(k, ("int-like",), item_name="k")
-    _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k)
+    _add_misc_channel(raw, eeg_stream, mouse_pos_stream, k, discrete=False)
 
 
 # ------------------------------------- GameEvents -------------------------------------
@@ -207,14 +207,33 @@ def add_game_events(
     """
     check_type(raw, (BaseRaw,), item_name="raw")
     check_type(k, ("int-like",), item_name="k")
-    _add_misc_channel(raw, eeg_stream, game_events_stream, k)
-
+    _add_misc_channel(
+        raw,
+        eeg_stream,
+        game_events_stream,
+        k,
+        discrete=True,
+        pulse_channels=["Death", "Pick_Health_Pack", "Pick_Assault_Ammo"],
+    )
 
 # ----------------------------- Misc channel interpolated ------------------------------
-def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) -> None:
+
+def _add_misc_channel(
+    raw: BaseRaw,
+    eeg_stream: dict,
+    stream: dict,
+    k: int = 1,
+    *,
+    discrete: bool = False,
+    pulse_channels: list | None = None,
+) -> None:
     """Add data from stream to the raw as a misc channel.
 
-    The data from stream is interpolated on the timestamps of eeg_stream.
+    If discrete=True, forward-fill is used (correct for stepped/integer
+    game event streams). If False, UnivariateSpline is used (correct for
+    continuous streams like mouse position).
+    Channels listed in pulse_channels are treated as momentary trigger
+    events: 1 at the exact EEG sample of the event, 0 everywhere else.
 
     Notes
     -----
@@ -224,35 +243,60 @@ def _add_misc_channel(raw: BaseRaw, eeg_stream: dict, stream: dict, k: int = 1) 
     timestamps = _get_stream_timestamps(stream)
     data = _get_stream_data(stream)
 
-    if data.size == 0 or timestamps.size == 0:
-        logger.warning("Stream %s has no data, skipping.", stream["info"]["name"][0])
-        return
-
     ch_names = [
-        elt["label"][0] for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
+        elt["label"][0]
+        for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
     ]
-    if data.shape[0] == 0 or data.shape[1] == 0:
-        logger.warning("Stream %s contains empty data array, skipping.", stream["info"]["name"][0])
-        return
 
-    # interpolate spline on mouse position
-    spl = {
-        ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
-        for i, ch in enumerate(ch_names)
-    }
-
-    # find tmin/tmax compared to raw
     tmin_idx, tmax_idx = np.searchsorted(
         eeg_timestamps, (timestamps[0], timestamps[-1])
     )
-    xs = np.linspace(timestamps[0], timestamps[-1], tmax_idx - tmin_idx)
 
-    # create array
     raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
-    for i, ch in enumerate(ch_names):
-        raw_array[i, tmin_idx:tmax_idx] = spl[ch](xs)
 
-    # add channel
+    if discrete:
+        pulse_channels = set(pulse_channels or [])
+        event_indices = np.searchsorted(eeg_timestamps, timestamps)
+        for i, ch in enumerate(ch_names):
+            ch_data = data.T[i, :]
+
+            if ch in pulse_channels:
+                # Pulse channel: 1 only at the exact EEG sample of the event,
+                # 0 everywhere else. Used for momentary trigger events (Death,
+                # Pick_Health_Pack, Pick_Assault_Ammo). No forward-fill, no
+                # pre-crop initialization needed.
+                in_window = event_indices[
+                    (event_indices >= tmin_idx) & (event_indices < tmax_idx)
+                ]
+                raw_array[i, in_window] = 1.0
+            else:
+                # State channel: forward-fill, initialize from last pre-crop
+                # event. This matters because the game starts ~1 min before
+                # the EEG recording is cropped to the oddball task — without
+                # this, all channels would incorrectly start at 0 until the
+                # first in-window event fires.
+                prior = np.where(event_indices < tmin_idx)[0]
+                current_val = float(ch_data[prior[-1]]) if len(prior) > 0 else 0.0
+                # Start event pointer at first event at or after tmin_idx
+                # so we don't redundantly iterate through pre-window events.
+                event_ptr = int(np.searchsorted(event_indices, tmin_idx))
+                for samp in range(tmin_idx, tmax_idx):
+                    while (
+                        event_ptr < len(event_indices)
+                        and event_indices[event_ptr] <= samp
+                    ):
+                        current_val = ch_data[event_ptr]
+                        event_ptr += 1
+                    raw_array[i, samp] = current_val
+    else:
+        xs = np.linspace(timestamps[0], timestamps[-1], tmax_idx - tmin_idx)
+        splines = {
+            ch: UnivariateSpline(timestamps, data.T[i, :], k=k)
+            for i, ch in enumerate(ch_names)
+        }
+        for i, ch in enumerate(ch_names):
+            raw_array[i, tmin_idx:tmax_idx] = splines[ch](xs)
+
     info = create_info(ch_names, sfreq=raw.info["sfreq"], ch_types="misc")
     misc_raw = RawArray(raw_array, info)
     raw.add_channels([misc_raw], force_update_info=True)
