@@ -131,6 +131,15 @@ def _convert_xdf_to_fiff(
     eeg_stream = find_streams(streams, "eego")[0][1]
     raw = create_raw(eeg_stream)
 
+    # set participant metadata
+    raw.info['subject_info'] = {
+    'his_id': f"{participant}-{group}",  # unique identifier
+    'participant': participant,           # e.g. 'P01'
+    'group': group,                       # e.g. 'G1'
+    'task': task,                         # e.g. 'UT'
+    'run': run,                           # e.g. 1
+     }
+
     # fix the AUX channel name/types
     raw.rename_channels({"AUX7": "ECG", "AUX8": "hEOG", "EOG": "vEOG", "AUX4": "EDA"})
     raw.set_channel_types(
