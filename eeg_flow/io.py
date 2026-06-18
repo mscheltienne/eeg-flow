@@ -234,8 +234,6 @@ def _add_misc_channel(
     If discrete=True, forward-fill is used (correct for stepped/integer
     game event streams). If False, UnivariateSpline is used (correct for
     continuous streams like mouse position).
-    Channels listed in pulse_channels are treated as momentary trigger
-    events: 1 at the exact EEG sample of the event, 0 everywhere else.
 
     Notes
     -----
@@ -257,33 +255,27 @@ def _add_misc_channel(
     raw_array = np.zeros(shape=(len(ch_names), len(raw.times)))
 
     if discrete:
-        pulse_channels = set(pulse_channels or [])
         event_indices = np.searchsorted(eeg_timestamps, timestamps)
         for i, ch in enumerate(ch_names):
             ch_data = data.T[i, :]
-
-            if discrete:
-                event_indices = np.searchsorted(eeg_timestamps, timestamps)
-                for i, ch in enumerate(ch_names):
-                    ch_data = data.T[i, :]
-                    # State channel: forward-fill, initialize from last pre-crop
-                    # event. This matters because the game starts ~1 min before
-                    # the EEG recording is cropped to the oddball task — without
-                    # this, all channels would incorrectly start at 0 until the
-                    # first in-window event fires.
-                    prior = np.where(event_indices < tmin_idx)[0]
-                    current_val = float(ch_data[prior[-1]]) if len(prior) > 0 else 0.0
-                    # Start event pointer at first event at or after tmin_idx
-                    # so we don't redundantly iterate through pre-window events.
-                    event_ptr = int(np.searchsorted(event_indices, tmin_idx))
-                    for samp in range(tmin_idx, tmax_idx):
-                        while (
-                            event_ptr < len(event_indices)
-                            and event_indices[event_ptr] <= samp
-                        ):
-                            current_val = ch_data[event_ptr]
-                            event_ptr += 1
-                        raw_array[i, samp] = current_val
+            # State channel: forward-fill, initialize from last pre-crop
+            # event. This matters because the game starts ~1 min before
+            # the EEG recording is cropped to the oddball task — without
+            # this, all channels would incorrectly start at 0 until the
+            # first in-window event fires.
+            prior = np.where(event_indices < tmin_idx)[0]
+            current_val = float(ch_data[prior[-1]]) if len(prior) > 0 else 0.0
+            # Start event pointer at first event at or after tmin_idx
+            # so we don't redundantly iterate through pre-window events.
+            event_ptr = int(np.searchsorted(event_indices, tmin_idx))
+            for samp in range(tmin_idx, tmax_idx):
+                while (
+                    event_ptr < len(event_indices)
+                    and event_indices[event_ptr] <= samp
+                ):
+                    current_val = ch_data[event_ptr]
+                    event_ptr += 1
+                raw_array[i, samp] = current_val
     else:
         xs = np.linspace(timestamps[0], timestamps[-1], tmax_idx - tmin_idx)
         splines = {
