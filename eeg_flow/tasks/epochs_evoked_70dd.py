@@ -5,10 +5,10 @@ from collections import Counter
 from typing import TYPE_CHECKING
 from warnings import warn
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 from autoreject import get_rejection_threshold
 from mne import Epochs, find_events, read_epochs, read_evokeds
 from mne.epochs import make_metadata as make_metadata_mne
@@ -17,9 +17,9 @@ from mne.preprocessing import compute_current_source_density
 from mne.utils import check_version
 
 if check_version("mne", "1.6"):
-    from mne._fiff.pick import _picks_to_idx
+    pass
 else:
-    from mne.io.pick import _picks_to_idx
+    pass
 
 from ..config import load_config, load_triggers
 from ..utils._docs import fill_doc
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 _TOO_QUICK_THRESHOLD: float = 0.2
 
-#this below is worng, CSD should be done on epochs, not epochs
+# this below is worng, CSD should be done on epochs, not epochs
 '''
 def stimlocked_to_CSD(
     participant: str,
@@ -165,6 +165,7 @@ def stimlocked_to_CSD(
         del locks
 '''
 
+
 def response_to_CSD(
     participant: str,
     group: str,
@@ -197,14 +198,14 @@ def response_to_CSD(
     # "400200resp","2000resp","400200resp_CSD","2000resp_CSD"
 
     derivatives = [
-        #derivatives_folder
-        #/ f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif",
-        #derivatives_folder
-        #/ f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject_CSD-epo.fif",
+        # derivatives_folder
+        # / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif",
+        # derivatives_folder
+        # / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject_CSD-epo.fif",
         derivatives_folder
         / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject_CSD-ave.fif",
-        #derivatives_folder
-        #/ f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-ave.fif",
+        # derivatives_folder
+        # / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-ave.fif",
     ]
 
     locks = lock_files(*derivatives, timeout=timeout)
@@ -225,39 +226,37 @@ def response_to_CSD(
                 derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
             )[0]
         else:
-            #epochs = read_epochs(
+            # epochs = read_epochs(
             #    derivatives_folder
             #    / f"{fname_stem}_step8_responselocked-{BC_response}-cleaned-epo.fif",
-            #)
+            # )
 
             epochs = read_epochs(
                 derivatives_folder
                 / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-epo.fif",
             )
 
-            #evoked = read_evokeds(
+            # evoked = read_evokeds(
             #    derivatives_folder
             #    / f"{fname_stem}_step8_responselocked-{BC_response}-ave.fif",
-            #)[0]
+            # )[0]
 
         epochs_CSD = compute_current_source_density(
             epochs.interpolate_bads(), stiffness=3, n_legendre_terms=15, verbose=100
         )
-        
 
         # save epochs, drop-log and evoked files
 
-        if epochs_CSD is not None :
-        
-            #epochs_CSD.save(
+        if epochs_CSD is not None:
+            # epochs_CSD.save(
             #    derivatives_folder
             #    / f"{fname_stem}_step8b_responselocked-{BC_response}_CSD-cleaned-epo.fif"  # noqa: E501
-            #)
-            
-            #epochs_CSD.save(
+            # )
+
+            # epochs_CSD.save(
             #    derivatives_folder
             #    / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject_CSD-epo.fif",  # noqa: E501
-            #)
+            # )
 
             evoked_CSD = epochs_CSD.average()
             evoked_CSD.save(
@@ -328,14 +327,14 @@ def create_epochs_evoked_and_behavioral_metadata(
     # lock the output derivative files
     # create locks
     derivatives = [
-        #derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif",
-        #derivatives_folder
-        #/ "plots"
-        #/ f"{fname_stem}_step8_stimlocked-epochs-rejected.svg",
-        #derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo-drop-log.csv",
-        #derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif",
+        # derivatives_folder
+        # / "plots"
+        # / f"{fname_stem}_step8_stimlocked-epochs-rejected.svg",
+        # derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo-drop-log.csv",
+        # derivatives_folder / f"{fname_stem}_step8_stimlocked-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step8_stimlocked-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step8_stimlocked-novel-ave.fif",
         # derivatives_folder / f"{fname_stem}_step8_responselocked-cleaned-epo.fif",
         # derivatives_folder
         # / "plots"
@@ -343,75 +342,61 @@ def create_epochs_evoked_and_behavioral_metadata(
         # derivatives_folder
         # / f"{fname_stem}_step8_responselocked-cleaned-epo-drop-log.csv",
         # derivatives_folder / f"{fname_stem}_step8_responselocked-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-novel-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2_stimlocked-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2_stimlocked-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2_stimlocked-novel-ave.fif",  
-
-        #derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject_stimlocked-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject_stimlocked-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject_stimlocked-novel-ave.fif",
-
-        #derivatives_folder / f"{fname_stem}_step53e_postMastavg_stimlocked-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step53e_postMastavg_stimlocked-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step53e_postMastavg_stimlocked-novel-ave.fif",
-        # 
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-novel-ave.fif",  
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-epo.fif",  
-
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-rerefmastwithoutICA1-epo.fif",  
-        #derivatives_folder / f"{fname_stem}_step31zzb_stimlocked-EOGALL-originalonCPZ-epo.fif",  
-
-        #derivatives_folder / f"{fname_stem}_step60b-1-originalmast-epo.fif",  
-        #derivatives_folder / f"{fname_stem}_step60-2-mastICA1-epo.fif",  
-
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-standard-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-target-ave.fif",
-        #derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-novel-ave.fif",  
-
-        #derivatives_folder / f"{fname_stem}_step72ee_stimlocked_postMastavg_new-epo.fif",  
-        #derivatives_folder / "plots"/ f"{fname_stem}_step72ee_stimlocked-epochs-rejected.svg",  
-        #derivatives_folder / f"{fname_stem}_step72ee_stimlocked-cleaned-epo-drop-log.csv",  
-
-        #derivatives_folder / f"{fname_stem}_step72ee_responselocked_postMastavg_new-epo.fif",  
-        #derivatives_folder / "plots"/ f"{fname_stem}_step72ee_responselocked-epochs-rejected.svg",  
-        #derivatives_folder / f"{fname_stem}_step72ee_responselocked-cleaned-epo-drop-log.csv",  
-
-        derivatives_folder / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-epo.fif",  
-        derivatives_folder / "plots"/ f"{fname_stem}_step70dd_stimlocked-epochs-rejected.svg",  
-        derivatives_folder / f"{fname_stem}_step70dd_stimlocked-cleaned-epo-drop-log.csv",  
-
-        #derivatives_folder / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-epo.fif",  
-        #derivatives_folder / "plots"/ f"{fname_stem}_step70dd_responselocked-epochs-rejected.svg",  
-        #derivatives_folder / f"{fname_stem}_step70dd_responselocked-cleaned-epo-drop-log.csv",  
-
-        derivatives_folder / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-standard-ave.fif",  
-        derivatives_folder / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-target-ave.fif",  
-        derivatives_folder / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-novel-ave.fif",  
-        #derivatives_folder / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-response-ave.fif",  
-
-
-
-
-
-
-
-
-        # _step42mast1_preprocessed_raw.fif 
+        # derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2_stimlocked-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2_stimlocked-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2_stimlocked-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject_stimlocked-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject_stimlocked-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject_stimlocked-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step53e_postMastavg_stimlocked-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step53e_postMastavg_stimlocked-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step53e_postMastavg_stimlocked-novel-ave.fif",
+        #
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-epo.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-rerefmastwithoutICA1-epo.fif",
+        # derivatives_folder / f"{fname_stem}_step31zzb_stimlocked-EOGALL-originalonCPZ-epo.fif",
+        # derivatives_folder / f"{fname_stem}_step60b-1-originalmast-epo.fif",
+        # derivatives_folder / f"{fname_stem}_step60-2-mastICA1-epo.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-standard-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-target-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step72ee_stimlocked_postMastavg_new-epo.fif",
+        # derivatives_folder / "plots"/ f"{fname_stem}_step72ee_stimlocked-epochs-rejected.svg",
+        # derivatives_folder / f"{fname_stem}_step72ee_stimlocked-cleaned-epo-drop-log.csv",
+        # derivatives_folder / f"{fname_stem}_step72ee_responselocked_postMastavg_new-epo.fif",
+        # derivatives_folder / "plots"/ f"{fname_stem}_step72ee_responselocked-epochs-rejected.svg",
+        # derivatives_folder / f"{fname_stem}_step72ee_responselocked-cleaned-epo-drop-log.csv",
+        derivatives_folder
+        / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-epo.fif",
+        derivatives_folder
+        / "plots"
+        / f"{fname_stem}_step70dd_stimlocked-epochs-rejected.svg",
+        derivatives_folder
+        / f"{fname_stem}_step70dd_stimlocked-cleaned-epo-drop-log.csv",
+        # derivatives_folder / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-epo.fif",
+        # derivatives_folder / "plots"/ f"{fname_stem}_step70dd_responselocked-epochs-rejected.svg",
+        # derivatives_folder / f"{fname_stem}_step70dd_responselocked-cleaned-epo-drop-log.csv",
+        derivatives_folder
+        / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-standard-ave.fif",
+        derivatives_folder
+        / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-target-ave.fif",
+        derivatives_folder
+        / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-novel-ave.fif",
+        # derivatives_folder / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-response-ave.fif",
+        # _step42mast1_preprocessed_raw.fif
         # _step42mast2_preprocessed_raw.fif
         # _step42e1-noICA1-noICA2_preprocessed_raw.fif
         # _step42e2-wICA1-noICA2_preprocessed_raw.fif
-
-        #_step53mast1_preCAR
+        # _step53mast1_preCAR
         ##_step53mast2_postCAR_52c_EEG_postICA2
-        #_step53e_postMastavg
-        #_step53f_postautoreject
-        
-
+        # _step53e_postMastavg
+        # _step53f_postautoreject
     ]
 
     # window_response_bc = ["2000resp_freq","400200resp","2000resp",]
@@ -428,67 +413,64 @@ def create_epochs_evoked_and_behavioral_metadata(
     locks = lock_files(*derivatives, timeout=timeout)
 
     try:
-        #if all(derivative.exists() for derivative in derivatives):
+        # if all(derivative.exists() for derivative in derivatives):
         #    raise FileExistsError
 
         # load previous steps (raw_fit recording)
-        #raw = read_raw_fif(
+        # raw = read_raw_fif(
         #    derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif",
         #    preload=True,
-        #)
+        # )
 
         raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step70dd_oldwithoutautoreject_preprocessed_raw.fif",
+            derivatives_folder
+            / f"{fname_stem}_step70dd_oldwithoutautoreject_preprocessed_raw.fif",
             preload=True,
         )
 
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #    derivatives_folder / f"{fname_stem}_step12bb_preprocessed_EOG_raw.fif",
         #    preload=True,
-        #)
+        # )
 
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #    derivatives_folder / f"{fname_stem}_step20zz_preprocessed_EOGEEG3_raw.fif",
         #    preload=True,
-        #)
+        # )
 
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #    derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_raw.fif",
         #    preload=True,
-        #)
+        # )
 
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #    derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_rerefmastwithoutICA1raw.fif",
         #    preload=True,
-        #)
+        # )
 
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #            derivatives_folder / f"{fname_stem}_step60-1-originalmast_preprocessed_raw.fif",
         #            preload=True,
         #        )
 
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #            derivatives_folder / f"{fname_stem}_step60-2-mastICA1_preprocessed_raw.fif",
         #            preload=True,
         #        )
 
-
-        #raw_wEOG = read_raw_fif(
+        # raw_wEOG = read_raw_fif(
         #           derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_originalonCPZ_raw.fif",
         #           preload=True,
-        #)
-
-
-
+        # )
 
         # prepare epoch and behavioral data
         (
-            #epochs,
-            #count_stim_before,
-            #count_stim_after,
-            #drop_reasons,
-            #fig_drops,
-            #evokeds,
+            # epochs,
+            # count_stim_before,
+            # count_stim_after,
+            # drop_reasons,
+            # fig_drops,
+            # evokeds,
             # epochs_response,
             # evoked_response,
             # drop_reasons_response,
@@ -513,25 +495,21 @@ def create_epochs_evoked_and_behavioral_metadata(
             # fig_drops_response_2000resp_freq,
             # count_stim_before_response_2000resp_freq,
             # count_stim_after_response_2000resp_freq,
-
             epochs,
             count_stim_before,
             count_stim_after,
             drop_reasons,
             fig_drops,
             evokeds,
-
-            #epochs_response_2000resp,
-            #count_stim_before_response_2000resp,
-            #count_stim_after_response_2000resp,
-            #drop_reasons_response_2000resp,
-            #fig_drops_response_2000resp,
-            #evokeds_response_2000resp,
-
+            # epochs_response_2000resp,
+            # count_stim_before_response_2000resp,
+            # count_stim_after_response_2000resp,
+            # drop_reasons_response_2000resp,
+            # fig_drops_response_2000resp,
+            # evokeds_response_2000resp,
         ) = _create_epochs_evoked_and_behavioral_metadata(raw)
 
         # save epochs, drop-log and evoked files
-
 
         """ epochs.save(
             derivatives_folder / f"{fname_stem}_step72ee_stimlocked_postMastavg_new-epo.fif",
@@ -597,26 +575,27 @@ def create_epochs_evoked_and_behavioral_metadata(
                 )
  """
         epochs.save(
-            derivatives_folder / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-epo.fif",
+            derivatives_folder
+            / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-epo.fif",
         )
 
         for cond in epochs.event_id:
             evokeds[cond].save(
-                derivatives_folder / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-{cond}-ave.fif"
+                derivatives_folder
+                / f"{fname_stem}_step70dd_stimlocked_oldwithoutautoreject-{cond}-ave.fif"
             )
 
-
-        #fig_drops.get_axes()[0].set_title(f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}")
-        #fig_drops.savefig(
+        # fig_drops.get_axes()[0].set_title(f"{fname_stem}: {fig_drops.get_axes()[0].get_title()}")
+        # fig_drops.savefig(
         #    derivatives_folder / "plots" / f"{fname_stem}_step70dd_stimlocked-epochs-rejected.svg",
         #    transparent=True,
-        #)
+        # )
 
-        #events_mapping = load_triggers()
-        #with open(
+        # events_mapping = load_triggers()
+        # with open(
         #    derivatives_folder / f"{fname_stem}_step70dd_stimlocked-cleaned-epo-drop-log.csv",
         #    "w",
-        #) as file:
+        # ) as file:
         #    file.write("Condition,Stimuli_Presented,bad_segment,ptp,after_response,incorrect_trial,Stimuli_Remaining\n")
         #
         #    for condition in ["standard", "target", "novel"]:
@@ -627,35 +606,33 @@ def create_epochs_evoked_and_behavioral_metadata(
         #        after = drop_reasons[condition].get("after_response", 0)
         #        incorrect = drop_reasons[condition].get("incorrect_trial", 0)
 
-                #file.write(
-                #    f"{condition.capitalize()},{total},{bad},{ptp},{after},{incorrect},{remaining}\n"
-                #)
+        # file.write(
+        #    f"{condition.capitalize()},{total},{bad},{ptp},{after},{incorrect},{remaining}\n"
+        # )
 
-#####,
-     
-            
-        #epochs_response_2000resp.save(
+        #####,
+
+        # epochs_response_2000resp.save(
         #    derivatives_folder / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-epo.fif",
-        #)
+        # )
 
-        #evokeds_response_2000resp.save(
+        # evokeds_response_2000resp.save(
         #        derivatives_folder / f"{fname_stem}_step70dd_responselocked_oldwithoutautoreject-response-ave.fif"
         #    )
 
-
-        #fig_drops_response_2000resp.get_axes()[0].set_title(f"{fname_stem}: {fig_drops_response_2000resp.get_axes()[0].get_title()}")
-        #fig_drops_response_2000resp.savefig(
+        # fig_drops_response_2000resp.get_axes()[0].set_title(f"{fname_stem}: {fig_drops_response_2000resp.get_axes()[0].get_title()}")
+        # fig_drops_response_2000resp.savefig(
         #    derivatives_folder / "plots" / f"{fname_stem}_step70dd_responselocked-epochs-rejected.svg",
         #    transparent=True,
-        #)
+        # )
 
-        #events_mapping = load_triggers()
-        #with open(
+        # events_mapping = load_triggers()
+        # with open(
         #    derivatives_folder / f"{fname_stem}_step70dd_responselocked-cleaned-epo-drop-log.csv",
         #    "w",
-        #) as file:
+        # ) as file:
         #    file.write("Condition,Stimuli_Presented,bad_segment,ptp,after_response,incorrect_trial,Stimuli_Remaining\n")
-        
+
         #    for condition in ["response"]:
         #        total = sum(count_stim_before_response_2000resp.values())
         #        remaining = sum(count_stim_after_response_2000resp.values())
@@ -664,10 +641,9 @@ def create_epochs_evoked_and_behavioral_metadata(
         #        after = drop_reasons_response_2000resp[condition].get("after_response", 0)
         #        incorrect = drop_reasons_response_2000resp[condition].get("incorrect_trial", 0)
 
-                #file.write(
-                #    f"{condition.capitalize()},{total},{bad},{ptp},{after},{incorrect},{remaining}\n"
-                #)
-
+        # file.write(
+        #    f"{condition.capitalize()},{total},{bad},{ptp},{after},{incorrect},{remaining}\n"
+        # )
 
         """ epochs.save(
             derivatives_folder / f"{fname_stem}_step8_stimlocked-cleaned-epo.fif"
@@ -705,8 +681,7 @@ def create_epochs_evoked_and_behavioral_metadata(
             evokeds[cond].save(
                 derivatives_folder / f"{fname_stem}_step43e3-wICA1-wICA2-autoreject-{cond}-ave.fif"
             )       """
-        #events_mapping = load_triggers()
-        
+        # events_mapping = load_triggers()
 
         # if epochs_response is not None and evoked_response is not None:
         #     epochs_response.save(
@@ -813,30 +788,28 @@ def create_epochs_evoked_and_behavioral_metadata(
         #             ",Total,Rejected,Bad,PTP\n"
         #             f"Response,{count_stim_before_response_2000resp_freq[64]},{count_stim_before_response_2000resp_freq[64] - count_stim_after_response_2000resp_freq[64]},{drop_reasons_response_2000resp_freq['response']['bad_segment']},{drop_reasons_response_2000resp_freq['response']['ptp']}\n"  # noqa: E501
         #         )
-        #for cond in epochs_wEOG.event_id:
+        # for cond in epochs_wEOG.event_id:
         #    evokeds_wEOG[cond].save(
         #        derivatives_folder / f"{fname_stem}_step13b_stimlockedwEOG-{cond}-ave.fif"
         #    )
 
-        #for cond in epochs_wEOG.event_id:
+        # for cond in epochs_wEOG.event_id:
         #    evokeds_wEOG[cond].save(
         #        derivatives_folder / f"{fname_stem}_step21zz_stimlocked-EOG-{cond}-ave.fif"
         #    )
 
-        #for cond in epochs_wEOG.event_id:
+        # for cond in epochs_wEOG.event_id:
         #    evokeds_wEOG[cond].save(
         #        derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-{cond}-ave.fif"
         #    )
-        #epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-epo.fif")
+        # epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-autoreject-epo.fif")
 
-        #epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-rerefmastwithoutICA1-epo.fif")
-        #epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zzb_stimlocked-EOGALL-originalonCPZ-epo.fif")
-        #epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-epo.fif")
-        
-        #epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step60b-1-originalmast-epo.fif")
-        #epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step60-2-mastICA1-epo..fif")
-        
+        # epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-rerefmastwithoutICA1-epo.fif")
+        # epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zzb_stimlocked-EOGALL-originalonCPZ-epo.fif")
+        # epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step31zz_stimlocked-EOGALL-epo.fif")
 
+        # epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step60b-1-originalmast-epo.fif")
+        # epochs_wEOG.save(derivatives_folder / f"{fname_stem}_step60-2-mastICA1-epo..fif")
 
     except FileNotFoundError:
         logger.error(
@@ -875,18 +848,12 @@ def create_epochs_evoked_and_behavioral_metadata(
 def _create_epochs_evoked_and_behavioral_metadata(
     raw: BaseRaw,
 ) -> tuple[
-    #Epochs,
-    #Counter,
-    #Counter,
-    #dict[str, dict[str, int]],
-    #plt.Figure,
-    #dict[str, Evoked],
-    #Optional[Epochs],
-    # Optional[Evoked],
+    # Epochs,
+    # Counter,
+    # Counter,
     # dict[str, dict[str, int]],
     # plt.Figure,
-    # Counter,
-    # Counter,
+    # dict[str, Evoked],
     # Optional[Epochs],
     # Optional[Evoked],
     # dict[str, dict[str, int]],
@@ -899,7 +866,12 @@ def _create_epochs_evoked_and_behavioral_metadata(
     # plt.Figure,
     # Counter,
     # Counter,
-
+    # Optional[Epochs],
+    # Optional[Evoked],
+    # dict[str, dict[str, int]],
+    # plt.Figure,
+    # Counter,
+    # Counter,
     Optional[Epochs],
     Optional[Evoked],
 ]:
@@ -1029,7 +1001,7 @@ def _create_epochs_evoked_and_behavioral_metadata(
         baseline=(None, 0),
         picks="eeg",
     )
-    #reject = _get_rejection(epochs)
+    # reject = _get_rejection(epochs)
     (
         epochs,
         count_stim_before,
@@ -1051,36 +1023,32 @@ def _create_epochs_evoked_and_behavioral_metadata(
         baseline=(None, 0),
         picks=["eeg","eog"],
     )"""
-    #reject = _get_rejection(epochs_wEOG)
-    #(
+    # reject = _get_rejection(epochs_wEOG)
+    # (
     #    epochs_wEOG,
     #    _,
     #    _,
     #    _,
     #    _,
-    #) = _drop_bad_epochs(epochs_wEOG, events, reject, response=False)
-
-
-
-
+    # ) = _drop_bad_epochs(epochs_wEOG, events, reject, response=False)
 
     if metadata is None:
-        evokeds = dict((cond, epochs[cond].average(picks="all")) for cond in epochs.event_id)
+        evokeds = dict(
+            (cond, epochs[cond].average(picks="all")) for cond in epochs.event_id
+        )
     else:
         evokeds = dict(
             (cond, epochs["response_correct == True"][cond].average(picks="all"))
             for cond in epochs.event_id
         )
 
-
-    #if metadata is None:
+    # if metadata is None:
     #    evokeds_wEOG = dict((cond, epochs_wEOG[cond].average(picks="all")) for cond in epochs_wEOG.event_id)
-    #else:
+    # else:
     #    evokeds_wEOG = dict(
     #        (cond, epochs_wEOG["response_correct == True"][cond].average(picks="all"))
     #        for cond in epochs_wEOG.event_id
     #    )
-
 
     # Assuming `metadata`, `epochs`, and `event_id` are defined as in your original code
 
@@ -1091,10 +1059,9 @@ def _create_epochs_evoked_and_behavioral_metadata(
         drop_reasons,
         fig_drops,
         evokeds,
-
-        #epochs_wEOG,
-        #evokeds_wEOG,
-        #epochs_response,
+        # epochs_wEOG,
+        # evokeds_wEOG,
+        # epochs_response,
         # None if epochs_response is None else epochs_response.average(),
         # drop_reasons_response,
         # fig_drops_response,
@@ -1212,6 +1179,7 @@ def _get_rejection(epochs: BaseEpochs) -> dict[str, float]:
     logger.info(f"Elapsed {minutes}:{seconds}\n")
     return reject
 
+
 '''
 def _drop_bad_epochs(
     epochs: BaseEpochs, events: NDArray, reject: dict[str, float], response: bool
@@ -1296,21 +1264,23 @@ def _drop_bad_epochs(
 '''
 
 
-
-def plot_drop_bar(drop_reasons: dict[str, dict[str, int]], count_stim_before: Counter) -> plt.Figure:
-    import pandas as pd
-    import seaborn as sns
+def plot_drop_bar(
+    drop_reasons: dict[str, dict[str, int]], count_stim_before: Counter
+) -> plt.Figure:
     import matplotlib.pyplot as plt
+    import pandas as pd
 
     rows = []
     for condition, reasons in drop_reasons.items():
-        total = count_stim_before.get({'response': 64}.get(condition, condition), 0)
+        total = count_stim_before.get({"response": 64}.get(condition, condition), 0)
         for reason, count in reasons.items():
-            rows.append({
-                "Condition": condition,
-                "Reason": reason,
-                "Count": count,
-            })
+            rows.append(
+                {
+                    "Condition": condition,
+                    "Reason": reason,
+                    "Count": count,
+                }
+            )
 
     df = pd.DataFrame(rows)
 
@@ -1322,9 +1292,11 @@ def plot_drop_bar(drop_reasons: dict[str, dict[str, int]], count_stim_before: Co
             height = bar.get_height()
             if height > 0:
                 ax.annotate(
-                    f"{int(height)}", 
-                    (bar.get_x() + bar.get_width() / 2, height), 
-                    ha="center", va="bottom", fontsize=9
+                    f"{int(height)}",
+                    (bar.get_x() + bar.get_width() / 2, height),
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
                 )
 
     ax.set_title("Dropped Epochs per Condition and Reason")
@@ -1333,6 +1305,7 @@ def plot_drop_bar(drop_reasons: dict[str, dict[str, int]], count_stim_before: Co
     ax.grid(axis="y", linestyle="--", alpha=0.5)
     ax.legend(title="Drop Reason")
     return fig
+
 
 def _drop_bad_epochs(
     epochs: BaseEpochs, events: NDArray, response: bool
@@ -1343,18 +1316,19 @@ def _drop_bad_epochs(
     count_stim_before = Counter(events[:, 2])
     print(count_stim_before)
     events_mapping = {value: key for key, value in epochs.event_id.items()}
-    events_mapping["response"] = 64 #
-     # Initialize drop reason structure
+    events_mapping["response"] = 64  #
+    # Initialize drop reason structure
 
     if response:
-        drop_reasons = dict(response=dict(
-            bad_segment=0, ptp=0, incorrect_trial=0, too_short=0
-        ))
+        drop_reasons = dict(
+            response=dict(bad_segment=0, ptp=0, incorrect_trial=0, too_short=0)
+        )
     else:
         drop_reasons = {
             etype: dict(
                 bad_segment=0, ptp=0, after_response=0, incorrect_trial=0, too_short=0
-            ) for etype in ["standard", "target", "novel"]
+            )
+            for etype in ["standard", "target", "novel"]
         }
 
     if epochs.metadata is not None and not response:
@@ -1362,7 +1336,6 @@ def _drop_bad_epochs(
         idx_to_drop = np.where(~np.isnan(epochs.metadata["response"].values))[0] + 1
         idx_to_drop = idx_to_drop[np.where(idx_to_drop < len(epochs))]
         epochs.drop(idx_to_drop, reason="epoch after response")
-
 
     # --- Drop incorrect trials (log only, do not drop yet) ---
     if epochs.metadata is not None and "response_correct" in epochs.metadata.columns:
@@ -1374,8 +1347,6 @@ def _drop_bad_epochs(
 
     # --- Drop based on peak-to-peak or other artifact rejection ---
     # epochs.drop_bad(reject=reject)
-
-    
 
     # log dropped epochs
     # if response:
@@ -1392,7 +1363,7 @@ def _drop_bad_epochs(
         event_type = events_mapping[ev[2]]
 
         if response:
-            event_type = "response" #?
+            event_type = "response"  # ?
 
         if all(elt in epochs.ch_names for elt in drops):
             drop_reasons[event_type]["ptp"] += 1
@@ -1408,7 +1379,7 @@ def _drop_bad_epochs(
             raise ValueError(f"Unknown drop reason: {drops}")
 
     ## --- Add incorrect trial counts separately ---
-    #for idx in incorrect_indices:
+    # for idx in incorrect_indices:
     #    if idx >= len(events):
     #        continue
     #    event_code = events[idx, 2]

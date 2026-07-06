@@ -580,27 +580,22 @@ def apply_ica(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (#derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",
-                   
-                   #derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22e_preprocessed_raw.fif",
-
-                   #derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif",
-
-
-                   #derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif",
-                   derivatives_folder / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif", #skip CPZ
-                
-
-                   )
+    derivatives = (  # derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step22e_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif",
+        derivatives_folder
+        / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif",  # skip CPZ
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -625,28 +620,27 @@ def apply_ica(
         )
         ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif")
 
-        #fname = derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif"
+        # raw_mastoids.save(fname, overwrite=False)
 
-        #raw_mastoids_noICA1 = raw_mastoids.copy()
-        #raw_mastoids_noICA1.pick(["M1", "M2"])
+        # raw_mastoids_noICA1 = raw_mastoids.copy()
+        # raw_mastoids_noICA1.pick(["M1", "M2"])
 
         ica.apply(raw_mastoids)
 
-        #fname = derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif"
+        # raw_mastoids.save(fname, overwrite=False)
 
         del ica  # free resources
-        raw_mastoids.pick(["M1", "M2","TRIGGER"])
+        raw_mastoids.pick(["M1", "M2", "TRIGGER"])
 
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
 
         ## trick MNE in thinking that a custom-ref has been applied
-        #with raw_mastoids_noICA1.info._unlock():
+        # with raw_mastoids_noICA1.info._unlock():
         #    raw_mastoids_noICA1.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-
 
         # apply ICA for EEG channels
         raw.drop_channels(["M1", "M2"])
@@ -661,27 +655,27 @@ def apply_ica(
             pad="edge",
         )
 
-        #fname = derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
         raw.set_montage(None)  # just in case we have a montage left
         raw.add_reference_channels(ref_channels="CPz")
 
-        #raw.drop_channels(raw.info['bads']) 
-        #raw.drop_channels(["vEOG",'EDA','ECG','hEOG'])
+        # raw.drop_channels(raw.info['bads'])
+        # raw.drop_channels(["vEOG",'EDA','ECG','hEOG'])
 
-        #manual reref for mastoids
+        # manual reref for mastoids
         # Apply Common Average Reference (CAR) by subtracting the average of all channels
         # Calculate the average of all EEG channels (excluding vEOG for this step)
-        all_eeg_data = raw.get_data(picks='eeg')
+        all_eeg_data = raw.get_data(picks="eeg")
         avg_eeg_data = all_eeg_data.mean(axis=0)
 
         processed_channels = []
 
-        sfreq = raw.info['sfreq']
+        sfreq = raw.info["sfreq"]
 
-        #fname = derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif"
+        # raw_mastoids.save(fname, overwrite=False)
 
         # Process both mastoids
         for ch in ["M1", "M2"]:
@@ -689,72 +683,70 @@ def apply_ica(
                 mastoid_data = raw_mastoids.get_data(picks=ch)
                 mastoid_data_car = mastoid_data - avg_eeg_data  # shape: (1, n_times)
 
-                ch_info = create_info([ch], sfreq, ch_types=['eeg'])
+                ch_info = create_info([ch], sfreq, ch_types=["eeg"])
                 ch_raw = RawArray(mastoid_data_car, ch_info)
                 processed_channels.append(ch_raw)
 
-        #reref EEG to CAR
+        # reref EEG to CAR
         del raw_mastoids
         raw.set_eeg_reference("average", projection=False)
 
-        
-
-        #fname = derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
         ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_2nd_ica.fif")
         ica.apply(raw)
         del ica  # free resources
 
-        #fname = derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
         # Combine EEG and mastoids
         # Add all the re-referenced channels
         for ch_raw in processed_channels:
             raw.add_channels([ch_raw], force_update_info=True)
 
-        #fname = derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
-       
+        # raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
 
+        # raw_for_noICA1 = raw.copy()
 
-        #raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
+        # raw.add_channels([raw_mastoids])
+        # raw_for_noICA1.add_channels([raw_mastoids_noICA1])
+        # del raw_mastoids
+        # del raw_mastoids_noICA1
 
-        #raw_for_noICA1 = raw.copy()
-
-        #raw.add_channels([raw_mastoids])
-        #raw_for_noICA1.add_channels([raw_mastoids_noICA1])
-        #del raw_mastoids
-        #del raw_mastoids_noICA1
-
-        #fname = derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
         raw.set_montage("standard_1020")  # add montage for non-mastoids
         raw.set_eeg_reference(["M1", "M2"])
         raw.drop_channels(["M1", "M2"])
 
-        #fname = derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)   
+        # fname = derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
-        fname = derivatives_folder / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif"
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif"
+        )
         raw.save(fname, overwrite=False)
 
-        #raw_for_noICA1.set_montage("standard_1020")  # add montage for non-mastoids
-        #raw_for_noICA1.set_eeg_reference(["M1", "M2"])
-        #raw_for_noICA1.drop_channels(["M1", "M2"])
+        # raw_for_noICA1.set_montage("standard_1020")  # add montage for non-mastoids
+        # raw_for_noICA1.set_eeg_reference(["M1", "M2"])
+        # raw_for_noICA1.drop_channels(["M1", "M2"])
 
         # save derivative
-        #fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
-        #fname = derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif"
+        # raw.save(fname, overwrite=False)
 
-        #fname = derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif"
-        #raw_for_noICA1.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif"
+        # raw_for_noICA1.save(fname, overwrite=False)
 
     except FileNotFoundError:
         logger.error(
@@ -778,6 +770,7 @@ def apply_ica(
         for lock in locks:
             lock.release()
         del locks
+
 
 def apply_ica_original(
     participant: str,
@@ -805,7 +798,10 @@ def apply_ica_original(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step70dd_oldwithoutautoreject_preprocessed_raw.fif",)
+    derivatives = (
+        derivatives_folder
+        / f"{fname_stem}_step70dd_oldwithoutautoreject_preprocessed_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -864,7 +860,10 @@ def apply_ica_original(
         raw.drop_channels(["M1", "M2"])
 
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step70dd_oldwithoutautoreject_preprocessed_raw.fif"
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_step70dd_oldwithoutautoreject_preprocessed_raw.fif"
+        )
         raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -1035,7 +1034,9 @@ def apply_ica_reref_EOG(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step12_preprocessed_EOG_raw.fif",)
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step12_preprocessed_EOG_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -1066,7 +1067,7 @@ def apply_ica_reref_EOG(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         # apply ICA for EEG channels
         raw.drop_channels(["M1", "M2"])
 
@@ -1090,18 +1091,15 @@ def apply_ica_reref_EOG(
         raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
         raw.add_channels([raw_mastoids])
 
-
         # resume the final rereference specifically to the EEG channels
         raw.set_montage("standard_1020")  # add montage for non-mastoids
         raw.set_eeg_reference(["M1", "M2"])
 
-
-
         # Let's assume you want to subtract M1 and M2 from the vEOG
         # First, get the data for the vEOG and M1/M2
-        vEOG_data  = raw.get_data(picks='vEOG')
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        vEOG_data = raw.get_data(picks="vEOG")
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
 
         # Combine M1 and M2 as a reference (e.g., average or difference)
         average_mastoids = (M1_data + M2_data) / 2
@@ -1110,23 +1108,22 @@ def apply_ica_reref_EOG(
         vEOG_data_ref = vEOG_data - average_mastoids
 
         # Put the re-referenced vEOG data back into the raw object
-        raw._data[raw.info['ch_names'].index('vEOG')] = vEOG_data_ref
+        raw._data[raw.info["ch_names"].index("vEOG")] = vEOG_data_ref
 
-        del raw_mastoids       
-        
+        del raw_mastoids
+
         # Filter both EOG
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks='eog',
-            method='fir',
-            phase='zero-double',
-            fir_window='hamming',
-            fir_design='firwin',
-            pad='edge',
+            picks="eog",
+            method="fir",
+            phase="zero-double",
+            fir_window="hamming",
+            fir_design="firwin",
+            pad="edge",
         )
-        
-        
+
         raw.drop_channels(["M1", "M2"])
 
         # save derivative
@@ -1155,6 +1152,7 @@ def apply_ica_reref_EOG(
             lock.release()
         del locks
 
+
 def apply_ica_reref_EOG_correct(
     participant: str,
     group: str,
@@ -1181,7 +1179,9 @@ def apply_ica_reref_EOG_correct(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step12bb_preprocessed_EOG_raw.fif",)
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step12bb_preprocessed_EOG_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -1212,14 +1212,14 @@ def apply_ica_reref_EOG_correct(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         # apply ICA for EEG channels
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -1232,7 +1232,7 @@ def apply_ica_reref_EOG_correct(
         raw.set_eeg_reference("average", projection=False)
 
         # Get the CPz data from the raw object after it's been referenced to CAR
-        CPz_CARref_data = raw.get_data(picks='CPz')
+        CPz_CARref_data = raw.get_data(picks="CPz")
 
         ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_2nd_ica.fif")
         ica.apply(raw)
@@ -1241,34 +1241,32 @@ def apply_ica_reref_EOG_correct(
         raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
         raw.add_channels([raw_mastoids])
 
-
         # resume the final rereference specifically to the EEG channels
         raw.set_montage("standard_1020")  # add montage for non-mastoids
         raw.set_eeg_reference(["M1", "M2"])
 
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
 
         # Apply Common Average Reference (CAR) by subtracting the average of all channels
         # Calculate the average of all EEG channels (excluding vEOG for this step)
-        all_eeg_data = raw.get_data(picks='eeg')
+        all_eeg_data = raw.get_data(picks="eeg")
         avg_eeg_data = all_eeg_data.mean(axis=0)
 
         # Subtract the average EEG data from the vEOG to perform CAR
         vEOG_data_car = vEOG_data - avg_eeg_data
 
         ###############################
-         # Subtract CPz from when it was rerefenced to CAR from the vEOG to re-reference to CPz
+        # Subtract CPz from when it was rerefenced to CAR from the vEOG to re-reference to CPz
         vEOG_data_cpz = vEOG_data_car - CPz_CARref_data
-
 
         ###############################
 
         # Let's assume you want to subtract M1 and M2 from the vEOG
         #  M1/M2
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
 
         # Combine M1 and M2 as a reference (e.g., average or difference)
         average_mastoids = (M1_data + M2_data) / 2
@@ -1277,12 +1275,12 @@ def apply_ica_reref_EOG_correct(
         vEOG_data_Mref = vEOG_data_cpz - average_mastoids
 
         # Put the re-referenced vEOG data back into the raw object
-        raw._data[raw.info['ch_names'].index('vEOG')] = vEOG_data_Mref
+        raw._data[raw.info["ch_names"].index("vEOG")] = vEOG_data_Mref
 
-        del raw_mastoids       
-        
+        del raw_mastoids
+
         ## Filter both EOG
-        #raw.filter(
+        # raw.filter(
         #    l_freq=0.5,
         #    h_freq=40.0,
         #    picks='eog',
@@ -1291,9 +1289,8 @@ def apply_ica_reref_EOG_correct(
         #    fir_window='hamming',
         #    fir_design='firwin',
         #    pad='edge',
-        #)
-        
-        
+        # )
+
         raw.drop_channels(["M1", "M2"])
 
         # save derivative
@@ -1349,7 +1346,10 @@ def apply_ica_reref_EOG_correct_noICA2(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step12cc_preprocessed_EOG_EEGnoICA2_raw.fif",)
+    derivatives = (
+        derivatives_folder
+        / f"{fname_stem}_step12cc_preprocessed_EOG_EEGnoICA2_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -1380,14 +1380,14 @@ def apply_ica_reref_EOG_correct_noICA2(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         # apply ICA for EEG channels
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -1399,11 +1399,10 @@ def apply_ica_reref_EOG_correct_noICA2(
         raw.set_eeg_reference("average", projection=False)
 
         # Get the CPz data from the raw object after it's been referenced to CAR
-        CPz_CARref_data = raw.get_data(picks='CPz')
+        CPz_CARref_data = raw.get_data(picks="CPz")
 
         raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
         raw.add_channels([raw_mastoids])
-
 
         # resume the final rereference specifically to the EEG channels
         raw.set_montage("standard_1020")  # add montage for non-mastoids
@@ -1411,27 +1410,26 @@ def apply_ica_reref_EOG_correct_noICA2(
 
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
 
         # Apply Common Average Reference (CAR) by subtracting the average of all channels
         # Calculate the average of all EEG channels (excluding vEOG for this step)
-        all_eeg_data = raw.get_data(picks='eeg')
+        all_eeg_data = raw.get_data(picks="eeg")
         avg_eeg_data = all_eeg_data.mean(axis=0)
 
         # Subtract the average EEG data from the vEOG to perform CAR
         vEOG_data_car = vEOG_data - avg_eeg_data
 
         ###############################
-         # Subtract CPz from when it was rerefenced to CAR from the vEOG to re-reference to CPz
+        # Subtract CPz from when it was rerefenced to CAR from the vEOG to re-reference to CPz
         vEOG_data_cpz = vEOG_data_car - CPz_CARref_data
-
 
         ###############################
 
         # Let's assume you want to subtract M1 and M2 from the vEOG
         #  M1/M2
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
 
         # Combine M1 and M2 as a reference (e.g., average or difference)
         average_mastoids = (M1_data + M2_data) / 2
@@ -1440,12 +1438,12 @@ def apply_ica_reref_EOG_correct_noICA2(
         vEOG_data_Mref = vEOG_data_cpz - average_mastoids
 
         # Put the re-referenced vEOG data back into the raw object
-        raw._data[raw.info['ch_names'].index('vEOG')] = vEOG_data_Mref
+        raw._data[raw.info["ch_names"].index("vEOG")] = vEOG_data_Mref
 
-        del raw_mastoids       
-        
+        del raw_mastoids
+
         ## Filter both EOG
-        #raw.filter(
+        # raw.filter(
         #    l_freq=0.5,
         #    h_freq=40.0,
         #    picks='eog',
@@ -1454,13 +1452,15 @@ def apply_ica_reref_EOG_correct_noICA2(
         #    fir_window='hamming',
         #    fir_design='firwin',
         #    pad='edge',
-        #)
-        
-        
+        # )
+
         raw.drop_channels(["M1", "M2"])
 
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step12cc_preprocessed_EOG_EEGnoICA2_raw.fif"
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_step12cc_preprocessed_EOG_EEGnoICA2_raw.fif"
+        )
         raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -1484,6 +1484,7 @@ def apply_ica_reref_EOG_correct_noICA2(
         for lock in locks:
             lock.release()
         del locks
+
 
 def apply_ica_reref_EOG_final(
     participant: str,
@@ -1511,7 +1512,9 @@ def apply_ica_reref_EOG_final(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step12d_preprocessed_EOG_raw.fif",)
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step12d_preprocessed_EOG_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -1542,13 +1545,13 @@ def apply_ica_reref_EOG_final(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -1558,19 +1561,17 @@ def apply_ica_reref_EOG_final(
         raw.set_montage(None)  # just in case we have a montage left
         raw.set_montage("standard_1020")  # add montage for non-mastoids
 
-
-        #assuming all good for Fp1
+        # assuming all good for Fp1
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
-        Fp1_data = raw.get_data(picks='Fp1')
-
+        vEOG_data = raw.get_data(picks="vEOG")
+        Fp1_data = raw.get_data(picks="Fp1")
 
         ###############################
         # Let's assume you want to subtract M1 and M2 from the vEOG
         #  M1/M2
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
 
         # Combine M1 and M2 as a reference (e.g., average or difference)
         average_mastoids = (M1_data + M2_data) / 2
@@ -1579,22 +1580,26 @@ def apply_ica_reref_EOG_final(
         vEOG_data_Mref = vEOG_data - average_mastoids
         Fp1_data_Mref = Fp1_data - average_mastoids
 
-        hEOG_raw = raw.copy().pick(['hEOG',"TRIGGER"])  # or use pick(picks='hEOG') if needed
+        hEOG_raw = raw.copy().pick(
+            ["hEOG", "TRIGGER"]
+        )  # or use pick(picks='hEOG') if needed
 
-        sfreq = raw.info['sfreq']
+        sfreq = raw.info["sfreq"]
 
         # vEOG
-        veog_info = create_info(['vEOG'], sfreq, ch_types=['eog'])
+        veog_info = create_info(["vEOG"], sfreq, ch_types=["eog"])
         veog_raw = RawArray(vEOG_data_Mref, veog_info)
 
         # FPA
-        Fp1_info = create_info(['Fp1'], sfreq, ch_types=['eeg']) 
+        Fp1_info = create_info(["Fp1"], sfreq, ch_types=["eeg"])
         Fp1_raw = RawArray(Fp1_data_Mref, Fp1_info)
 
-        EOG_raw = hEOG_raw.copy().add_channels([veog_raw, Fp1_raw], force_update_info=True)
+        EOG_raw = hEOG_raw.copy().add_channels(
+            [veog_raw, Fp1_raw], force_update_info=True
+        )
 
-        del raw_mastoids       
-        
+        del raw_mastoids
+
         # save derivative
         fname = derivatives_folder / f"{fname_stem}_step12d_preprocessed_EOG_raw.fif"
         EOG_raw.save(fname, overwrite=False)
@@ -1648,7 +1653,9 @@ def apply_ica_reref_EOG_final_extend(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step20zz_preprocessed_EOGEEG3_raw.fif",)
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step20zz_preprocessed_EOGEEG3_raw.fif",
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -1679,13 +1686,13 @@ def apply_ica_reref_EOG_final_extend(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -1695,27 +1702,41 @@ def apply_ica_reref_EOG_final_extend(
         raw.set_montage(None)  # just in case we have a montage left
         raw.set_montage("standard_1020")  # add montage for non-mastoids
 
-
-        #assuming all good for Fp1
+        # assuming all good for Fp1
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
 
         # Define EEG channels to process (excluding Fp1 — handled separately)
-        eeg_channels = ['Fp1', 'AF7', 'AF3', 'AF4', 'AF8', 'Fz', 'F7', 'F5', 'F3', 'F1', 'F2', 'F4', 'F6', 'F8']
+        eeg_channels = [
+            "Fp1",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "Fz",
+            "F7",
+            "F5",
+            "F3",
+            "F1",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+        ]
 
         # Sampling frequency
-        sfreq = raw.info['sfreq']
+        sfreq = raw.info["sfreq"]
 
         # Get mastoid reference (average of M1 and M2)
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
         average_mastoids = (M1_data + M2_data) / 2
 
         # Process vEOG (EOG type)
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
         vEOG_data_Mref = vEOG_data - average_mastoids
-        veog_info = create_info(['vEOG'], sfreq, ch_types=['eog'])
+        veog_info = create_info(["vEOG"], sfreq, ch_types=["eog"])
         veog_raw = RawArray(vEOG_data_Mref, veog_info)
 
         # List to collect all processed EEG RawArrays
@@ -1725,24 +1746,25 @@ def apply_ica_reref_EOG_final_extend(
         for ch in eeg_channels:
             ch_data = raw.get_data(picks=ch)
             ch_data_Mref = ch_data - average_mastoids
-            ch_info = create_info([ch], sfreq, ch_types=['eeg'])
+            ch_info = create_info([ch], sfreq, ch_types=["eeg"])
             ch_raw = RawArray(ch_data_Mref, ch_info)
             processed_channels.append(ch_raw)
 
         # Start with hEOG and TRIGGER channels
-        EOG_raw = raw.copy().pick(['hEOG', 'TRIGGER'])
+        EOG_raw = raw.copy().pick(["hEOG", "TRIGGER"])
 
         # Add all the re-referenced channels
         for ch_raw in processed_channels:
             EOG_raw.add_channels([ch_raw], force_update_info=True)
 
-
         # Clean up
         del raw_mastoids
-        ###############################     
-        
+        ###############################
+
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step20zz_preprocessed_EOGEEG3_raw.fif"
+        fname = (
+            derivatives_folder / f"{fname_stem}_step20zz_preprocessed_EOGEEG3_raw.fif"
+        )
         EOG_raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -1794,13 +1816,9 @@ def apply_ica_reref_EOG_final_extend_all_eeg(
     fname_stem = get_fname(participant, group, task, run)
 
     # lock the output derivative files
-    derivatives = (derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_raw.fif",
-
-                   
-                   )
-
-
-
+    derivatives = (
+        derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_raw.fif",
+    )
 
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -1833,13 +1851,13 @@ def apply_ica_reref_EOG_final_extend_all_eeg(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -1847,43 +1865,111 @@ def apply_ica_reref_EOG_final_extend_all_eeg(
             pad="edge",
         )
 
-
-    
-
-
-
-
         raw.set_montage(None)  # just in case we have a montage left
         raw.set_montage("standard_1020")  # add montage for non-mastoids
 
-
-        #assuming all good for Fp1
+        # assuming all good for Fp1
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
 
         # Define EEG channels to process (excluding Fp1 — handled separately)
         raw.add_reference_channels(ref_channels="CPz")
 
-        eeg_channels = ['Fp1', 'AF7', 'AF3', 'AF4', 'AF8', 'Fz', 'F7', 'F5', 'F3', 'F1', 'F2', 'F4', 'F6', 'F8']
-        eeg_channels = ['Fp1','Fpz','Fp2','F7','F3','Fz','F4','F8','FC5','FC1','FC2','FC6','T7','C3','Cz','C4',
-                        'T8','CP5','CP1','CP2','CP6','P7','P3','Pz','P4','P8','POz','O1','O2','AF7','AF3','AF4',
-                        'AF8','F5','F1','F2','F6','FC3','FCz','FC4','C5','C1','C2','C6','CP3','CP4','P5','P1','P2',
-                        'P6','PO5','PO3','PO4','PO6','FT7','FT8','TP7','TP8','PO7','PO8','Oz','CPz']
-        
+        eeg_channels = [
+            "Fp1",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "Fz",
+            "F7",
+            "F5",
+            "F3",
+            "F1",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+        ]
+        eeg_channels = [
+            "Fp1",
+            "Fpz",
+            "Fp2",
+            "F7",
+            "F3",
+            "Fz",
+            "F4",
+            "F8",
+            "FC5",
+            "FC1",
+            "FC2",
+            "FC6",
+            "T7",
+            "C3",
+            "Cz",
+            "C4",
+            "T8",
+            "CP5",
+            "CP1",
+            "CP2",
+            "CP6",
+            "P7",
+            "P3",
+            "Pz",
+            "P4",
+            "P8",
+            "POz",
+            "O1",
+            "O2",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "F5",
+            "F1",
+            "F2",
+            "F6",
+            "FC3",
+            "FCz",
+            "FC4",
+            "C5",
+            "C1",
+            "C2",
+            "C6",
+            "CP3",
+            "CP4",
+            "P5",
+            "P1",
+            "P2",
+            "P6",
+            "PO5",
+            "PO3",
+            "PO4",
+            "PO6",
+            "FT7",
+            "FT8",
+            "TP7",
+            "TP8",
+            "PO7",
+            "PO8",
+            "Oz",
+            "CPz",
+        ]
+
         # Sampling frequency
-        sfreq = raw.info['sfreq']
+        sfreq = raw.info["sfreq"]
         bads = raw.info["bads"]
 
         # Get mastoid reference (average of M1 and M2)
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
         average_mastoids = (M1_data + M2_data) / 2
 
         # Process vEOG (EOG type)
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
         vEOG_data_Mref = vEOG_data - average_mastoids
-        veog_info = create_info(['vEOG'], sfreq, ch_types=['eog'])
+        veog_info = create_info(["vEOG"], sfreq, ch_types=["eog"])
         veog_raw = RawArray(vEOG_data_Mref, veog_info)
 
         # List to collect all processed EEG RawArrays
@@ -1893,12 +1979,12 @@ def apply_ica_reref_EOG_final_extend_all_eeg(
         for ch in eeg_channels:
             ch_data = raw.get_data(picks=ch)
             ch_data_Mref = ch_data - average_mastoids
-            ch_info = create_info([ch], sfreq, ch_types=['eeg'])
+            ch_info = create_info([ch], sfreq, ch_types=["eeg"])
             ch_raw = RawArray(ch_data_Mref, ch_info)
             processed_channels.append(ch_raw)
 
         # Start with hEOG and TRIGGER channels
-        EOG_raw = raw.copy().pick(['hEOG', 'TRIGGER'])
+        EOG_raw = raw.copy().pick(["hEOG", "TRIGGER"])
 
         # Add all the re-referenced channels
         for ch_raw in processed_channels:
@@ -1907,10 +1993,12 @@ def apply_ica_reref_EOG_final_extend_all_eeg(
         EOG_raw.info["bads"] = bads
         # Clean up
         del raw_mastoids
-        ###############################     
-        
+        ###############################
+
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_raw.fif"
+        fname = (
+            derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_raw.fif"
+        )
         EOG_raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -1934,7 +2022,6 @@ def apply_ica_reref_EOG_final_extend_all_eeg(
         for lock in locks:
             lock.release()
         del locks
-
 
 
 def apply_ica_reref_EOG_final_extend_all_eeg_noICA1(
@@ -1964,12 +2051,9 @@ def apply_ica_reref_EOG_final_extend_all_eeg_noICA1(
 
     # lock the output derivative files
     derivatives = (
-                
-                   derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_rerefmastwithoutICA1raw.fif",
-                   )
-
-
-
+        derivatives_folder
+        / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_rerefmastwithoutICA1raw.fif",
+    )
 
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -1999,13 +2083,13 @@ def apply_ica_reref_EOG_final_extend_all_eeg_noICA1(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -2013,38 +2097,110 @@ def apply_ica_reref_EOG_final_extend_all_eeg_noICA1(
             pad="edge",
         )
 
-
-
         raw.set_montage(None)  # just in case we have a montage left
         raw.set_montage("standard_1020")  # add montage for non-mastoids
 
-
-        #assuming all good for Fp1
+        # assuming all good for Fp1
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
 
         # Define EEG channels to process (excluding Fp1 — handled separately)
         raw.add_reference_channels(ref_channels="CPz")
 
-        eeg_channels = ['Fp1', 'AF7', 'AF3', 'AF4', 'AF8', 'Fz', 'F7', 'F5', 'F3', 'F1', 'F2', 'F4', 'F6', 'F8']
-        eeg_channels = ['Fp1','Fpz','Fp2','F7','F3','Fz','F4','F8','FC5','FC1','FC2','FC6','T7','C3','Cz','C4',
-                        'T8','CP5','CP1','CP2','CP6','P7','P3','Pz','P4','P8','POz','O1','O2','AF7','AF3','AF4',
-                        'AF8','F5','F1','F2','F6','FC3','FCz','FC4','C5','C1','C2','C6','CP3','CP4','P5','P1','P2',
-                        'P6','PO5','PO3','PO4','PO6','FT7','FT8','TP7','TP8','PO7','PO8','Oz','CPz']
-        
+        eeg_channels = [
+            "Fp1",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "Fz",
+            "F7",
+            "F5",
+            "F3",
+            "F1",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+        ]
+        eeg_channels = [
+            "Fp1",
+            "Fpz",
+            "Fp2",
+            "F7",
+            "F3",
+            "Fz",
+            "F4",
+            "F8",
+            "FC5",
+            "FC1",
+            "FC2",
+            "FC6",
+            "T7",
+            "C3",
+            "Cz",
+            "C4",
+            "T8",
+            "CP5",
+            "CP1",
+            "CP2",
+            "CP6",
+            "P7",
+            "P3",
+            "Pz",
+            "P4",
+            "P8",
+            "POz",
+            "O1",
+            "O2",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "F5",
+            "F1",
+            "F2",
+            "F6",
+            "FC3",
+            "FCz",
+            "FC4",
+            "C5",
+            "C1",
+            "C2",
+            "C6",
+            "CP3",
+            "CP4",
+            "P5",
+            "P1",
+            "P2",
+            "P6",
+            "PO5",
+            "PO3",
+            "PO4",
+            "PO6",
+            "FT7",
+            "FT8",
+            "TP7",
+            "TP8",
+            "PO7",
+            "PO8",
+            "Oz",
+            "CPz",
+        ]
+
         # Sampling frequency
-        sfreq = raw.info['sfreq']
+        sfreq = raw.info["sfreq"]
 
         # Get mastoid reference (average of M1 and M2)
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
         average_mastoids = (M1_data + M2_data) / 2
 
         # Process vEOG (EOG type)
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
         vEOG_data_Mref = vEOG_data - average_mastoids
-        veog_info = create_info(['vEOG'], sfreq, ch_types=['eog'])
+        veog_info = create_info(["vEOG"], sfreq, ch_types=["eog"])
         veog_raw = RawArray(vEOG_data_Mref, veog_info)
 
         # List to collect all processed EEG RawArrays
@@ -2054,24 +2210,26 @@ def apply_ica_reref_EOG_final_extend_all_eeg_noICA1(
         for ch in eeg_channels:
             ch_data = raw.get_data(picks=ch)
             ch_data_Mref = ch_data - average_mastoids
-            ch_info = create_info([ch], sfreq, ch_types=['eeg'])
+            ch_info = create_info([ch], sfreq, ch_types=["eeg"])
             ch_raw = RawArray(ch_data_Mref, ch_info)
             processed_channels.append(ch_raw)
 
         # Start with hEOG and TRIGGER channels
-        EOG_raw = raw.copy().pick(['hEOG', 'TRIGGER'])
+        EOG_raw = raw.copy().pick(["hEOG", "TRIGGER"])
 
         # Add all the re-referenced channels
         for ch_raw in processed_channels:
             EOG_raw.add_channels([ch_raw], force_update_info=True)
 
-
         # Clean up
         del raw_mastoids
-        ###############################     
-        
+        ###############################
+
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_rerefmastwithoutICA1raw.fif"
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_rerefmastwithoutICA1raw.fif"
+        )
         EOG_raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -2095,6 +2253,7 @@ def apply_ica_reref_EOG_final_extend_all_eeg_noICA1(
         for lock in locks:
             lock.release()
         del locks
+
 
 def apply_ica_reref_EOG_final_extend_all_eeg_onlyfilter(
     participant: str,
@@ -2123,11 +2282,9 @@ def apply_ica_reref_EOG_final_extend_all_eeg_onlyfilter(
 
     # lock the output derivative files
     derivatives = (
-                   derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_originalonCPZ_raw.fif",
-                   )
-
-
-
+        derivatives_folder
+        / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_originalonCPZ_raw.fif",
+    )
 
     locks = lock_files(*derivatives, timeout=timeout)
     try:
@@ -2157,13 +2314,13 @@ def apply_ica_reref_EOG_final_extend_all_eeg_onlyfilter(
         # trick MNE in thinking that a custom-ref has been applied
         with raw_mastoids.info._unlock():
             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-    
+
         raw.drop_channels(["M1", "M2"])
 
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks=["eeg","eog"],
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -2171,37 +2328,109 @@ def apply_ica_reref_EOG_final_extend_all_eeg_onlyfilter(
             pad="edge",
         )
 
-
-
         raw.set_montage(None)  # just in case we have a montage left
         raw.set_montage("standard_1020")  # add montage for non-mastoids
 
-
-        #assuming all good for Fp1
+        # assuming all good for Fp1
         ###############################
         # Get the raw data for vEOG
-        vEOG_data = raw.get_data(picks='vEOG')
+        vEOG_data = raw.get_data(picks="vEOG")
 
         # Define EEG channels to process (excluding Fp1 — handled separately)
         raw.add_reference_channels(ref_channels="CPz")
 
-        eeg_channels = ['Fp1', 'AF7', 'AF3', 'AF4', 'AF8', 'Fz', 'F7', 'F5', 'F3', 'F1', 'F2', 'F4', 'F6', 'F8']
-        eeg_channels = ['Fp1','Fpz','Fp2','F7','F3','Fz','F4','F8','FC5','FC1','FC2','FC6','T7','C3','Cz','C4',
-                        'T8','CP5','CP1','CP2','CP6','P7','P3','Pz','P4','P8','POz','O1','O2','AF7','AF3','AF4',
-                        'AF8','F5','F1','F2','F6','FC3','FCz','FC4','C5','C1','C2','C6','CP3','CP4','P5','P1','P2',
-                        'P6','PO5','PO3','PO4','PO6','FT7','FT8','TP7','TP8','PO7','PO8','Oz','CPz']
-        
+        eeg_channels = [
+            "Fp1",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "Fz",
+            "F7",
+            "F5",
+            "F3",
+            "F1",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+        ]
+        eeg_channels = [
+            "Fp1",
+            "Fpz",
+            "Fp2",
+            "F7",
+            "F3",
+            "Fz",
+            "F4",
+            "F8",
+            "FC5",
+            "FC1",
+            "FC2",
+            "FC6",
+            "T7",
+            "C3",
+            "Cz",
+            "C4",
+            "T8",
+            "CP5",
+            "CP1",
+            "CP2",
+            "CP6",
+            "P7",
+            "P3",
+            "Pz",
+            "P4",
+            "P8",
+            "POz",
+            "O1",
+            "O2",
+            "AF7",
+            "AF3",
+            "AF4",
+            "AF8",
+            "F5",
+            "F1",
+            "F2",
+            "F6",
+            "FC3",
+            "FCz",
+            "FC4",
+            "C5",
+            "C1",
+            "C2",
+            "C6",
+            "CP3",
+            "CP4",
+            "P5",
+            "P1",
+            "P2",
+            "P6",
+            "PO5",
+            "PO3",
+            "PO4",
+            "PO6",
+            "FT7",
+            "FT8",
+            "TP7",
+            "TP8",
+            "PO7",
+            "PO8",
+            "Oz",
+            "CPz",
+        ]
+
         # Sampling frequency
-        sfreq = raw.info['sfreq']
+        sfreq = raw.info["sfreq"]
 
         # Get mastoid reference (average of M1 and M2)
-        M1_data = raw_mastoids.get_data(picks='M1')
-        M2_data = raw_mastoids.get_data(picks='M2')
+        M1_data = raw_mastoids.get_data(picks="M1")
+        M2_data = raw_mastoids.get_data(picks="M2")
         average_mastoids = (M1_data + M2_data) / 2
 
         # Process vEOG (EOG type)
-        vEOG_data = raw.get_data(picks='vEOG')
-        veog_info = create_info(['vEOG'], sfreq, ch_types=['eog'])
+        vEOG_data = raw.get_data(picks="vEOG")
+        veog_info = create_info(["vEOG"], sfreq, ch_types=["eog"])
         veog_raw = RawArray(vEOG_data, veog_info)
 
         # List to collect all processed EEG RawArrays
@@ -2210,24 +2439,26 @@ def apply_ica_reref_EOG_final_extend_all_eeg_onlyfilter(
         # Process each EEG channel
         for ch in eeg_channels:
             ch_data = raw.get_data(picks=ch)
-            ch_info = create_info([ch], sfreq, ch_types=['eeg'])
+            ch_info = create_info([ch], sfreq, ch_types=["eeg"])
             ch_raw = RawArray(ch_data, ch_info)
             processed_channels.append(ch_raw)
 
         # Start with hEOG and TRIGGER channels
-        EOG_raw = raw.copy().pick(['hEOG', 'TRIGGER'])
+        EOG_raw = raw.copy().pick(["hEOG", "TRIGGER"])
 
         # Add all the re-referenced channels
         for ch_raw in processed_channels:
             EOG_raw.add_channels([ch_raw], force_update_info=True)
 
-
         # Clean up
         del raw_mastoids
-        ###############################     
-        
+        ###############################
+
         # save derivative
-        fname = derivatives_folder / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_originalonCPZ_raw.fif"
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_step30zz_preprocessed_EOGEEGall_originalonCPZ_raw.fif"
+        )
         EOG_raw.save(fname, overwrite=False)
     except FileNotFoundError:
         logger.error(
@@ -2280,9 +2511,9 @@ def apply_ica_journey_mastoids(
 
     # lock the output derivative files
     derivatives = (
-                   derivatives_folder / f"{fname_stem}_step60-1-originalmast_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step60-2-mastICA1_preprocessed_raw.fif"
-                )
+        derivatives_folder / f"{fname_stem}_step60-1-originalmast_preprocessed_raw.fif",
+        # derivatives_folder / f"{fname_stem}_step60-2-mastICA1_preprocessed_raw.fif"
+    )
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
@@ -2306,17 +2537,20 @@ def apply_ica_journey_mastoids(
             pad="edge",
         )
 
-        fname = derivatives_folder / f"{fname_stem}_step60-1-originalmast_preprocessed_raw.fif" 
+        fname = (
+            derivatives_folder
+            / f"{fname_stem}_step60-1-originalmast_preprocessed_raw.fif"
+        )
         raw_mastoids.save(fname, overwrite=False)
 
-        #ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif")
+        # ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif")
 
-        #ica.apply(raw_mastoids)
+        # ica.apply(raw_mastoids)
 
-        #fname = derivatives_folder / f"{fname_stem}_step60-2-mastICA1_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
+        # fname = derivatives_folder / f"{fname_stem}_step60-2-mastICA1_preprocessed_raw.fif"
+        # raw_mastoids.save(fname, overwrite=False)
 
-        #del ica  # free resources
+        # del ica  # free resources
         """raw_mastoids.pick(["M1", "M2","TRIGGER"])
 
         
