@@ -16,8 +16,6 @@ from scipy.interpolate import UnivariateSpline
 
 from .utils._checks import check_type, ensure_path
 from .utils._docs import fill_doc
-from .utils.logs import logger
-
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -190,6 +188,7 @@ def add_mouse_position(
 # Only Health and Ammo are reliable for analysis — see analysis
 # code for full exclusion rationale per channel.
 
+
 @fill_doc
 def add_game_events(
     raw: BaseRaw, eeg_stream: dict, game_events_stream: dict, *, k: int = 1
@@ -219,7 +218,9 @@ def add_game_events(
         discrete=True,
     )
 
+
 # ----------------------------- Misc channel interpolated ------------------------------
+
 
 def _add_misc_channel(
     raw: BaseRaw,
@@ -244,8 +245,7 @@ def _add_misc_channel(
     data = _get_stream_data(stream)
 
     ch_names = [
-        elt["label"][0]
-        for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
+        elt["label"][0] for elt in stream["info"]["desc"][0]["channels"][0]["channel"]
     ]
 
     tmin_idx, tmax_idx = np.searchsorted(
@@ -270,8 +270,7 @@ def _add_misc_channel(
             event_ptr = int(np.searchsorted(event_indices, tmin_idx))
             for samp in range(tmin_idx, tmax_idx):
                 while (
-                    event_ptr < len(event_indices)
-                    and event_indices[event_ptr] <= samp
+                    event_ptr < len(event_indices) and event_indices[event_ptr] <= samp
                 ):
                     current_val = ch_data[event_ptr]
                     event_ptr += 1
