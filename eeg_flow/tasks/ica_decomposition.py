@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from mne import create_info, pick_types
+from mne import create_info, pick_types, set_bipolar_reference
 from mne.io import RawArray, read_raw_fif
 from mne.io.constants import FIFF
 from mne.preprocessing import ICA, read_ica
@@ -554,6 +554,232 @@ def compare_labels(
         del locks
 
 
+# def apply_ica(
+#     participant: str,
+#     group: str,
+#     task: str,
+#     run: int,
+#     *,
+#     timeout: float = 10,
+# ):
+#     """Apply the reviewed ICA decomposition.
+
+#     Parameters
+#     ----------
+#     %(participant)s
+#     %(group)s
+#     %(task)s
+#     %(run)s
+#     %(timeout)s
+#     """
+#     # prepare folders
+#     _, derivatives_folder_root, username = load_config()
+#     derivatives_folder = get_derivative_folder(
+#         derivatives_folder_root, participant, group, task, run
+#     )
+#     fname_stem = get_fname(participant, group, task, run)
+
+#     # lock the output derivative files
+#     derivatives = (#derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",
+                   
+#                    #derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step22e_preprocessed_raw.fif",
+
+#                    #derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif",
+
+
+#                    #derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif",
+#                    #derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif",
+#                    derivatives_folder / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif", #skip CPZ
+                
+
+#                    )
+#     locks = lock_files(*derivatives, timeout=timeout)
+#     try:
+#         if all(derivative.exists() for derivative in derivatives):
+#             raise FileExistsError
+#         # The raw saved after interpolation of bridges already contains bad channels and
+#         # segments. No need to reload the "info" and "oddball_with_bads" annotations.
+#         raw = read_raw_fif(
+#             derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif", preload=True
+#         )
+
+#         # apply ICA for mastoids
+#         raw_mastoids = raw.copy()
+#         raw_mastoids.filter(
+#             l_freq=0.5,
+#             h_freq=40.0,
+#             picks="eeg",
+#             method="fir",
+#             phase="zero-double",
+#             fir_window="hamming",
+#             fir_design="firwin",
+#             pad="edge",
+#         )
+#         ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif")
+
+#         #fname = derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif"
+#         #raw_mastoids.save(fname, overwrite=False)
+
+#         #raw_mastoids_noICA1 = raw_mastoids.copy()
+#         #raw_mastoids_noICA1.pick(["M1", "M2"])
+
+#         ica.apply(raw_mastoids)
+
+#         #fname = derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif"
+#         #raw_mastoids.save(fname, overwrite=False)
+
+#         del ica  # free resources
+#         raw_mastoids.pick(["M1", "M2","TRIGGER"])
+
+#         # trick MNE in thinking that a custom-ref has been applied
+#         with raw_mastoids.info._unlock():
+#             raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
+
+#         ## trick MNE in thinking that a custom-ref has been applied
+#         #with raw_mastoids_noICA1.info._unlock():
+#         #    raw_mastoids_noICA1.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
+
+
+#         # apply ICA for EEG channels
+#         raw.drop_channels(["M1", "M2"])
+#         raw.filter(
+#             l_freq=0.5,
+#             h_freq=40.0,
+#             picks="eeg",
+#             method="fir",
+#             phase="zero-double",
+#             fir_window="hamming",
+#             fir_design="firwin",
+#             pad="edge",
+#         )
+
+#         #fname = derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+#         raw.set_montage(None)  # just in case we have a montage left
+#         raw.add_reference_channels(ref_channels="CPz")
+
+#         #raw.drop_channels(raw.info['bads']) 
+#         #raw.drop_channels(["vEOG",'EDA','ECG','hEOG'])
+
+#         #manual reref for mastoids
+#         # Apply Common Average Reference (CAR) by subtracting the average of all channels
+#         # Calculate the average of all EEG channels (excluding vEOG for this step)
+#         all_eeg_data = raw.get_data(picks='eeg')
+#         avg_eeg_data = all_eeg_data.mean(axis=0)
+
+#         processed_channels = []
+
+#         sfreq = raw.info['sfreq']
+
+#         #fname = derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif"
+#         #raw_mastoids.save(fname, overwrite=False)
+
+#         # Process both mastoids
+#         for ch in ["M1", "M2"]:
+#             if ch != "TRIGGER":
+#                 mastoid_data = raw_mastoids.get_data(picks=ch)
+#                 mastoid_data_car = mastoid_data - avg_eeg_data  # shape: (1, n_times)
+
+#                 ch_info = create_info([ch], sfreq, ch_types=['eeg'])
+#                 ch_raw = RawArray(mastoid_data_car, ch_info)
+#                 processed_channels.append(ch_raw)
+
+#         #reref EEG to CAR
+#         del raw_mastoids
+#         raw.set_eeg_reference("average", projection=False)
+
+        
+
+#         #fname = derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+#         ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_2nd_ica.fif")
+#         ica.apply(raw)
+#         del ica  # free resources
+
+#         #fname = derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+#         # Combine EEG and mastoids
+#         # Add all the re-referenced channels
+#         for ch_raw in processed_channels:
+#             raw.add_channels([ch_raw], force_update_info=True)
+
+#         #fname = derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+       
+
+
+#         #raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
+
+#         #raw_for_noICA1 = raw.copy()
+
+#         #raw.add_channels([raw_mastoids])
+#         #raw_for_noICA1.add_channels([raw_mastoids_noICA1])
+#         #del raw_mastoids
+#         #del raw_mastoids_noICA1
+
+#         #fname = derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+#         raw.set_montage("standard_1020")  # add montage for non-mastoids
+#         raw.set_eeg_reference(["M1", "M2"])
+#         raw.drop_channels(["M1", "M2"])
+
+#         #fname = derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)   
+
+#         fname = derivatives_folder / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif"
+#         raw.save(fname, overwrite=False)
+
+#         #raw_for_noICA1.set_montage("standard_1020")  # add montage for non-mastoids
+#         #raw_for_noICA1.set_eeg_reference(["M1", "M2"])
+#         #raw_for_noICA1.drop_channels(["M1", "M2"])
+
+#         # save derivative
+#         #fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+#         #fname = derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif"
+#         #raw.save(fname, overwrite=False)
+
+#         #fname = derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif"
+#         #raw_for_noICA1.save(fname, overwrite=False)
+
+#     except FileNotFoundError:
+#         logger.error(
+#             "The requested file for participant %s, group %s, task %s, run %i does "
+#             "not exist and will be skipped.",
+#             participant,
+#             group,
+#             task,
+#             run,
+#         )
+#     except FileExistsError:
+#         logger.error(
+#             "The destination file for participant %s, group %s, task %s, run %i "
+#             "already exists.",
+#             participant,
+#             group,
+#             task,
+#             run,
+#         )
+#     finally:
+#         for lock in locks:
+#             lock.release()
+#         del locks
+
+@fill_doc
 def apply_ica(
     participant: str,
     group: str,
@@ -561,8 +787,13 @@ def apply_ica(
     run: int,
     *,
     timeout: float = 10,
-):
-    """Apply the reviewed ICA decomposition.
+) -> None:
+    """Apply the reviewed ICA decomposition and save the preprocessed raw.
+
+    Applies ICA1 (cardiac/mastoid artifacts) and ICA2 (other artifacts),
+    rerferences EEG to linked mastoids, computes bipolar vEOG (Fp1 - vEOG),
+    and saves the result as step7. Both EEG and EOG are processed in a single
+    step so that step8 epochs can pick channels as needed.
 
     Parameters
     ----------
@@ -572,88 +803,31 @@ def apply_ica(
     %(run)s
     %(timeout)s
     """
-    # prepare folders
-    _, derivatives_folder_root, username = load_config()
+    _, derivatives_folder_root, _ = load_config()
     derivatives_folder = get_derivative_folder(
         derivatives_folder_root, participant, group, task, run
     )
     fname_stem = get_fname(participant, group, task, run)
 
-    # lock the output derivative files
-    derivatives = (#derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",
-                   
-                   #derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step22e_preprocessed_raw.fif",
-
-                   #derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif",
-
-
-                   #derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif",
-                   #derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif",
-                   derivatives_folder / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif", #skip CPZ
-                
-
-                   )
+    derivatives = [
+        derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif",
+    ]
     locks = lock_files(*derivatives, timeout=timeout)
     try:
         if all(derivative.exists() for derivative in derivatives):
             raise FileExistsError
-        # The raw saved after interpolation of bridges already contains bad channels and
-        # segments. No need to reload the "info" and "oddball_with_bads" annotations.
+
+        # --- load step3 ---
         raw = read_raw_fif(
-            derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif", preload=True
+            derivatives_folder / f"{fname_stem}_step3_with-bads_raw.fif",
+            preload=True,
         )
 
-        # apply ICA for mastoids
-        raw_mastoids = raw.copy()
-        raw_mastoids.filter(
-            l_freq=0.5,
-            h_freq=40.0,
-            picks="eeg",
-            method="fir",
-            phase="zero-double",
-            fir_window="hamming",
-            fir_design="firwin",
-            pad="edge",
-        )
-        ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif")
-
-        #fname = derivatives_folder / f"{fname_stem}_step42mast1_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
-
-        #raw_mastoids_noICA1 = raw_mastoids.copy()
-        #raw_mastoids_noICA1.pick(["M1", "M2"])
-
-        ica.apply(raw_mastoids)
-
-        #fname = derivatives_folder / f"{fname_stem}_step42mast2_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
-
-        del ica  # free resources
-        raw_mastoids.pick(["M1", "M2","TRIGGER"])
-
-        # trick MNE in thinking that a custom-ref has been applied
-        with raw_mastoids.info._unlock():
-            raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-
-        ## trick MNE in thinking that a custom-ref has been applied
-        #with raw_mastoids_noICA1.info._unlock():
-        #    raw_mastoids_noICA1.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
-
-
-        # apply ICA for EEG channels
-        raw.drop_channels(["M1", "M2"])
+        # --- filter EEG and EOG ---
         raw.filter(
             l_freq=0.5,
             h_freq=40.0,
-            picks="eeg",
+            picks=["eeg", "eog"],
             method="fir",
             phase="zero-double",
             fir_window="hamming",
@@ -661,119 +835,77 @@ def apply_ica(
             pad="edge",
         )
 
-        #fname = derivatives_folder / f"{fname_stem}_step22a_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
+        # --- ICA1: clean cardiac artifact from mastoids ---
+        # copy after filtering — raw_mastoids already has EEG + EOG filtered
+        raw_mastoids = raw.copy()
+        ica1 = read_ica(
+            derivatives_folder / f"{fname_stem}_step6_reviewed_1st_ica.fif"
+        )
+        ica1.apply(raw_mastoids)
+        del ica1
+        raw_mastoids.pick(["M1", "M2"])
+        # trick MNE into accepting this as a custom-referenced raw
+        with raw_mastoids.info._unlock():
+            raw_mastoids.info["custom_ref_applied"] = FIFF.FIFFV_MNE_CUSTOM_REF_ON
 
-        raw.set_montage(None)  # just in case we have a montage left
+        # --- ICA2: clean other artifacts from EEG + EOG ---
+        raw.drop_channels(["M1", "M2"])
+        raw.set_montage(None)
         raw.add_reference_channels(ref_channels="CPz")
-
-        #raw.drop_channels(raw.info['bads']) 
-        #raw.drop_channels(["vEOG",'EDA','ECG','hEOG'])
-
-        #manual reref for mastoids
-        # Apply Common Average Reference (CAR) by subtracting the average of all channels
-        # Calculate the average of all EEG channels (excluding vEOG for this step)
-        all_eeg_data = raw.get_data(picks='eeg')
-        avg_eeg_data = all_eeg_data.mean(axis=0)
-
-        processed_channels = []
-
-        sfreq = raw.info['sfreq']
-
-        #fname = derivatives_folder / f"{fname_stem}_step52mast1_preCAR_preprocessed_raw.fif"
-        #raw_mastoids.save(fname, overwrite=False)
-
-        # Process both mastoids
-        for ch in ["M1", "M2"]:
-            if ch != "TRIGGER":
-                mastoid_data = raw_mastoids.get_data(picks=ch)
-                mastoid_data_car = mastoid_data - avg_eeg_data  # shape: (1, n_times)
-
-                ch_info = create_info([ch], sfreq, ch_types=['eeg'])
-                ch_raw = RawArray(mastoid_data_car, ch_info)
-                processed_channels.append(ch_raw)
-
-        #reref EEG to CAR
-        del raw_mastoids
         raw.set_eeg_reference("average", projection=False)
+        ica2 = read_ica(
+            derivatives_folder / f"{fname_stem}_step6_reviewed_2nd_ica.fif"
+        )
+        ica2.apply(raw)
+        del ica2
 
-        
-
-        #fname = derivatives_folder / f"{fname_stem}_step22b_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
-
-        ica = read_ica(derivatives_folder / f"{fname_stem}_step6_reviewed_2nd_ica.fif")
-        ica.apply(raw)
-        del ica  # free resources
-
-        #fname = derivatives_folder / f"{fname_stem}_step22c_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
-
-        # Combine EEG and mastoids
-        # Add all the re-referenced channels
-        for ch_raw in processed_channels:
-            raw.add_channels([ch_raw], force_update_info=True)
-
-        #fname = derivatives_folder / f"{fname_stem}_step52mast2_postCAR_52c_EEG_postICA2_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
-
-       
-
-
-        #raw.set_eeg_reference(["CPz"], projection=False)  # change reference back
-
-        #raw_for_noICA1 = raw.copy()
-
-        #raw.add_channels([raw_mastoids])
-        #raw_for_noICA1.add_channels([raw_mastoids_noICA1])
-        #del raw_mastoids
-        #del raw_mastoids_noICA1
-
-        #fname = derivatives_folder / f"{fname_stem}_step22d_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
-
-        raw.set_montage("standard_1020")  # add montage for non-mastoids
+        # --- rereference EEG + EOG to linked mastoids ---
+        raw.set_eeg_reference(["CPz"], projection=False)  # back to CPz
+        raw.add_channels([raw_mastoids])
+        del raw_mastoids
+        raw.set_montage("standard_1020")
         raw.set_eeg_reference(["M1", "M2"])
         raw.drop_channels(["M1", "M2"])
 
-        #fname = derivatives_folder / f"{fname_stem}_step42e3-wICA1-wICA2_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)   
+        # --- bipolar vEOG: Fp1 (above eye) - vEOG (below eye) ---
+        # rename original vEOG before bipolar computation
+        raw.rename_channels({"vEOG": "vEOG_mono"})      
+        # Fp1 is kept as EEG (drop_refs=False)
+        # bipolar vEOG: Fp1 (above eye) - vEOG_mono (below eye)
+        raw = set_bipolar_reference(
+            raw,
+            anode="Fp1",
+            cathode="vEOG_mono",
+            ch_name="vEOG",      # result named vEOG
+            drop_refs=False,     # keep Fp1 as EEG
+        )
+        raw.set_channel_types({"vEOG": "eog"})
+        raw.drop_channels(["vEOG_mono"])
 
-        fname = derivatives_folder / f"{fname_stem}_step52ee_postMastavg_preprocessed_raw.fif"
+        # --- save step7 ---
+        fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
         raw.save(fname, overwrite=False)
-
-        #raw_for_noICA1.set_montage("standard_1020")  # add montage for non-mastoids
-        #raw_for_noICA1.set_eeg_reference(["M1", "M2"])
-        #raw_for_noICA1.drop_channels(["M1", "M2"])
-
-        # save derivative
-        #fname = derivatives_folder / f"{fname_stem}_step7_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
-
-        #fname = derivatives_folder / f"{fname_stem}_step42e2-wICA1-noICA2_preprocessed_raw.fif"
-        #raw.save(fname, overwrite=False)
-
-        #fname = derivatives_folder / f"{fname_stem}_step42e1-noICA1-noICA2_preprocessed_raw.fif"
-        #raw_for_noICA1.save(fname, overwrite=False)
+        logger.info("Saved: %s", fname.name)
 
     except FileNotFoundError:
         logger.error(
-            "The requested file for participant %s, group %s, task %s, run %i does "
-            "not exist and will be skipped.",
-            participant,
-            group,
-            task,
-            run,
+            "The requested file for participant %s, group %s, task %s, "
+            "run %i does not exist and will be skipped.",
+            participant, group, task, run,
         )
     except FileExistsError:
         logger.error(
-            "The destination file for participant %s, group %s, task %s, run %i "
-            "already exists.",
-            participant,
-            group,
-            task,
-            run,
+            "The destination file for participant %s, group %s, task %s, "
+            "run %i already exists.",
+            participant, group, task, run,
         )
+    except Exception as error:
+        logger.error(
+            "The file for participant %s, group %s, task %s, run %i "
+            "could not be processed.",
+            participant, group, task, run,
+        )
+        logger.exception(error)
     finally:
         for lock in locks:
             lock.release()
