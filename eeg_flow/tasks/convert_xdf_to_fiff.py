@@ -145,8 +145,23 @@ def _convert_xdf_to_fiff(
         # add the mouse position and the game events as channels
         mouse_pos_stream = find_streams(streams, "MousePosition")[0][1]
         add_mouse_position(raw, eeg_stream, mouse_pos_stream)
-        game_events_stream = find_streams(streams, "UT_GameEvents")[0][1]
-        add_game_events(raw, eeg_stream, game_events_stream)
+
+        game_streams = find_streams(streams, "UT_GameEvents")
+        if len(game_streams) == 0:
+            logger.warning(
+                "No UT_GameEvents stream found for %s %s %s run %i "
+                "— game channels will be absent from step1.",
+                participant, group, task, run,
+            )
+        elif len(game_streams[0][1]["time_stamps"]) == 0:
+            logger.warning(
+                "UT_GameEvents stream is empty for %s %s %s run %i "
+                "— game channels will be absent from step1.",
+                participant, group, task, run,
+            )
+        else:
+            game_events_stream = game_streams[0][1]
+            add_game_events(raw, eeg_stream, game_events_stream)
 
         # add the keyboard and mouse button annotations
         keyboard_stream = find_streams(streams, "Keyboard")[0][1]
